@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "ai-forward",
-  "generated": "2026-09-26T17:13:02Z",
+  "generated": "2026-09-27T16:39:55Z",
   "audit": [
     {
       "actor": null,
@@ -13326,6 +13326,25 @@ window.AUDIT_DATA = {
       "done_when": "Windows/macOS/Linux workflow can run the existing doctrine assertions against its required comparison ref.",
       "tier": "T1",
       "fan_out": 0
+    },
+    {
+      "id": "al-01M3HVSJN9T0P735B10864M13X",
+      "shortname": "grill-me-integration-proposal",
+      "datetime": "2026-09-27T16:39:55Z",
+      "session": "fb5c4f7c-3f87-4ce0-8988-ec93c2bb2114",
+      "prompt": "Analyze Matt Pocock's grill-me skill and propose how its dependency-aware interrogation approach should surface intrinsically in specify and ui-design, plus as an interactive decision-closure gate after specify, ui-design, define-architecture, and slice-scoped design; deliver the proposal as HTML under docs\\proposals.",
+      "summary": "Produced and browser-validated the interactive proposal at docs/proposals/grill-me-integration-proposal.html.",
+      "kind": "prompt",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [],
+      "tags": [
+        "skills",
+        "interrogation",
+        "proposal"
+      ],
+      "outcome": "success"
     }
   ],
   "changes": [

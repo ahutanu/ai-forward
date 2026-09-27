@@ -1,0 +1,1150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI-Forward Decision Interrogation Proposal</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+    }
+    button, select, textarea, input { font: inherit; }
+    button { cursor: pointer; }
+    a { color: var(--cp-link); }
+    code, pre {
+      font-family: Consolas, "Courier New", Courier, monospace;
+    }
+    .shell {
+      display: grid;
+      grid-template-columns: 272px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    .rail {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 24px 20px;
+      border-right: 1px solid var(--cp-border);
+      background: var(--cp-bg-elevated);
+      overflow: auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 0.625rem;
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+    .brand strong { display: block; font-size: 14px; }
+    .brand span { display: block; color: var(--cp-text-muted); font-size: 12px; }
+    .rail-label {
+      margin: 22px 8px 8px;
+      color: var(--cp-text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .nav {
+      display: grid;
+      gap: 4px;
+    }
+    .nav button {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      border-radius: 0.625rem;
+      background: transparent;
+      color: var(--cp-text-muted);
+      text-align: left;
+    }
+    .nav button:hover,
+    .nav button.active {
+      border-color: var(--cp-border);
+      background: var(--cp-accent-soft);
+      color: var(--cp-text);
+    }
+    .rail-note {
+      margin-top: 28px;
+      padding: 14px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      font-size: 12px;
+      color: var(--cp-text-muted);
+    }
+    .main {
+      min-width: 0;
+      padding: 32px clamp(20px, 4vw, 64px) 80px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .eyebrow {
+      color: var(--cp-accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .theme-toggle {
+      padding: 8px 12px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      color: var(--cp-text);
+    }
+    .view {
+      display: none;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    .view.active { display: block; }
+    h1, h2, h3 { margin-top: 0; line-height: 1.15; letter-spacing: -0.025em; }
+    h1 { max-width: 920px; margin-bottom: 20px; font-size: clamp(38px, 5vw, 68px); }
+    h2 { margin-bottom: 12px; font-size: clamp(28px, 3vw, 42px); }
+    h3 { font-size: 19px; }
+    .lead {
+      max-width: 820px;
+      margin: 0 0 28px;
+      color: var(--cp-text-muted);
+      font-size: clamp(17px, 2vw, 21px);
+    }
+    .decision-banner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 20px;
+      align-items: center;
+      margin: 28px 0 40px;
+      padding: 24px;
+      border: 1px solid var(--cp-border);
+      border-left: 5px solid var(--cp-accent);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px color-mix(in srgb, var(--cp-text) 12%, transparent), 0 1px 2px color-mix(in srgb, var(--cp-text) 14%, transparent);
+    }
+    .decision-banner strong { font-size: 18px; }
+    .decision-banner p { margin: 6px 0 0; color: var(--cp-text-muted); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border: 1px solid var(--cp-border);
+      border-radius: 999px;
+      background: var(--cp-surface-soft);
+      color: var(--cp-text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .pill.accent { border-color: var(--cp-accent); background: var(--cp-accent-soft); color: var(--cp-accent); }
+    .pill.success { color: var(--cp-success); }
+    .pill.warning { color: var(--cp-warning); }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 24px 0 40px;
+    }
+    .card {
+      padding: 22px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px color-mix(in srgb, var(--cp-text) 12%, transparent), 0 1px 2px color-mix(in srgb, var(--cp-text) 14%, transparent);
+    }
+    .card p { margin: 8px 0 0; color: var(--cp-text-muted); }
+    .card-number {
+      margin-bottom: 20px;
+      color: var(--cp-accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+    .section {
+      margin-top: 48px;
+      padding-top: 12px;
+    }
+    .section-intro {
+      max-width: 800px;
+      color: var(--cp-text-muted);
+    }
+    .compare {
+      width: 100%;
+      margin-top: 24px;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+    .compare th,
+    .compare td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--cp-border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .compare th {
+      background: var(--cp-surface-soft);
+      color: var(--cp-text-muted);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .compare tr:last-child td { border-bottom: 0; }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 24px;
+      margin: 28px 0;
+      align-items: stretch;
+    }
+    .flow-step {
+      position: relative;
+      padding: 18px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+    .flow-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -19px;
+      color: var(--cp-border-strong);
+      font-weight: 800;
+      transform: translateY(-50%);
+    }
+    .flow-step b { display: block; margin-bottom: 6px; }
+    .flow-step span { color: var(--cp-text-muted); font-size: 13px; }
+    .callout {
+      margin: 22px 0;
+      padding: 18px 20px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-accent-soft);
+    }
+    .callout b { color: var(--cp-accent); }
+    .integration-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .skill-card {
+      padding: 22px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+    .skill-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .skill-card ul { margin: 12px 0 0; padding-left: 20px; color: var(--cp-text-muted); }
+    .skill-card li + li { margin-top: 8px; }
+    .stage {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-top: 1px solid var(--cp-border);
+    }
+    .stage:first-of-type { border-top: 0; }
+    .stage-label {
+      min-width: 92px;
+      color: var(--cp-accent);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .stage p { margin: 0; color: var(--cp-text-muted); }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 12px;
+      margin: 20px 0;
+      padding: 16px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+    .field { display: grid; gap: 6px; }
+    .field label {
+      color: var(--cp-text-muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    select, textarea, input[type="text"] {
+      min-height: 42px;
+      padding: 9px 11px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-bg-elevated);
+      color: var(--cp-text);
+    }
+    .btn {
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      color: var(--cp-text);
+      font-weight: 700;
+    }
+    .btn:hover { border-color: var(--cp-border-strong); }
+    .btn.primary {
+      border-color: var(--cp-accent);
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+    }
+    .btn.primary:hover { background: var(--cp-accent-hover); }
+    .btn.ghost { background: transparent; }
+    .demo-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .question-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+    .question-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+    }
+    .question-table th,
+    .question-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--cp-border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .question-table th {
+      background: var(--cp-surface-soft);
+      color: var(--cp-text-muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .question-table tr:last-child td { border-bottom: 0; }
+    .question-title { font-weight: 750; }
+    .question-meta { margin-top: 5px; color: var(--cp-text-muted); font-size: 12px; }
+    .walker {
+      position: sticky;
+      top: 24px;
+      padding: 22px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px color-mix(in srgb, var(--cp-text) 12%, transparent), 0 1px 2px color-mix(in srgb, var(--cp-text) 14%, transparent);
+    }
+    .progress-track {
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--cp-surface-soft);
+    }
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: var(--cp-accent);
+      transition: width 180ms ease-out;
+    }
+    .walker-kicker {
+      display: flex;
+      justify-content: space-between;
+      margin: 14px 0 20px;
+      color: var(--cp-text-muted);
+      font-size: 12px;
+    }
+    .walker h3 { margin-bottom: 10px; }
+    .walker-copy { min-height: 84px; color: var(--cp-text-muted); }
+    .recommendation {
+      margin: 18px 0;
+      padding: 14px;
+      border-left: 4px solid var(--cp-accent);
+      background: var(--cp-accent-soft);
+    }
+    .recommendation b { display: block; margin-bottom: 4px; color: var(--cp-accent); }
+    .answer-box {
+      width: 100%;
+      min-height: 88px;
+      resize: vertical;
+    }
+    .walker-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .resolved {
+      padding: 18px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-accent-soft);
+    }
+    .resolved strong { color: var(--cp-success); }
+    .code-block {
+      overflow: auto;
+      margin: 16px 0;
+      padding: 18px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface-soft);
+      color: var(--cp-text);
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .recommend-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .recommend-row {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+    }
+    .recommend-row .num {
+      color: var(--cp-accent);
+      font-weight: 800;
+    }
+    .recommend-row p { margin: 4px 0 0; color: var(--cp-text-muted); }
+    .footer {
+      max-width: 1180px;
+      margin: 64px auto 0;
+      padding-top: 20px;
+      border-top: 1px solid var(--cp-border);
+      color: var(--cp-text-muted);
+      font-size: 12px;
+    }
+    .mobile-nav { display: none; }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .rail { display: none; }
+      .mobile-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        margin: 0 0 28px;
+        padding-bottom: 8px;
+      }
+      .mobile-nav button { white-space: nowrap; }
+      .grid-3, .flow { grid-template-columns: 1fr; }
+      .flow-step:not(:last-child)::after {
+        content: "↓";
+        top: auto;
+        right: 50%;
+        bottom: -22px;
+        transform: translateX(50%);
+      }
+      .demo-shell { grid-template-columns: 1fr; }
+      .walker { position: static; }
+    }
+    @media (max-width: 720px) {
+      .main { padding: 20px 16px 56px; }
+      .topbar { align-items: flex-start; }
+      .decision-banner { grid-template-columns: 1fr; }
+      .integration-grid { grid-template-columns: 1fr; }
+      .walker-actions { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .progress-bar { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand">
+        <div class="brand-mark">AF</div>
+        <div>
+          <strong>Decision Interrogation</strong>
+          <span>Skill integration proposal</span>
+        </div>
+      </div>
+      <div class="rail-label">Review</div>
+      <nav class="nav" aria-label="Proposal sections">
+        <button class="active" data-view="overview">1. Recommendation</button>
+        <button data-view="mechanics">2. Interaction model</button>
+        <button data-view="skills">3. Skill surfaces</button>
+        <button data-view="prototype">4. Interactive prototype</button>
+        <button data-view="wording">5. Proposed skill wording</button>
+      </nav>
+      <div class="rail-note">
+        <strong>Core design constraint</strong><br>
+        Ask the human only for decisions. Facts are researched by the agent; visual unknowns are prototyped; settled decisions are not re-asked.
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <div class="eyebrow">Proposal · 27 Sep 2026</div>
+          <div>Adapted from Matt Pocock's <code>grilling</code> primitive</div>
+        </div>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle light and dark theme">Toggle theme</button>
+      </div>
+
+      <div class="mobile-nav" aria-label="Proposal sections">
+        <button class="btn active" data-view="overview">Recommendation</button>
+        <button class="btn" data-view="mechanics">Model</button>
+        <button class="btn" data-view="skills">Skills</button>
+        <button class="btn" data-view="prototype">Prototype</button>
+        <button class="btn" data-view="wording">Wording</button>
+      </div>
+
+      <section class="view active" id="overview">
+        <div class="eyebrow">Recommended direction</div>
+        <h1>Make decision quality intrinsic, without turning every run into an interview.</h1>
+        <p class="lead">Adopt the design-tree and frontier mechanics from <code>grilling</code>, but integrate them as a bounded <strong>Decision Interrogation Protocol</strong> inside AI-Forward's existing Rigor stages and gates.</p>
+
+        <div class="decision-banner">
+          <div>
+            <strong>Two surfaces, one shared protocol</strong>
+            <p>Early interrogation where ambiguity is cheapest to resolve; a closure gate after the artifact is drafted when unresolved human decisions remain.</p>
+          </div>
+          <span class="pill accent">Recommended</span>
+        </div>
+
+        <div class="grid-3">
+          <article class="card">
+            <div class="card-number">01 · EARLY</div>
+            <h3>Intrinsic frontier in <code>/specify</code> and <code>/ui-design</code></h3>
+            <p>After grounding, ask only the currently answerable product or direction decisions that materially shape the artifact. Recompute after each answer.</p>
+          </article>
+          <article class="card">
+            <div class="card-number">02 · LATE</div>
+            <h3>Decision Closure Gate after four workflows</h3>
+            <p>After <code>/specify</code>, <code>/ui-design</code>, <code>/define-architecture</code>, and slice-level <code>/design</code>, expose unresolved decisions before handoff.</p>
+          </article>
+          <article class="card">
+            <div class="card-number">03 · EFFICIENT</div>
+            <h3>Summary first, then one-by-one</h3>
+            <p>Show the entire current frontier in a compact table, then walk questions sequentially with recommendations, fast-accept, defer, and prototype routes.</p>
+          </article>
+        </div>
+
+        <section class="section">
+          <h2>What to preserve from <code>grilling</code></h2>
+          <p class="section-intro">The strongest idea is not “ask more questions.” It is to model dependencies between decisions and ask each question only when its prerequisites are settled.</p>
+          <table class="compare">
+            <thead>
+              <tr><th>Source mechanic</th><th>Why it works</th><th>AI-Forward adaptation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Design tree</strong></td><td>Questions are decisions with dependent decisions hanging off them.</td><td>Build a lightweight decision tree from the workflow's artifact obligations, risks, and flagged unknowns.</td></tr>
+              <tr><td><strong>Frontier</strong></td><td>Only ask what can be answered honestly now.</td><td>Never ask a downstream question while its prerequisite is unresolved; recompute after every answer.</td></tr>
+              <tr><td><strong>Facts vs decisions</strong></td><td>The agent researches facts; the human owns choices.</td><td>Auto-resolve repository/API facts. Ask product, UX, trade-off, risk-acceptance, and irreversible decisions.</td></tr>
+              <tr><td><strong>Recommendation per question</strong></td><td>The user reacts to a concrete position instead of a blank prompt.</td><td>Every question states the recommended answer and why, while preserving explicit disagreement.</td></tr>
+              <tr><td><strong>Shared-understanding gate</strong></td><td>The session does not silently turn into execution.</td><td>Update the artifact only after answers are confirmed; require a final “shared understanding” confirmation.</td></tr>
+              <tr><td><strong>Ungrillable → prototype</strong></td><td>Some choices need something visible or runnable to react to.</td><td>Route visual/interaction questions to a lightweight mockup and contract questions to a spike instead of forcing verbal guesses.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <div class="callout">
+          <b>Important adaptation:</b> unlike standalone <code>/grill-me</code>, AI-Forward should not be “relentless” by default. The protocol is bounded by the current artifact, asks only consequential unresolved decisions, and stops when further questioning would not change the artifact or its next handoff.
+        </div>
+
+        <section class="section">
+          <h2>Proposed name</h2>
+          <p class="section-intro"><strong>Decision Interrogation Protocol</strong> is clearer inside the pack than “grilling”: it describes the purpose, fits the Rigor vocabulary, and can be referenced consistently from several skills without introducing another user-facing command.</p>
+        </section>
+      </section>
+
+      <section class="view" id="mechanics">
+        <div class="eyebrow">Shared interaction model</div>
+        <h1>A frontier summary followed by a focused decision walk.</h1>
+        <p class="lead">The interaction is optimized for both scanability and focus: the user sees the whole decision surface first, but answers one question at a time.</p>
+
+        <div class="flow" aria-label="Decision interrogation flow">
+          <div class="flow-step"><b>1. Ground</b><span>Read specs, code, evidence, and prior decisions.</span></div>
+          <div class="flow-step"><b>2. Classify</b><span>Fact, human decision, prototype-needed, or safe deferral.</span></div>
+          <div class="flow-step"><b>3. Summarize</b><span>Show the current frontier in the three-column table.</span></div>
+          <div class="flow-step"><b>4. Walk</b><span>Ask one-by-one; recommendation visible; recompute dependencies.</span></div>
+          <div class="flow-step"><b>5. Commit</b><span>Confirm shared understanding, update artifact, record decision.</span></div>
+        </div>
+
+        <section class="section">
+          <h2>The decision classifier</h2>
+          <div class="grid-3">
+            <article class="card">
+              <span class="pill success">Agent resolves</span>
+              <h3>Fact</h3>
+              <p>Can be established from the repo, an authoritative source, a spike, a measurement, or a tool. It never becomes a user question.</p>
+            </article>
+            <article class="card">
+              <span class="pill accent">Human answers</span>
+              <h3>Decision</h3>
+              <p>Product intent, experience direction, trade-off, risk acceptance, priority, or an irreversible choice with multiple legitimate answers.</p>
+            </article>
+            <article class="card">
+              <span class="pill warning">Make evidence</span>
+              <h3>Ungrillable</h3>
+              <p>Cannot be settled by discussion: how an interaction feels, whether a layout works, or whether an unfamiliar contract behaves as expected. Prototype or spike it.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Question eligibility</h2>
+          <table class="compare">
+            <thead><tr><th>Ask now when…</th><th>Do not ask when…</th></tr></thead>
+            <tbody>
+              <tr><td>The answer materially changes scope, acceptance criteria, archetype, architecture, contracts, phasing, or risk acceptance.</td><td>The answer is discoverable from the repository, documentation, code, or an executable probe.</td></tr>
+              <tr><td>All prerequisites are settled, so the question is on the current frontier.</td><td>A prerequisite decision is still open; hold it for a later frontier.</td></tr>
+              <tr><td>There are multiple defensible choices and the human owns the trade-off.</td><td>There is a repository-standard answer or an authoritative constraint already fixes it.</td></tr>
+              <tr><td>Deferral would create expensive downstream rework.</td><td>Deferral is safe and the consequence is explicit; record it as a flagged risk instead.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section">
+          <h2>Efficiency controls</h2>
+          <div class="recommend-list">
+            <div class="recommend-row"><div class="num">1</div><div><strong>Default to one-by-one after the table.</strong><p>This matches the requested interaction and avoids the cognitive load of drafting a multi-answer response, while preserving the frontier's scanability.</p></div></div>
+            <div class="recommend-row"><div class="num">2</div><div><strong>Offer “Accept all recommendations in this frontier.”</strong><p>A fast path for low-controversy rounds; the user can still override individual items before confirmation.</p></div></div>
+            <div class="recommend-row"><div class="num">3</div><div><strong>Support “I don't know” as a first-class answer.</strong><p>The protocol responds by researching, prototyping, recording a bounded assumption, or deferring with consequence — never by inventing certainty.</p></div></div>
+            <div class="recommend-row"><div class="num">4</div><div><strong>Use a significance threshold.</strong><p>Do not interrupt for choices that can be reversed cheaply and do not alter the current artifact or next handoff.</p></div></div>
+            <div class="recommend-row"><div class="num">5</div><div><strong>Stop on decision closure, not question count.</strong><p>The frontier is empty when remaining unknowns are factual work, prototype work, or explicitly accepted residual risk.</p></div></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="skills">
+        <div class="eyebrow">Skill integration</div>
+        <h1>One protocol, surfaced differently by workflow.</h1>
+        <p class="lead">The protocol should be a shared knowledge standard referenced by skills, not copied as four divergent interview implementations.</p>
+
+        <div class="integration-grid">
+          <article class="skill-card">
+            <div class="skill-head"><h3><code>/specify</code></h3><span class="pill accent">Intrinsic + closure</span></div>
+            <div class="stage"><div class="stage-label">After Stage 1</div><p>Build the first frontier from problem framing: user, core job, scope boundary, success measure, governance choices.</p></div>
+            <div class="stage"><div class="stage-label">Before evidence</div><p>Ask only decisions that determine what research or comparables are relevant. Research facts in parallel.</p></div>
+            <div class="stage"><div class="stage-label">Closure gate</div><p>Resolve open product, UX, UI, NFR, or commercial-model decisions before the spec becomes Accepted or hands off.</p></div>
+          </article>
+
+          <article class="skill-card">
+            <div class="skill-head"><h3><code>/ui-design</code></h3><span class="pill accent">Intrinsic + closure</span></div>
+            <div class="stage"><div class="stage-label">After grounding</div><p>Build a direction frontier: JTBD, emotional state, archetype, density, references, anti-goals, brand constraints.</p></div>
+            <div class="stage"><div class="stage-label">Prototype route</div><p>If the answer is visual or experiential, build 2–3 minimal variants instead of continuing to ask abstract preference questions.</p></div>
+            <div class="stage"><div class="stage-label">Closure gate</div><p>Resolve remaining direction, trade-off, and state-priority decisions before the design language and mockup are approved.</p></div>
+          </article>
+
+          <article class="skill-card">
+            <div class="skill-head"><h3><code>/define-architecture</code></h3><span class="pill">Closure only</span></div>
+            <div class="stage"><div class="stage-label">During workflow</div><p>Continue using Rigor interrogation and spikes; do not add conversational ceremony where evidence can settle the question.</p></div>
+            <div class="stage"><div class="stage-label">Closure gate</div><p>Surface unresolved boundary, consistency, identity, build-vs-buy, durable-data, rollout, or risk-acceptance decisions after the draft/council review.</p></div>
+            <div class="stage"><div class="stage-label">Record</div><p>Answers that bear load become ADRs; lower-weight choices become decision notes.</p></div>
+          </article>
+
+          <article class="skill-card">
+            <div class="skill-head"><h3><code>/design</code> per slice</h3><span class="pill">Closure only</span></div>
+            <div class="stage"><div class="stage-label">Scope note</div><p>No separate <code>design-slice</code> skill exists today; treat this as <code>/design</code> scoped to one architecture delivery slice.</p></div>
+            <div class="stage"><div class="stage-label">Closure gate</div><p>Surface unresolved contract, failure disposition, migration, UX state, test-oracle, or accepted-risk decisions before implementation handoff.</p></div>
+            <div class="stage"><div class="stage-label">Record</div><p>Update the design's flagged-risk section and decision notes; block handoff only for required-now questions.</p></div>
+          </article>
+        </div>
+
+        <section class="section">
+          <h2>Question families by workflow</h2>
+          <table class="compare">
+            <thead><tr><th>Workflow</th><th>Likely frontier questions</th><th>Questions the agent should resolve itself</th></tr></thead>
+            <tbody>
+              <tr><td><code>/specify</code></td><td>Primary user, core job, explicit non-goals, success threshold, risk tolerance, pricing/commercial posture.</td><td>Existing product behavior, repo terminology, industry comparables, applicable standards.</td></tr>
+              <tr><td><code>/ui-design</code></td><td>Desired emotional quality, density trade-off, archetype choice, reference preference, priority of hard states.</td><td>Platform HIG, current token usage, contrast ratios, component inventory, existing implementation measurements.</td></tr>
+              <tr><td><code>/define-architecture</code></td><td>Consistency trade-off, data authority, build-vs-buy, identity boundary, acceptable degradation, rollout constraints.</td><td>SDK behavior, package versions, current system topology, benchmarkable limits, protocol contracts.</td></tr>
+              <tr><td><code>/design</code> slice</td><td>Accepted failure behavior, compatibility boundary, user-visible error semantics, migration tolerance, deliberate simplifications.</td><td>Existing code patterns, exact signatures, test framework APIs, current schema, call graph.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <div class="callout">
+          <b>Handoff rule:</b> a workflow may complete with open questions only when each is explicitly classified as <em>deferred-safe</em>, <em>prototype-needed</em>, <em>spike-needed</em>, or <em>accepted residual risk</em>. A required-now human decision keeps the handoff gate open.
+        </div>
+      </section>
+
+      <section class="view" id="prototype">
+        <div class="eyebrow">Interactive review</div>
+        <h1>Try the proposed closure experience.</h1>
+        <p class="lead">Choose a workflow. The table shows the current frontier; the guided panel then walks it one question at a time.</p>
+
+        <div class="toolbar">
+          <div class="field">
+            <label for="skillSelect">Workflow</label>
+            <select id="skillSelect">
+              <option value="specify">/specify</option>
+              <option value="ui-design">/ui-design</option>
+              <option value="architecture">/define-architecture</option>
+              <option value="design">/design — vertical slice</option>
+            </select>
+          </div>
+          <button class="btn primary" id="startReview">Start guided review</button>
+          <button class="btn" id="acceptFrontier">Accept frontier recommendations</button>
+          <button class="btn ghost" id="resetReview">Reset</button>
+        </div>
+
+        <div class="demo-shell">
+          <div>
+            <div class="question-table-wrap">
+              <table class="question-table">
+                <thead>
+                  <tr>
+                    <th>Question</th>
+                    <th>What it is needed for</th>
+                    <th>Recommendation</th>
+                  </tr>
+                </thead>
+                <tbody id="questionRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <aside class="walker" aria-live="polite">
+            <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+            <div class="walker-kicker"><span id="walkerStatus">Not started</span><span id="walkerCount">0 / 0</span></div>
+            <div id="walkerBody">
+              <h3>Review the frontier first</h3>
+              <p class="walker-copy">The summary keeps the full decision surface visible. Start the guided review when you are ready to answer sequentially.</p>
+              <div class="recommendation"><b>Why one-by-one?</b>It preserves focus while each answer can reshape the questions that follow.</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="wording">
+        <div class="eyebrow">Proposed pack changes</div>
+        <h1>Minimal source changes, centralized behavior.</h1>
+        <p class="lead">Add one shared knowledge document and targeted references in four skills. Avoid a new command unless later usage shows value beyond these workflows.</p>
+
+        <section class="section">
+          <h2>1. New shared standard</h2>
+          <pre class="code-block">pack/knowledge/decision-interrogation.md
+
+DI1 — Model unresolved decisions as a dependency tree.
+DI2 — The current frontier contains only questions whose prerequisites are settled.
+DI3 — Resolve facts autonomously; ask the human only for decisions.
+DI4 — Show the frontier first as:
+      Question | What it is needed for | Recommendation
+DI5 — Walk the frontier one question at a time; recompute after every answer.
+DI6 — "I don't know" routes to research, spike, prototype, bounded assumption, or safe deferral.
+DI7 — Ungrillable visual/experiential questions require a prototype, not more prose.
+DI8 — Do not hand off while a required-now human decision remains open.
+DI9 — End with a shared-understanding confirmation before updating/acting.
+DI10 — Persist answers in the artifact, decision notes, or ADRs at the correct weight.</pre>
+        </section>
+
+        <section class="section">
+          <h2>2. <code>/specify</code> insertion</h2>
+          <pre class="code-block">After Stage 1 — OPEN:
+
+If the frame contains consequential human-owned decisions, run the Decision
+Interrogation Protocol before Stage 3. Build the current frontier from the problem,
+primary user, core scenario, scope boundary, success measures, governance choices,
+and UX/UI direction. Resolve discoverable facts yourself. Show the frontier table,
+then walk it one question at a time. Recompute the frontier after every answer.
+Do not ask decisions that evidence or a prototype must settle.
+
+At Stage 5 — CONVERGE:
+
+Run the Decision Closure Gate. If required-now product, UX, UI, NFR, commercial,
+or risk-acceptance decisions remain open, do not mark the spec Accepted or hand off.
+Summarize the open frontier, walk it sequentially, update the spec, then ask the
+user to confirm shared understanding.</pre>
+        </section>
+
+        <section class="section">
+          <h2>3. <code>/ui-design</code> insertion</h2>
+          <pre class="code-block">After Stage 1 — OPEN:
+
+If direction is underdetermined, run the Decision Interrogation Protocol over the
+JTBD, emotional state, archetype, density, references, anti-goals, and constraints.
+For visual or experiential questions that cannot be settled honestly in prose,
+stop questioning and build the smallest useful comparison prototype. Return with
+the evidence and place the now-answerable decision on the next frontier.
+
+At Stage 5 — CONVERGE:
+
+Run the Decision Closure Gate before approving the design language or mockup.
+Required-now direction and trade-off decisions block approval. Mechanical facts
+(contrast, token use, current implementation shape) are resolved by the agent;
+accessibility vetoes are resolved by evidence, not user preference.</pre>
+        </section>
+
+        <section class="section">
+          <h2>4. Shared closure block for architecture and slice design</h2>
+          <pre class="code-block">Decision Closure Gate (before the final status table):
+
+Inspect the confidence ledger, flagged risks, unresolved veto conditions, and the
+artifact's open-question section. Classify each item as Fact, Human decision,
+Prototype/Spike needed, Deferred-safe, or Accepted residual risk.
+
+If Human decisions are required now:
+1. Show the current frontier as Question | What it is needed for | Recommendation.
+2. Walk the questions one by one, preserving disagreement and "I don't know".
+3. Recompute the frontier after each answer.
+4. Update the artifact and the appropriate ADR/decision note.
+5. Ask the user to confirm shared understanding before handoff.
+
+If none are required now, proceed without conversational ceremony.</pre>
+        </section>
+
+        <section class="section">
+          <h2>5. Artifact addition</h2>
+          <pre class="code-block">Add to spec / architecture / design templates:
+
+## Open decisions
+| Question | Needed for | Recommendation | Classification | Status / decision record |
+|---|---|---|---|---|
+
+This section is empty when the Decision Closure Gate passes. Deferred items name
+their consequence and validation trigger; ADR-weight decisions link the ADR.</pre>
+        </section>
+
+        <section class="section">
+          <h2>Recommended implementation order</h2>
+          <div class="recommend-list">
+            <div class="recommend-row"><div class="num">1</div><div><strong>Introduce the shared standard and template section.</strong><p>This establishes one contract before any skill references it.</p></div></div>
+            <div class="recommend-row"><div class="num">2</div><div><strong>Add intrinsic interrogation to <code>/specify</code> and <code>/ui-design</code>.</strong><p>These are the workflows where human intent and direction are cheapest to clarify early.</p></div></div>
+            <div class="recommend-row"><div class="num">3</div><div><strong>Add the closure gate to all four workflows.</strong><p>Use identical wording so behavior does not drift.</p></div></div>
+            <div class="recommend-row"><div class="num">4</div><div><strong>Add eval cases.</strong><p>Prove facts are researched, decisions are asked, dependent questions wait, ungrillable questions route to prototype/spike, and no-question runs stay uninterrupted.</p></div></div>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer">
+        <strong>Evidence used:</strong>
+        <a href="https://github.com/mattpocock/skills/tree/main/skills/productivity/grilling">Matt Pocock's <code>grilling</code> primitive</a>,
+        <a href="https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me"><code>grill-me</code> wrapper</a>,
+        and the current AI-Forward source skills under <code>pack/commands/</code>.
+        The current repository has <code>/design</code> scoped by architecture delivery phase; it does not contain a separate <code>/design-slice</code> command.
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const questionSets = {
+      "specify": [
+        {
+          title: "Who is the primary user when priorities conflict?",
+          body: "The draft names operators and team leads, but their success criteria pull in different directions. Which persona should the core scenario optimize for first?",
+          needed: "Core scenario, scope priority, acceptance criteria, and UX flow order.",
+          recommendation: "Make the day-to-day operator primary; treat the team lead as a secondary reporting persona.",
+          type: "Human decision"
+        },
+        {
+          title: "What is the success threshold for the first release?",
+          body: "A qualitative goal is present, but the spec cannot become testable until the result has a measurable threshold.",
+          needed: "Falsifiable acceptance criteria and the release gate.",
+          recommendation: "Set a task-completion target and a p95 time-to-complete threshold for the core scenario.",
+          type: "Human decision"
+        },
+        {
+          title: "Should the first release include cross-team sharing?",
+          body: "Sharing changes identity, privacy, information architecture, and scope. It is not safely implicit.",
+          needed: "In/out scope, authorization model, privacy review, and navigation.",
+          recommendation: "Defer cross-team sharing; preserve export as the reversible first-release path.",
+          type: "Human decision"
+        }
+      ],
+      "ui-design": [
+        {
+          title: "Which experience quality should dominate?",
+          body: "The brief asks for both high density and a calm guided experience. One must lead when they conflict.",
+          needed: "Density mode, hierarchy, spacing rhythm, and archetype selection.",
+          recommendation: "Prioritize calm guidance for the primary flow; expose expert density only after the first successful completion.",
+          type: "Human decision"
+        },
+        {
+          title: "Should the task be a workspace or a guided sequence?",
+          body: "The current concept can be rendered as a dashboard or as a stepwise orchestrator. This is an archetype decision, not a styling choice.",
+          needed: "Navigation, pacing, screen count, and state model.",
+          recommendation: "Use a guided sequence because the user is entering and validating information, not monitoring it in parallel.",
+          type: "Human decision"
+        },
+        {
+          title: "Which visual direction should be prototyped?",
+          body: "The desired balance between editorial warmth and technical precision is not answerable reliably in prose alone.",
+          needed: "Type pairing, palette, density, and component surface treatment.",
+          recommendation: "Prototype two token-level directions and choose by side-by-side review rather than further verbal questioning.",
+          type: "Prototype needed"
+        }
+      ],
+      "architecture": [
+        {
+          title: "Which system owns the canonical record?",
+          body: "Two stores can currently accept writes. Without one authority, reconciliation and audit semantics remain undefined.",
+          needed: "Data boundaries, consistency model, migration plan, and ADR.",
+          recommendation: "Make the append-only operational store authoritative; derive the search/read projection.",
+          type: "Human decision"
+        },
+        {
+          title: "What degradation is acceptable when the model provider is unavailable?",
+          body: "The architecture can fail closed, return cached output, or continue in a deterministic reduced mode.",
+          needed: "Availability target, fallback design, user messaging, and SLO.",
+          recommendation: "Continue in deterministic reduced mode and clearly mark unavailable AI assistance.",
+          type: "Human decision"
+        },
+        {
+          title: "Build the workflow engine or adopt an existing one?",
+          body: "Both options satisfy the functional shape but create different ownership and operational costs.",
+          needed: "Component map, dependency posture, delivery phasing, and ADR.",
+          recommendation: "Adopt the existing platform capability if the spike confirms cancellation, idempotency, and observability contracts.",
+          type: "Human decision"
+        }
+      ],
+      "design": [
+        {
+          title: "What should the user see on partial dependency failure?",
+          body: "The slice can fail the whole request, show partial data, or show cached data with a stale marker.",
+          needed: "Error contract, UI states, telemetry, and negative tests.",
+          recommendation: "Return partial data with an explicit stale/unavailable state for the failed dependency.",
+          type: "Human decision"
+        },
+        {
+          title: "Is backward compatibility required for the old payload?",
+          body: "The new field changes the wire contract. The implementation plan depends on whether old clients remain supported during rollout.",
+          needed: "Schema shape, expand-migrate-contract plan, fixtures, and release sequencing.",
+          recommendation: "Support both payload shapes for one rollout window, then contract in a separate change.",
+          type: "Human decision"
+        },
+        {
+          title: "Is the O(n²) matcher an accepted bounded simplification?",
+          body: "It is simplest and correct at current volumes, but the design needs an explicit ceiling and upgrade trigger.",
+          needed: "Pattern choice, performance budget, simplify marker, and residual risk.",
+          recommendation: "Accept it for batches below 1,000 items; add an index when p95 exceeds the stated budget.",
+          type: "Human decision"
+        }
+      ]
+    };
+
+    let currentSet = "specify";
+    let currentIndex = -1;
+    let answers = [];
+
+    const allNavButtons = document.querySelectorAll("[data-view]");
+    const views = document.querySelectorAll(".view");
+    allNavButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.dataset.view;
+        allNavButtons.forEach((item) => item.classList.toggle("active", item.dataset.view === target));
+        views.forEach((view) => view.classList.toggle("active", view.id === target));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = next;
+    });
+
+    const skillSelect = document.getElementById("skillSelect");
+    const questionRows = document.getElementById("questionRows");
+    const walkerBody = document.getElementById("walkerBody");
+    const walkerStatus = document.getElementById("walkerStatus");
+    const walkerCount = document.getElementById("walkerCount");
+    const progressBar = document.getElementById("progressBar");
+
+    function renderTable() {
+      const items = questionSets[currentSet];
+      questionRows.innerHTML = items.map((item, index) => {
+        const answered = answers[index];
+        return `
+          <tr>
+            <td>
+              <div class="question-title">${index + 1}. ${item.title}</div>
+              <div class="question-meta"><span class="pill ${item.type === "Prototype needed" ? "warning" : ""}">${item.type}</span>${answered ? ` <span class="pill success">${answered.status}</span>` : ""}</div>
+            </td>
+            <td>${item.needed}</td>
+            <td>${item.recommendation}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function resetWalker() {
+      currentIndex = -1;
+      answers = [];
+      progressBar.style.width = "0%";
+      walkerStatus.textContent = "Not started";
+      walkerCount.textContent = `0 / ${questionSets[currentSet].length}`;
+      walkerBody.innerHTML = `
+        <h3>Review the frontier first</h3>
+        <p class="walker-copy">The summary keeps the full decision surface visible. Start the guided review when you are ready to answer sequentially.</p>
+        <div class="recommendation"><b>Why one-by-one?</b>It preserves focus while each answer can reshape the questions that follow.</div>
+      `;
+      renderTable();
+    }
+
+    function showQuestion(index) {
+      const items = questionSets[currentSet];
+      if (index >= items.length) {
+        currentIndex = items.length;
+        progressBar.style.width = "100%";
+        walkerStatus.textContent = "Frontier complete";
+        walkerCount.textContent = `${items.length} / ${items.length}`;
+        walkerBody.innerHTML = `
+          <div class="resolved">
+            <strong>Shared-understanding checkpoint</strong>
+            <h3>All current-frontier decisions are classified.</h3>
+            <p>The real skill would now summarize the decisions, show any new downstream frontier, update the artifact and decision records, then ask for confirmation before handoff.</p>
+            <button class="btn primary" id="confirmUnderstanding">Confirm shared understanding</button>
+          </div>
+        `;
+        document.getElementById("confirmUnderstanding").addEventListener("click", () => {
+          walkerBody.innerHTML = `
+            <div class="resolved">
+              <strong>Confirmed</strong>
+              <h3>Artifact may now be updated and handed off.</h3>
+              <p>No required-now human decision remains open. Prototype, spike, deferred-safe, and accepted-risk items remain visible with their next trigger.</p>
+            </div>
+          `;
+        });
+        renderTable();
+        return;
+      }
+
+      currentIndex = index;
+      const item = items[index];
+      const progress = Math.round((index / items.length) * 100);
+      progressBar.style.width = `${progress}%`;
+      walkerStatus.textContent = item.type;
+      walkerCount.textContent = `${index + 1} / ${items.length}`;
+      walkerBody.innerHTML = `
+        <h3>${item.title}</h3>
+        <p class="walker-copy">${item.body}</p>
+        <div class="recommendation"><b>Recommendation</b>${item.recommendation}</div>
+        <textarea class="answer-box" id="answerText" aria-label="Your answer" placeholder="Add your answer or explain where you disagree…"></textarea>
+        <div class="walker-actions">
+          <button class="btn primary" data-answer="Accepted recommendation">Accept recommendation</button>
+          <button class="btn" data-answer="Custom answer">Use my answer</button>
+          <button class="btn" data-answer="Deferred with consequence">Defer safely</button>
+          <button class="btn" data-answer="Prototype or spike needed">I don't know yet</button>
+        </div>
+      `;
+      walkerBody.querySelectorAll("[data-answer]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const text = document.getElementById("answerText").value.trim();
+          answers[index] = { status: button.dataset.answer, text };
+          renderTable();
+          showQuestion(index + 1);
+        });
+      });
+    }
+
+    skillSelect.addEventListener("change", () => {
+      currentSet = skillSelect.value;
+      resetWalker();
+    });
+    document.getElementById("startReview").addEventListener("click", () => showQuestion(0));
+    document.getElementById("resetReview").addEventListener("click", resetWalker);
+    document.getElementById("acceptFrontier").addEventListener("click", () => {
+      answers = questionSets[currentSet].map(() => ({ status: "Accepted recommendation", text: "" }));
+      renderTable();
+      showQuestion(questionSets[currentSet].length);
+    });
+
+    resetWalker();
+  </script>
+</body>
+</html>
