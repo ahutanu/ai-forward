@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "ai-forward",
-  "generated": "2026-09-27T16:39:55Z",
+  "generated": "2026-09-27T17:47:12Z",
   "audit": [
     {
       "actor": null,
@@ -13345,6 +13345,58 @@ window.AUDIT_DATA = {
         "proposal"
       ],
       "outcome": "success"
+    },
+    {
+      "id": "al-01M3HXGG2AE3ZVCBJXWK8HGR8G",
+      "shortname": "/specify create the spec based on the grill-me-integration-proposal.html…",
+      "datetime": "2026-09-27T17:09:55Z",
+      "session": "prompt-log",
+      "prompt": "/specify create the spec based on the grill-me-integration-proposal.html proposal",
+      "summary": "prompt logged for reuse",
+      "kind": "prompt",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [],
+      "tags": [],
+      "outcome": "success"
+    },
+    {
+      "id": "al-01M3HZMRB9D1H3NJ0E549H83QV",
+      "shortname": "specify-decision-interrogation-protocol",
+      "datetime": "2026-09-27T17:47:12Z",
+      "session": "fb5c4f7c-3f87-4ce0-8988-ec93c2bb2114",
+      "prompt": "/specify create the spec based on the grill-me-integration-proposal.html proposal",
+      "summary": "Produced and accepted docs/specs/decision-interrogation-protocol.md: a three-layer specification for intrinsic dependency-aware interrogation and post-workflow decision closure across specify, ui-design, define-architecture, and design-slice. All Simplifier, Data, UX/IA, Accessibility, and Test Architect gates passed.",
+      "kind": "skill",
+      "skill": "specify",
+      "tool": "Copilot CLI",
+      "actor": "@timmall_microsoft",
+      "artifacts": [
+        "docs/specs/decision-interrogation-protocol.md"
+      ],
+      "tags": [
+        "decision-interrogation",
+        "specification"
+      ],
+      "outcome": "success",
+      "compiled": false,
+      "goal": "Create an accepted, testable specification from the approved grill-me integration proposal.",
+      "done_when": "The three-layer specification is accepted, indexed, audited, adversarially approved, validated, committed, and pushed.",
+      "tier": "T2",
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true,
+        "acceptance_met": true,
+        "regression": false
+      },
+      "change": "cl-01M3HZMHSN9G7XSMFTD6KSNHEY",
+      "git": {
+        "sha": "8b22849a0d2c064448094498f7246d7524f2736c",
+        "short": "8b22849a0",
+        "branch": "main",
+        "pushed": true
+      }
     }
   ],
   "changes": [
@@ -15001,6 +15053,31 @@ window.AUDIT_DATA = {
         "before": "3b7940d6dc2bdb7001a0980bb75908255198fe8d",
         "after": "3b7940d6dc2bdb7001a0980bb75908255198fe8d",
         "branch": "fix/harness-config-upgrade",
+        "pushed": true,
+        "commits": []
+      }
+    },
+    {
+      "id": "cl-01M3HZMHSN9G7XSMFTD6KSNHEY",
+      "datetime": "2026-09-27T17:47:05Z",
+      "session": "fb5c4f7c-3f87-4ce0-8988-ec93c2bb2114",
+      "kind": "spec",
+      "skill": "specify",
+      "title": "Accept the Decision Interrogation Protocol specification",
+      "prompt": "/specify create the spec based on the grill-me-integration-proposal.html proposal",
+      "summary": "Accepted the three-layer Decision Interrogation Protocol specification, including dependency-aware questioning, closure gates, lifecycle and authority semantics, portable interaction operations, accessibility requirements, and release-blocking evaluation criteria.",
+      "rationale": "Consequential human decisions need to be resolved at the earliest responsible point while factual unknowns remain the agent's research responsibility; a shared protocol makes that behavior consistent across workflows and harnesses.",
+      "artifacts": [
+        "docs/specs/decision-interrogation-protocol.md"
+      ],
+      "tags": [
+        "decision-interrogation",
+        "specification"
+      ],
+      "git": {
+        "before": "8b22849a0d2c064448094498f7246d7524f2736c",
+        "after": "8b22849a0d2c064448094498f7246d7524f2736c",
+        "branch": "main",
         "pushed": true,
         "commits": []
       }

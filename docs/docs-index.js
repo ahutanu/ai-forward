@@ -10934,6 +10934,68 @@ window.DOCS_INDEX = {
       "sourceSha256": "6ac864798f7a484206531f7a488b99b8a72b4c068d4548e77c1a96fa6b6113ee"
     },
     {
+      "id": "spec-decision-interrogation-protocol",
+      "path": "docs/specs/decision-interrogation-protocol.md",
+      "title": "Decision Interrogation Protocol — Product Specification",
+      "type": "spec",
+      "status": "accepted",
+      "owner": "@timianmalloo",
+      "phase": "1",
+      "reviewBy": "2027-03-26",
+      "reviewSuggested": [],
+      "summary": "Specifies a shared, dependency-aware Decision Interrogation Protocol for resolving consequential unknowns early in /specify and /ui-design and closing open decisions before /specify, /ui-design, /define-architecture, and /design-slice handoffs. The protocol separates facts from human-owned decisions, presents the current decision frontier with recommendations, walks decisions sequentially, and blocks handoff only when required-now decisions remain unresolved.",
+      "tags": [
+        "skills",
+        "decisions",
+        "interrogation",
+        "specify",
+        "ui-design",
+        "architecture",
+        "design-slice"
+      ],
+      "links": [
+        {
+          "to": "spec-skill-evolution",
+          "rel": "refines"
+        },
+        {
+          "to": "spec-design-slice-rename",
+          "rel": "depends-on"
+        },
+        {
+          "to": "spec-compile-stage",
+          "rel": "relates-to"
+        },
+        {
+          "to": "spec-agent-coordination",
+          "rel": "relates-to"
+        }
+      ],
+      "diagrams": [
+        {
+          "kind": "class",
+          "title": "Conceptual relationships",
+          "mermaid": "classDiagram\n    class WorkflowRun {\n      identity\n      governedArtifact\n    }\n    class GovernedUnknown {\n      stableIdentity\n      classification\n      routeStatus\n    }\n    class DecisionRevision {\n      revision\n      recommendation\n      disposition\n    }\n    class ArtifactHandoff {\n      readiness\n      confirmation\n    }\n    class Dependency {\n      prerequisite\n    }\n    class ValidationTrigger {\n      condition\n    }\n\n    WorkflowRun \"1\" o-- \"0..*\" GovernedUnknown : owns\n    WorkflowRun \"1\" --> \"1\" ArtifactHandoff : evaluates\n    GovernedUnknown \"1\" o-- \"1..*\" DecisionRevision : preserves\n    GovernedUnknown \"0..*\" --> \"0..*\" GovernedUnknown : depends on\n    DecisionRevision \"0..1\" --> \"0..1\" ValidationTrigger : reopens when\n    ArtifactHandoff --> WorkflowRun : binds to map revision"
+        },
+        {
+          "kind": "flowchart",
+          "title": "Flow 1 — Governed interrogation, evidence, closure, and fast path",
+          "mermaid": "flowchart TD\n    A[Ground artifact baseline identity] --> B{Readable and authorized?}\n    B -- No --> B1[Show permission, unavailable, or ambiguous-baseline error]\n    B1 --> B2{Retry, correct source, or pause and exit}\n    B2 -- Retry --> A\n    B2 -- Correct source --> A\n    B2 -- Pause and exit --> PS[Request atomic Pause and end invocation]\n    B -- Yes --> C[Classify unknowns and build active dependency graph]\n    C --> D{Invalid input, cycle, or competing revision?}\n    D -- Yes --> D1[Show Conflict with affected IDs and consequences]\n    D1 --> D2{Correct classification, resolve branch, propose dependency change, gather evidence, or pause and exit}\n    D2 -- Classification or branch resolution --> R[Apply revision-safe operation and recompute]\n    D2 -- Propose dependency change --> D3[Validate and preview unlock, block, reopen, and stale consequences]\n    D3 --> D4{Confirm or cancel}\n    D4 -- Confirm --> R\n    D4 -- Cancel --> D1\n    D2 -- Evidence --> V[Start research, prototype, or spike for affected component]\n    D2 -- Pause and exit --> PS\n    D -- No --> E[Start required evidence routes without hiding independent decisions]\n    E --> F{Any answerable human decisions?}\n    F -- No --> F0{Evaluate all pending evidence, blockers, confirmation content, and exact no-decision predicates}\n    F0 -- Pending evidence --> V\n    F0 -- Blocker --> X\n    F0 -- Confirmation content --> M\n    F0 -- Exact no-decision predicate --> L\n    F -- Yes --> G[Show Decisions to resolve for displayed map revision]\n    G --> H[Activate deterministic first decision or user-selected eligible ID]\n    H --> I{Answer, accept, accept all shown, defer non-blocking item, reactivate deferred item, I don't know, assumption, risk, inspect/correct dependencies, pause and exit, or abandon}\n    I -- Invalid or ambiguous --> I1[Not applied; preserve input and show valid grammar]\n    I1 --> H\n    I -- Stale revision or baseline --> I2[Not applied; show changed inputs and current revision]\n    I2 --> R\n    I -- Unauthorized assumption or risk --> I3[Not applied; explain authority and blocked consequence]\n    I3 --> H\n    I -- Inspect or correct dependencies --> D1\n    I -- Defer non-blocking item --> DF[Record owner, reason, scope, and reactivation trigger; omit from active frontier]\n    DF --> R\n    I -- Reactivate deferred item --> DR[Select deferred stable ID; record explicit reactivation]\n    DR --> R\n    I -- I don't know --> V\n    I -- Pause and exit --> PS\n    I -- Abandon --> ABQ[Show unsettled work, preserved evidence, and handoff consequences]\n    ABQ --> ABQ1{Confirm abandon or cancel}\n    ABQ1 -- Cancel --> H\n    ABQ1 -- Confirm --> AZ[Record Abandoned; reject later mutation and offer a new run]\n    I -- Valid answer or authorized disposition --> R\n    V --> V0{Evidence completes, fails, or receives a cancel request?}\n    V0 -- Completes or fails --> V1{Evidence complete and authoritative?}\n    V0 -- Cancel request --> V3{Cancel applies before authoritative completion at the expected route revision?}\n    V3 -- Yes --> VC\n    V3 -- No; evidence completed first --> V4[Record cancel not applied; incorporate authoritative evidence once]\n    V4 --> R\n    V1 -- Yes --> R\n    V1 -- Partial, failed, offline, timeout, denied, or canceled --> V2[Show preserved evidence, missing proof, and retry/cancel/pause/block choices]\n    V2 -- Retry --> V\n    V2 -- Cancel route --> VC[Record cancel applied; evidence result not applied; retain partial non-authoritative evidence; clear route; return unknown to route selection]\n    VC --> R\n    V2 -- Pause and exit --> PS\n    V2 -- Cannot proceed safely --> X[Blocked with blocker details and recovery actions]\n    R --> J{Independent frontier, pending route, or blocker remains?}\n    J -- Frontier, with or without blocked components --> G\n    J -- Pending route only --> V\n    J -- Blocker with no independent frontier --> X\n    X --> X1{Answer or reopen owner decision, retry or replace evidence, authorized bounded disposition, or pause and exit}\n    X1 -- Answer or reopen --> H\n    X1 -- Retry or replace evidence --> V\n    X1 -- Authorized bounded disposition --> R\n    X1 -- Pause and exit --> PS\n    J -- None --> K{No human decisions or confirmation-requiring dispositions existed?}\n    K -- Yes --> L[Record no-decision attestation]\n    K -- No --> M[Build closure summary including deferred items for exact map and baseline revision]\n    M --> N{Confirm, reopen/correct, reactivate deferred item, or new evidence}\n    N -- Reopen, correct, or evidence --> R\n    N -- Reactivate deferred item --> DR\n    N -- Confirm exact revision --> O[Mark closure satisfied and recheck artifact baseline]\n    O --> O1{Artifact result applied against the confirmed baseline?}\n    O1 -- Baseline changed --> I2\n    O1 -- Not applied or denied --> O3[Keep closure satisfied but not finalized; show reauthorize, re-ground, retry, pause and exit, or abandon]\n    O3 -- Reauthorize or re-ground --> R\n    O3 -- Retry --> O\n    O3 -- Pause and exit --> PS\n    O3 -- Abandon --> ABF[Show finalization-state consequences]\n    ABF --> ABF1{Confirm abandon or cancel}\n    ABF1 -- Cancel --> O3\n    ABF1 -- Confirm --> AZ\n    O1 -- Ambiguous acknowledgement --> O2[Reconcile command and produced-artifact identity]\n    O2 -- Applied --> Q[Finalize record, project artifact summary, and mark Ready]\n    O2 -- Not applied --> O3\n    O2 -- Inconclusive --> O4[Remain not finalized; inspect, reconcile again, pause and exit, or abandon]\n    O4 -- Reconcile --> O2\n    O4 -- Pause and exit --> PS\n    O4 -- Abandon --> ABR[Show reconciliation-state consequences]\n    ABR --> ABR1{Confirm abandon or cancel}\n    ABR1 -- Cancel --> O4\n    ABR1 -- Confirm --> AZ\n    O1 -- Yes --> Q\n    L --> O\n    PS --> PS1{Pause operation outcome}\n    PS1 -- Applied --> P[Record Paused checkpoint and end invocation]\n    PS1 -- Not applied --> PS2[Remain Active; do not claim Paused]\n    PS1 -- Application unknown --> PS3[Reconcile operation and checkpoint identity; do not resubmit]\n    PS3 -- Applied --> P\n    PS3 -- Not applied --> PS2\n    PS3 -- Inconclusive --> PS4[End safely with lifecycle unverified or last-known; no Ready handoff]\n    PS2 --> PS5{Retry Pause, continue preserved Active flow, or end invocation}\n    PS5 -- Retry Pause --> PS\n    PS5 -- Continue --> PS6[Return to the preserved pre-Pause surface and input]\n    PS6 --> R\n    PS5 -- End invocation --> PS7[End invocation; preserve discoverable interrupted-Active projection]"
+        },
+        {
+          "kind": "flowchart",
+          "title": "Flow 2 — Interruption, resume, and contradiction recovery",
+          "mermaid": "flowchart TD\n    A[Invoke workflow against governed artifact] --> B{Discover interrupted Active or Paused run projections}\n    B -- None --> B1[Offer new run; do not invent prior state]\n    B1 --> B4{Start new run or end invocation}\n    B4 -- Start --> C0[Create Active run from current artifact baseline]\n    C0 --> P\n    B4 -- End invocation --> Z0[No run started]\n    B -- Multiple --> B2[Show run IDs, verified or last-known lifecycle, accessibility, map revision, and checkpoint time]\n    B2 --> B3{Choose accessible run, recover inaccessible candidate, abandon accessible run, or end invocation}\n    B -- One --> C[Load canonical Decision Run Record]\n    B3 -- Choose --> C\n    B3 -- Recover inaccessible candidate --> BI[Choose candidate ID for read-only recovery without selecting it as active]\n    BI --> D1\n    B3 -- Abandon --> A0B[Load selected run and show abandon consequence preview]\n    A0B --> A1B{Confirm abandon or cancel}\n    A1B -- Cancel --> B2\n    A1B -- Confirm --> A2[Record Abandoned; reject later mutation and offer new-run path]\n    B3 -- End invocation --> Z0\n    C --> D{Checkpoint accessible and authorized?}\n    D -- No --> D1[Show run-not-found, permission, or corrupted-checkpoint recovery]\n    D1 --> D2{Retry access, return to candidates, conflict-safe restart, abandon if accessible, or end invocation}\n    D2 -- Retry --> C\n    D2 -- Return to candidates --> B2\n    D2 -- Restart --> B1\n    D2 -- Abandon --> A0D[Show accessible-run abandonment consequences]\n    A0D --> A1D{Confirm abandon or cancel}\n    A1D -- Cancel --> D2\n    A1D -- Confirm --> A2\n    D2 -- End invocation --> ZU[End invocation; report lifecycle as unverified or last-known; apply no mutation]\n    D -- Yes --> E[Re-ground authoritative inputs and artifact baseline]\n    E --> F{Re-grounding succeeded?}\n    F -- No --> F1[Show offline, timeout, unavailable source, or partial-evidence status]\n    F1 --> F2{Retry, end invocation, or abandon}\n    F2 -- Retry --> E\n    F2 -- End invocation --> ZE[End invocation; preserve verified lifecycle and apply no mutation]\n    F2 -- Abandon --> A0F[Show interrupted-resume abandonment consequences]\n    A0F --> A1F{Confirm abandon or cancel}\n    A1F -- Cancel --> F2\n    A1F -- Confirm --> A2\n    F -- Yes --> FL{Verified lifecycle?}\n    FL -- Active --> IA[Show interrupted-Active reconciliation summary and baseline changes]\n    IA --> IA1{Continue Active run, inspect deferred items, pause and exit, abandon, or end invocation}\n    IA1 -- Inspect deferred --> IAD[Show deferred stable IDs, owner, reason, scope, and trigger]\n    IAD --> IA1\n    IA1 -- Continue Active run --> O1\n    IA1 -- Pause and exit --> ZPR\n    IA1 -- Abandon --> A0P\n    IA1 -- End invocation --> ZIA[End invocation; preserve discoverable interrupted-Active projection]\n    FL -- Paused --> G{Baseline and closure inputs unchanged?}\n    G -- Yes --> H[Show reconciliation summary]\n    G -- No --> I[Show changed evidence, stale decisions, and affected dependents]\n    H --> H1{Resume, inspect deferred items, abandon, or end invocation}\n    I --> H1\n    H1 -- Inspect deferred --> HD[Show deferred stable IDs, owner, reason, scope, and trigger]\n    HD --> H1\n    H1 -- Abandon --> A0H[Show paused-run abandonment consequences]\n    A0H --> A1H{Confirm abandon or cancel}\n    A1H -- Cancel --> H1\n    A1H -- Confirm --> A2\n    H1 -- End invocation --> ZE\n    H1 -- Resume --> O[Record Active after artifact-baseline reconciliation]\n    O --> O1{Changed inputs require active reconciliation?}\n    O1 -- No --> P[Return to deterministic first eligible decision, Blocked, Conflict, or closure summary]\n    O1 -- Yes --> J{Retain with evidence, revise, supersede, propose dependency change, gather evidence, or pause and exit}\n    J -- Retain --> K[Append rationale revision]\n    J -- Revise or supersede --> L[Create child revision and reopen transitive dependents]\n    J -- Propose dependency change --> M[Validate and preview consequences]\n    M --> M1{Confirm or cancel}\n    M1 -- Confirm --> M2[Apply revision-safe dependency change]\n    M1 -- Cancel --> J\n    J -- Evidence --> N[Enter Evidence route; remain non-Ready]\n    J -- Pause and exit --> ZPR[Request atomic Pause and end invocation]\n    K --> K1[Show updated reconciliation summary]\n    L --> K1\n    M2 --> K1\n    N --> K1\n    K1 --> P\n    P --> P1{Continue, inspect/reactivate deferred, defer an explicitly non-blocking item, pause and exit, or abandon}\n    P1 -- Inspect or reactivate deferred --> PD[Show deferred items; apply selected explicit reactivation]\n    PD --> P\n    P1 -- Defer --> P2[Record owner, reason, scope, and reactivation trigger; recompute]\n    P2 --> P\n    P1 -- Continue --> W[Continue in Flow 1 at the recomputed frontier, Blocked, Conflict, or closure state]\n    P1 -- Pause and exit --> ZPR\n    P1 -- Abandon --> A0P[Show active-run abandonment consequences]\n    A0P --> A1P{Confirm abandon or cancel}\n    A1P -- Cancel --> P1\n    A1P -- Confirm --> A2\n    ZPR --> ZPO{Pause operation outcome}\n    ZPO -- Applied --> ZP[Record Paused checkpoint and end invocation]\n    ZPO -- Not applied --> ZPN[Remain Active; do not claim Paused]\n    ZPO -- Application unknown --> ZPU[Reconcile operation and checkpoint identity; do not resubmit]\n    ZPU -- Applied --> ZP\n    ZPU -- Not applied --> ZPN\n    ZPU -- Inconclusive --> ZPX[End safely with lifecycle unverified or last-known; no Ready handoff]\n    ZPN --> ZPN1{Retry Pause, continue Active, or end invocation}\n    ZPN1 -- Retry Pause --> ZPR\n    ZPN1 -- Continue Active --> P\n    ZPN1 -- End invocation --> ZIA"
+        },
+        {
+          "kind": "flowchart",
+          "title": "Reusable governed-mutation outcome subflow",
+          "mermaid": "flowchart LR\n    A[Submit governed mutation with expected revisions] --> B{Effective operation outcome}\n    B -- Applied --> C[Follow operation-specific applied continuation exactly once]\n    B -- Not applied --> D[Preserve prior effective state; show reason, authority or stale input, and recovery]\n    B -- Application unknown --> E[Block dependent mutation and reconcile operation/result identity; do not resubmit]\n    E --> F{Reconciliation result}\n    F -- Applied --> C\n    F -- Not applied --> D\n    F -- Inconclusive --> G[End or remain non-Ready with lifecycle/result unverified or last-known]"
+        }
+      ],
+      "sourceSha256": "0c5a678d19a87a74b5fbedef9f045ff584d3237cb2933f8d7905d53a8c1dff7b"
+    },
+    {
       "id": "spec-design-slice-rename",
       "path": "docs/specs/design-slice-rename.md",
       "title": "Rename /design to /design-slice — Specification",
@@ -11620,6 +11682,13 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     },
     {
+      "id": "surface-proposals-grill-me-integration-proposal",
+      "path": "docs/proposals/grill-me-integration-proposal.html",
+      "title": "AI-Forward Decision Interrogation Proposal",
+      "kind": "knowledge-tool",
+      "description": "Open an interactive knowledge artifact."
+    },
+    {
       "id": "surface-portal-index",
       "path": "docs/portal/index.html",
       "title": "AI-Forward Portal",
@@ -11851,5 +11920,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "fc9c3214973ad5e9a176ba6c88ad15007a8f87a28c092708c5bb0415a3c880b7"
+  "graphSha256": "804dd3cf6378ec44f91a6ee20121132e9181541fbb2719bb5056bd9a437ea739"
 };
