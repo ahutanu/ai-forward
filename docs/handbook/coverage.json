@@ -101,6 +101,17 @@
       "source_contract": "pack/commands/compile/SKILL.md"
     },
     {
+      "skill": "create-proposal",
+      "problem": "Use this skill to brainstorm a product or feature idea, compare real alternatives, and make the idea concrete before turning it into accepted requirements.",
+      "reader": "Engineer or technical lead shaping a change",
+      "prerequisites": "Bring an idea, problem, opportunity, or rough concept. One sentence is enough; related research, proposals, specs, and mockups are reused when present.",
+      "guide_home": "#design",
+      "reference_home": "#skill-create-proposal",
+      "example": "/create-proposal Explore a lightweight team decision journal. Compare at least two\napproaches and recommend one.",
+      "scope_limits": "If the idea is already settled, move directly to specify. If a mockup starts settling detailed interface rules, use ui-design instead. Check that the alternatives are genuinely different, assumptions are visible, the recommendation explains its trade-offs, and unresolved questions are explicit.",
+      "source_contract": "pack/commands/create-proposal/SKILL.md"
+    },
+    {
       "skill": "define-architecture",
       "problem": "Use this skill when a project or major capability needs a top-level architecture: components, boundaries, data representation, integration contracts, AI tiering and durable decisions.",
       "reader": "Engineer or technical lead shaping a change",
@@ -342,6 +353,7 @@
       "guide": "workflow",
       "sources": [
         "specification-standards",
+        "decision-interrogation",
         "communication-and-task-discipline",
         "execution-graph-optimization"
       ]

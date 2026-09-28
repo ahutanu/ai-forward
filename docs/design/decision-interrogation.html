@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Decision Interrogation</title><style>
+:root { color-scheme: light dark; --bg:#f7f5ef; --panel:#fff; --text:#20201d;
+  --muted:#66645f; --line:#d9d5ca; --accent:#3157a4; --code:#f0eee7; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#171816; --panel:#20221f; --text:#f2f1eb; --muted:#b8b6ae;
+    --line:#3d403a; --accent:#8fb0ff; --code:#292c27; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+  font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { width:min(920px,calc(100% - 32px)); margin:32px auto; padding:40px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+h1,h2,h3,h4,h5,h6 { line-height:1.2; margin:1.5em 0 .55em; }
+h1 { margin-top:0; font-size:2.2rem; } h2 { border-bottom:1px solid var(--line); padding-bottom:.3em; }
+a { color:var(--accent); } code { background:var(--code); padding:.12em .35em; border-radius:4px; }
+pre { overflow:auto; padding:16px; background:var(--code); border-radius:8px; }
+pre code { padding:0; } blockquote { margin:1em 0; padding:.2em 1em; color:var(--muted);
+  border-left:4px solid var(--line); }
+table { width:100%; border-collapse:collapse; margin:1em 0; display:block; overflow:auto; }
+th,td { padding:.55em .75em; border:1px solid var(--line); text-align:left; vertical-align:top; }
+th { background:var(--code); } hr { border:0; border-top:1px solid var(--line); }
+.source { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+@media (max-width:640px) { main { width:100%; margin:0; padding:24px 18px; border:0; border-radius:0; } }
+</style></head><body><main><div class="source">Rendered from decision-interrogation.md</div><h1>Decision Interrogation Skill Design</h1>
+<h2>Shared contract</h2>
+<p>Each skill builds a short list of unresolved consequential questions. A question is consequential only when its answer changes the artifact, acceptance criteria, architecture, or design direction. The skill resolves facts itself and does not ask the human to do research it can perform.</p>
+<p>Before asking, render:</p>
+<table><thead><tr><th>Question</th><th>Needed for</th><th>Recommendation</th></tr></thead><tbody><tr><td>concise decision question</td><td>artifact choice it controls</td><td>preferred answer and one-line reason</td></tr></tbody></table>
+<p>Then ask one question at a time. After each answer:</p>
+<ol><li>record the decision in the working artifact;</li><li>remove questions made irrelevant;</li><li>add a newly exposed question only when it is consequential;</li><li>stop when the list is empty or the human defers the remaining decision.</li></ol>
+<h2>Insertion points</h2>
+<table><thead><tr><th>Skill</th><th>During authoring</th><th>Before handoff</th></tr></thead><tbody><tr><td><code>/specify</code></td><td>Before settling scope, user need, UX flow, or UI archetype when evidence does not decide</td><td>Yes</td></tr><tr><td><code>/ui-design</code></td><td>Before settling direction, archetype, density, interaction, or visual trade-offs</td><td>Yes</td></tr><tr><td><code>/define-architecture</code></td><td>Facts are researched; human product/constraint forks are recorded for closure</td><td>Yes</td></tr><tr><td><code>/design-slice</code></td><td>Facts are researched; unresolved component trade-offs are recorded for closure</td><td>Yes</td></tr></tbody></table>
+<h2>Question shape</h2>
+<p>Each question contains:</p>
+<ul><li>the question;</li><li>what it is needed for;</li><li>the recommendation and reason;</li><li>suggested choices where useful;</li><li>a free-form answer path;</li><li>defer only when the dependent artifact section can remain explicitly unresolved.</li></ul>
+<h2>Proof</h2>
+<p>Static regression tests assert that the shared contract and all four insertion points remain wired. The existing skill evals provide behavioral regression coverage.</p></main></body></html>

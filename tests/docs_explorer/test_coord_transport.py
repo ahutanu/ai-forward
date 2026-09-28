@@ -249,9 +249,10 @@ class TransportTests(unittest.TestCase):
     def test_runtime_permission_wait_retains_deadline_cancel_and_output_bound(self):
         result = self.run_peer("runtime_permission", permission_handler=lambda *args: None, deadline_seconds=.15)
         self.assertEqual("deadline_exceeded", result["code"])
-        start = time.monotonic()
         result = self.run_peer("runtime_permission", permission_handler=lambda *args: None,
-                               cancelled=lambda: time.monotonic() - start > .15)
+                               cancelled=lambda: any(
+                                   event["event"] == "permission_pending" for event in self.events
+                               ))
         self.assertEqual("cancelled", result["code"])
         replies = [r for r in self.requests() if r.get("id") == "permission-request" and "result" in r]
         self.assertTrue(any(r["result"]["outcome"] == {"outcome": "cancelled"} for r in replies))
@@ -854,9 +855,10 @@ class TestWindowsTransport(unittest.TestCase):
                 self.assertEqual("deadline_exceeded", result["code"])
 
     def test_windows_pending_permission_cancel_emits_cancelled_reply(self):
-        start = time.monotonic()
         result = self.run_peer("runtime_permission", permission_handler=lambda *args: None,
-                               cancelled=lambda: time.monotonic() - start > .15)
+                               cancelled=lambda: any(
+                                   event["event"] == "permission_pending" for event in self.events
+                               ))
         self.assertEqual("cancelled", result["code"])
         replies = [r for r in self.requests() if r.get("id") == "permission-request" and "result" in r]
         self.assertTrue(any(r["result"]["outcome"] == {"outcome": "cancelled"} for r in replies))

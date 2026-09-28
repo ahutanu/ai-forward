@@ -192,13 +192,16 @@ every non-trivial task.
 - **Personas (dual-mode):** author in Peer Mode, review in Adversary Mode; the author never
   clears its own hard veto. Agents in `.github/agents/`; the operating standard in the
   `persona-audit` / `persona-cards` instructions.
-- **Workflows (28):** the prompts in `.github/prompts/` — twenty-three reasoning workflows
-  (`collectknowledge`, `adddomainexperts`, `specify`, `define-architecture`, `design-slice`, `ui-design`,
+- **Workflows (29):** the prompts in `.github/prompts/` — twenty-four reasoning workflows
+  (`collectknowledge`, `adddomainexperts`, `create-proposal`, `specify`, `define-architecture`, `design-slice`, `ui-design`,
   `visualize`, `implement`, `investigate`, `document`, `adopt`, `forensicreview`, `code-hygiene`, `migrate`,
   `updatepack`, `addpacktorepo`, `extendaibundle`, `optimize-graph`, `dream`, `apply-learnings`, `session-profiler`,
   `prepare-for-coordination`, `execute-with-coordination`),
   the `auditlog` lens over the audit & change log, the `also` turn-control utility, the `compile` prompt compiler (CO-S0), plus two prompt-log utilities, `prompts` and
   `searchprompts`. Templates: `docs/ai-forward-pack/templates/`.
+- **Human-facing artifact views:** whenever a skill creates or materially updates Markdown for
+  people, it also refreshes the sibling HTML view with
+  `docs/ai-forward-pack/scripts/render-markdown.py` (V19). Markdown remains canonical.
 - **Prompt reuse (utility):** `/prompts` opens the audit log's prompts as an arrow-navigable stack
   (newest on top; → expand, ← collapse, Enter reuse) and `/searchprompts` searches them; reuse
   copies the chosen prompt to the clipboard to paste-and-edit. Engine:

@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "ai-forward",
-  "generated": "2026-09-27T17:47:12Z",
+  "generated": "2026-09-28T00:46:53Z",
   "audit": [
     {
       "actor": null,
@@ -13397,6 +13397,59 @@ window.AUDIT_DATA = {
         "branch": "main",
         "pushed": true
       }
+    },
+    {
+      "id": "al-01M3J769QJ05YFWRYH4NEWSBW2",
+      "shortname": "go through the whole loop to get this implemented: /define-architecture …",
+      "datetime": "2026-09-27T19:59:06Z",
+      "session": "prompt-log",
+      "prompt": "go through the whole loop to get this implemented: /define-architecture then /design-slice then /implement",
+      "summary": "prompt logged for reuse",
+      "kind": "prompt",
+      "skill": null,
+      "tool": null,
+      "actor": null,
+      "artifacts": [],
+      "tags": [],
+      "outcome": "success"
+    },
+    {
+      "id": "al-01M3JQN7J6RNFE2NNYSJEKDC83",
+      "shortname": "implement-decision-interrogation",
+      "datetime": "2026-09-28T00:46:53Z",
+      "session": "fb5c4f7c-3f87-4ce0-8988-ec93c2bb2114",
+      "prompt": "Go through define-architecture, design-slice, and implement for the grill-me integration, keeping it a simple natural evolution of the pack.",
+      "summary": "Implemented conversation-native interrogation in four authoring skills, added create-proposal, deterministic Markdown HTML companions, and collectknowledge native deep-research guidance; focused tests and the full functional suite passed.",
+      "kind": "skill",
+      "skill": "implement",
+      "tool": null,
+      "actor": null,
+      "artifacts": [
+        "docs\\specs\\decision-interrogation-protocol.md",
+        "docs\\architecture-decision-interrogation.md",
+        "docs\\design\\decision-interrogation.md",
+        "docs\\proof\\decision-interrogation.md",
+        "pack\\commands\\create-proposal\\SKILL.md",
+        "pack\\scripts\\render-markdown.py"
+      ],
+      "tags": [],
+      "outcome": "success",
+      "compiled": false,
+      "goal": "Finish the lightweight decision-interrogation pack evolution.",
+      "done_when": "Full bundle verification passes and the feature branch is pushed.",
+      "tier": "T1",
+      "fan_out": 0,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true,
+        "acceptance_met": true
+      },
+      "git": {
+        "sha": "eca5d29035f97f79aba300afb82cf9677cdcea01",
+        "short": "eca5d2903",
+        "branch": "feature/decision-interrogation-protocol",
+        "pushed": null
+      }
     }
   ],
   "changes": [
@@ -15079,6 +15132,29 @@ window.AUDIT_DATA = {
         "after": "8b22849a0d2c064448094498f7246d7524f2736c",
         "branch": "main",
         "pushed": true,
+        "commits": []
+      }
+    },
+    {
+      "id": "cl-01M3JQN79F7GAG49J8Y6D4SK2P",
+      "datetime": "2026-09-28T00:46:53Z",
+      "session": "fb5c4f7c-3f87-4ce0-8988-ec93c2bb2114",
+      "kind": "architecture",
+      "skill": "implement",
+      "title": "Use conversation-native decision interrogation",
+      "prompt": "Keep it simple and just a natural evolution of the pack.",
+      "summary": "Replaced the over-engineered decision runtime with shared skill guidance, serial host-native questions, create-proposal, Markdown HTML companions, and verified deep-research guidance.",
+      "rationale": "The workflow has the same security and privacy characteristics as ordinary prompting; custom identity, persistence, and Git protocols add no user value.",
+      "artifacts": [
+        "docs\\adr\\0013-conversation-native-interrogation.md",
+        "docs\\architecture-decision-interrogation.md"
+      ],
+      "tags": [],
+      "git": {
+        "before": "eca5d29035f97f79aba300afb82cf9677cdcea01",
+        "after": "eca5d29035f97f79aba300afb82cf9677cdcea01",
+        "branch": "feature/decision-interrogation-protocol",
+        "pushed": null,
         "commits": []
       }
     }

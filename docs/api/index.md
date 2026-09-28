@@ -9,7 +9,7 @@ links:
   - { to: architecture, rel: documents }
 review-by: "2027-03-03"
 summary: >-
-  Generated API reference for the pack's public surface — the deployed script bundle. 548 public functions across 44 modules, 47% carrying a docstring.
+  Generated API reference for the pack's public surface — the deployed script bundle. 552 public functions across 45 modules, 47% carrying a docstring.
 ---
 
 # API reference — the deployed script bundle
@@ -51,6 +51,7 @@ with no docstring is listed as a **coverage gap** rather than described from gue
 | [`platform_process.py`](platform_process.md) | 4 | 0 | — | Cross-platform owned-process helpers for bounded local subprocesses. |
 | [`prompt-compile.py`](prompt-compile.md) | 22 | 7 | 4 | prompt-compile.py - the compile stage: a logged raw prompt -> a gated, harness-rendered prompt. |
 | [`prompt-log.py`](prompt-log.md) | 18 | 7 | 8 | prompt-log.py — the fast prompt-reuse lens over the project's audit log. |
+| [`render-markdown.py`](render-markdown.md) | 4 | 0 | — | Render a human-facing Markdown artifact as a self-contained HTML companion. |
 | [`repo_identity.py`](repo_identity.md) | 1 | 1 | — | repo_identity.py - the canonical project name, in ONE place (class PACK-P). |
 | [`run-verify-gates.py`](run-verify-gates.md) | 5 | 3 | — | run-verify-gates.py - every verify-*.py gate, one exit status, no pipe. |
 | [`scrub.py`](scrub.md) | 2 | 2 | — | scrub.py — first-pass PII/secret redaction for Markdown (deployable). |
@@ -68,5 +69,5 @@ with no docstring is listed as a **coverage gap** rather than described from gue
 | [`visual-assets-setup.py`](visual-assets-setup.md) | 12 | 5 | — | visual-assets-setup.py - wire up a generation backend for UI visual assets (AI-Forward). |
 | [`xaml-token-lint.py`](xaml-token-lint.md) | 9 | 0 | — | xaml-token-lint.py — first-slice token linter for XAML/native UI markup. |
 
-**Total** — 548 public functions across 44 modules, **260 documented (47%)**.
+**Total** — 552 public functions across 45 modules, **260 documented (47%)**.
 

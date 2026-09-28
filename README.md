@@ -13,7 +13,7 @@ This repo is two things at once:
    `.grok/`, `.agents/`, `docs/`) so the skills, agents, and knowledge are active in Claude Code, Copilot,
    Grok Build, Antigravity, and Codex *while you work on the pack itself*. Dogfooding: the pack is built using the pack.
 
-For the pack's own story — why it exists, what's inside, how to use the twenty-eight skills — read
+For the pack's own story — why it exists, what's inside, how to use the twenty-nine skills — read
 [`pack/README.md`](pack/README.md) and [`pack/OVERVIEW.md`](pack/OVERVIEW.md).
 
 For a newcomer-oriented learning path, use the
@@ -34,7 +34,7 @@ ai-forward/
 ├─ pack/                  ← CANONICAL SOURCE — edit here to expand the pack
 │   ├─ README.md  OVERVIEW.md  research-synthesis.md
 │   ├─ knowledge/         ← the reasoning spine + 23-persona roster + vendored foundation
-│   ├─ commands/          ← the 28 skills (SKILL.md + reference/ each)
+│   ├─ commands/          ← the 29 skills (SKILL.md + reference/ each)
 │   ├─ templates/         ← the artifacts each skill produces
 │   ├─ adapters/          ← INSTALL.md + Claude Code / Copilot agents + prompts + managed blocks
 │   ├─ evals/             ← the pack's own regression suite
@@ -81,7 +81,7 @@ The pack is already installed, so in Claude Code here you can just run the skill
 automatically by description, or call one explicitly:
 
 ```
-/collectknowledge → /adddomainexperts → /specify → /define-architecture → /design-slice → /implement → /document
+/collectknowledge → /adddomainexperts → /create-proposal → /specify → /define-architecture → /design-slice → /implement → /document
                                                                               ↑
                                                             /investigate  (whenever a defect appears)
 ```

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Architecture Decision Interrogation</title><style>
+:root { color-scheme: light dark; --bg:#f7f5ef; --panel:#fff; --text:#20201d;
+  --muted:#66645f; --line:#d9d5ca; --accent:#3157a4; --code:#f0eee7; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#171816; --panel:#20221f; --text:#f2f1eb; --muted:#b8b6ae;
+    --line:#3d403a; --accent:#8fb0ff; --code:#292c27; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+  font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { width:min(920px,calc(100% - 32px)); margin:32px auto; padding:40px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+h1,h2,h3,h4,h5,h6 { line-height:1.2; margin:1.5em 0 .55em; }
+h1 { margin-top:0; font-size:2.2rem; } h2 { border-bottom:1px solid var(--line); padding-bottom:.3em; }
+a { color:var(--accent); } code { background:var(--code); padding:.12em .35em; border-radius:4px; }
+pre { overflow:auto; padding:16px; background:var(--code); border-radius:8px; }
+pre code { padding:0; } blockquote { margin:1em 0; padding:.2em 1em; color:var(--muted);
+  border-left:4px solid var(--line); }
+table { width:100%; border-collapse:collapse; margin:1em 0; display:block; overflow:auto; }
+th,td { padding:.55em .75em; border:1px solid var(--line); text-align:left; vertical-align:top; }
+th { background:var(--code); } hr { border:0; border-top:1px solid var(--line); }
+.source { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+@media (max-width:640px) { main { width:100%; margin:0; padding:24px 18px; border:0; border-radius:0; } }
+</style></head><body><main><div class="source">Rendered from architecture-decision-interrogation.md</div><h1>Decision Interrogation Architecture</h1>
+<h2>Shape</h2>
+<p>The architecture has two parts:</p>
+<ol><li><code>pack/knowledge/decision-interrogation.md</code> defines the shared dialogue contract.</li><li>The four authoring skills invoke that contract at their required insertion points.</li></ol>
+<p>The active harness provides the interaction primitive. A structured question tool is preferred; plain chat is the fallback. The current skill owns its in-memory question list and writes only the normal artifact it already owns.</p>
+<h2>Boundaries</h2>
+<ul><li>The protocol does not call a model separately from the active skill.</li><li>The protocol adds no data store, Git ref, identity system, security boundary, or telemetry.</li><li>Existing audit, repository, and conversation behavior remains unchanged.</li><li>Portability comes from semantic guidance, not a host-specific API contract.</li></ul>
+<h2>Delivery slices</h2>
+<ol><li>Shared contract plus <code>/specify</code>.</li><li><code>/ui-design</code>, <code>/define-architecture</code>, and <code>/design-slice</code>.</li><li>Regression tests and generated pack surfaces.</li></ol>
+<h2>Residual risk</h2>
+<p>Hosts differ in how they present structured questions. The semantic fallback is one plain chat question at a time.</p></main></body></html>

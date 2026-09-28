@@ -117,7 +117,7 @@ class TreeTests(unittest.TestCase):
     def test_the_tree_is_clean(self):
         r = subprocess.run([sys.executable, str(LINT), "--root", str(ROOT)], capture_output=True, text=True)
         self.assertEqual(0, r.returncode, r.stdout)
-        self.assertIn("clean - 28 skill(s)", r.stdout)
+        self.assertIn("clean - 29 skill(s)", r.stdout)
 
     def test_every_skill_cites_co_s0(self):
         for d in sorted(p for p in COMMANDS.iterdir() if p.is_dir()):

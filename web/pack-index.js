@@ -6,22 +6,22 @@ window.PACK_INDEX = {
 {
 "id": "knowledge",
 "label": "Knowledge docs",
-"count": 40
+"count": 41
 },
 {
 "id": "skills",
 "label": "Skills",
-"count": 28
+"count": 29
 },
 {
 "id": "templates",
 "label": "Templates",
-"count": 28
+"count": 29
 },
 {
 "id": "scripts",
 "label": "Scripts",
-"count": 45
+"count": 46
 },
 {
 "id": "personas",
@@ -36,7 +36,7 @@ window.PACK_INDEX = {
 {
 "id": "graph",
 "label": "Knowledge graph (docs/)",
-"count": 348
+"count": 355
 },
 {
 "id": "guides",
@@ -44,7 +44,7 @@ window.PACK_INDEX = {
 "count": 9
 }
 ],
-"total": 527,
+"total": 538,
 "items": [
 {
 "cat": "knowledge",
@@ -162,6 +162,15 @@ window.PACK_INDEX = {
 "path": "pack/knowledge/csharp-style-guide.md",
 "kind": "knowledge",
 "text": "c# coding style guide --- c# coding style guide 1. self-documenting code 1.1 names reveal intent, not implementation 1.2 prefer expressive types over primitives 1.3 boolean parameters are a code smell 1.4 comments document *why*, never *what* 1.5 code reads top-down at one level of abstraction 1.6 no commented-out or dead code 2. terse methods 2.1 size 2.2 guard clauses first, happy path last 2.3 expression-bodied members where natural 2.4 extract until the name is the only documentation needed 2.5 no flag parameters 2.6 put the constant on the left in equality checks 3. fluent code 3.1 prefer linq when it expresses intent 3.2 builders for complex construction 3.3 return `this` or a new instance, never both 3.4 fluent assertions in tests 3.5 beware temporal coupling in fluent chains 4. exception practices 4.1 throw typed exceptions 4.2 custom exception template 4.3 legibility is part of the type 4.4 catch narrowly 4.5 preserve the stack trace 4.6 expected failures aren't exceptions 4.7 never swallow 4.8 async exception ergonomics 5. concurrency & asynchrony 5.1 flow the `cancellationtoken`, always 5.2 never block on async 5.3 `configureawait(false)` in library code 5.4 prefer the right primitive 6. type design 6.1 records for values, classes for identity 6.2 immutable by default 6.3 expose read-only contracts at boundaries 6.4 nullability is a contract, not a warning 6.5 use the language's modern leverage 7. secure coding 7.1 secrets never live in code or logs 7.2 validate at the trust boundary, on the trusted side 7.3 parameterize every query 7.4 safe serialization only 7.5 fail closed 8. observability 8.1 structured logging with message templates 8.2 never log secrets or pii 8.3 distinguish errors from non-errors appendix: defaults appendix: enforcement --- load: glob applyto: \"**/*.cs,**/*.csx\" --- # c# coding style guide *version 2.0 — default target platform: the latest stable lts / c# version (currently .net 10 (lts) / c# 14). this is the portable baseline; a consuming repository's own target framework is authoritative where it differs (see that repo's `.github/instructions/csharp-style-guide.instructions.md` / `directory.build.props`).* a specification for writing c# that is legible, intentional, and durable. the guide is opinionated; defaults exist so reviewers can spend energy on design, not formatting. **scope and relationship.** this guide governs *how c# is written*. it is one of a coherent set: the **agent body of knowledge** governs how the agent reasons and researches; the **layered optimized architecture (loa)** governs how ai-integrated systems are designed (its appendix d is the authoritative .net idiom map, not duplicated here). where loa or the bok speak, defer to them; this guide is authoritative over c# legibility and the language-level conventions below. sections 1–4 are the original craft core; sections 5–8 extend it to concurrency, type design, security, and observability; the enforcement appendix makes the whole guide mechanically checkable. --- ## 1. self-documenting code the reader is the primary customer. code should be understandable without comments, debuggers, or tribal knowledge. comments explain *why*; code explains *what* and *how*. ### 1.1 names reveal intent, not implementation a name is a contract. if the name is wrong, the abstraction is wrong. ```csharp // ✗ implementation leaks into name list<order> getordersfromdb(int customerid) // ✓ intent, free of storage detail ireadonlylist<order> ordersfor(customerid customer) ``` names earn their length. a loop counter may be `i`; a domain concept never is. avoid the noise words `manager`, `helper`, `processor`, `util`, `data`, `info` — they signal that the author could not name the responsibility. ### 1.2 prefer expressive types over primitives primitive obsession is the single largest source of ambiguous code. a `string customerid` and a `string orderid` are interchangeable to the compiler and disastrous in production. ```csharp // ✗ three strings, any order public receipt charge(string customerid, string orderid, string currency, decimal amount) // ✓ wrong call site fails to compile public receipt charge(customerid customer, orderid order, money amount) ``` use `record struct` or `readonly record struct` for identifiers and value objects. the cost is one declaration; the benefit is compile-time safety and self-naming parameters. ### 1.3 boolean parameters are a code smell at the call site, `true` and `false` are anonymous. ```csharp // ✗ what does true mean here? user.save(true); // ✓ either split the method... user.saveandflush(); // ✓ ...or name the intent user.save(savemode.immediate); ``` ### 1.4 comments document *why*, never *what* if a comment paraphrases the code, delete one of them. comments are reserved for: non-obvious *why*, references to external contracts (rfcs, tickets, regulations), and warnings about constraints that aren't visible in the code. ```csharp // ✗ restates the obvious // increment the counter counter++; // ✓ captures invisible context // retry budget per aws sdk guidance (see adr-014); exceeding it // triggers circuit-breaker fallback rather than caller-visible failure. const int maxretries = 3; ``` ### 1.5 code reads top-down at one level of abstraction a method should read like a paragraph. higher-level orchestration sits at the top of a file; lower-level helpers sit below. a single method should not mix `httpclient.sendasync` with domain rule evaluation — the reader has to context-switch on every line. ### 1.6 no commented-out or dead code commented-out code is not documentation — it is rot with a delay timer. it goes stale silently, misleads the next reader about what the code actually does, and defeats every tool that reasons about the tree (a code-graph builder, an analyzer, a `grep`). **version control is the archive; the working tree is not.** deleted code is one `git log` away, so *delete* it — never park it in a comment \"in case.\" ```csharp // ✗ rot: which of…"
+},
+{
+"cat": "knowledge",
+"id": "decision-interrogation",
+"title": "Decision Interrogation",
+"summary": "---",
+"path": "pack/knowledge/decision-interrogation.md",
+"kind": "knowledge",
+"text": "decision interrogation --- decision interrogation di1 - resolve before asking di2 - keep the fast path di3 - orient once di4 - ask serially di5 - handle deferral honestly di6 - close before handoff --- id: decision-interrogation title: \"decision interrogation\" type: knowledge status: accepted owner: \"@timianmalloo\" phase: \"cross-cutting\" tags: [questions, decisions, dialogue] load: skill skills: [create-proposal, specify, ui-design, define-architecture, design-slice] links: - { to: specification-standards, rel: depends-on } review-by: 2027-01-25 summary: >- a lightweight question-first pattern for resolving consequential unknowns inside the current skill conversation. --- # decision interrogation use this pattern when an unanswered question would materially change the artifact. it is ordinary conversation, not a separate security, privacy, identity, or persistence system. ## di1 - resolve before asking check facts yourself when repository evidence, documentation, or a quick experiment can answer them. ask the human only for a preference, priority, trade-off, or product decision that evidence cannot settle. ## di2 - keep the fast path if no consequential question remains, continue. do not manufacture an interrogation round. ## di3 - orient once before the first question, show all currently known questions: | question | needed for | recommendation | |---|---|---| keep each cell brief. the recommendation includes one sentence of reasoning. ## di4 - ask serially ask one question at a time. prefer the harness's structured question tool. if it is unavailable, ask one ordinary chat question and wait. include suggested choices when useful, but always allow a free-form answer. after each answer, update the remaining list. do not ask a question made irrelevant by an earlier answer. ## di5 - handle deferral honestly allow deferral only when the affected artifact section can stay explicitly unresolved. state what cannot be finalized and what later decision will unblock it. never silently turn deferral into the recommendation. ## di6 - close before handoff before handing off from `/specify`, `/ui-design`, `/define-architecture`, or `/design-slice`: 1. identify remaining consequential questions; 2. if any exist, show the table and resolve them one by one; 3. record resolved decisions in the artifact; 4. list deferred questions and their impact; 5. continue only when the artifact is honest about what remains open. `/specify` and `/ui-design` also apply di1-di5 during authoring when an early answer prevents wasted work."
 },
 {
 "cat": "knowledge",
@@ -486,6 +495,15 @@ window.PACK_INDEX = {
 "path": "pack/commands/compile/SKILL.md",
 "kind": "skill",
 "text": "/compile compile a prose request into the harness- and model-specific starting prompt (goal state, traced clauses, marked assumptions, decision requests) without adding scope — the co-s0 stage every prose-input skill runs first. `/compile \"<text>\"` or `/compile --from-audit <id>`; logs raw and compiled together so what the human changes is measured. skill: /compile input flow engine reference (verbs and flags, verbatim from design-compile-stage › contracts › exposed) definition of done documentation & discoverability audit (last action)"
+},
+{
+"cat": "skills",
+"id": "create-proposal",
+"title": "/create-proposal",
+"summary": "Brainstorm an idea into reviewable Markdown and HTML proposals, with optional mockups.",
+"path": "pack/commands/create-proposal/SKILL.md",
+"kind": "skill",
+"text": "/create-proposal brainstorm an idea into reviewable markdown and html proposals, with optional mockups. skill: /create-proposal grounding (first action) input cast flow (rigor protocol, specialized) output artifact definition of done (exit gate) documentation & discoverability (last action)"
 },
 {
 "cat": "skills",
@@ -858,6 +876,15 @@ window.PACK_INDEX = {
 },
 {
 "cat": "templates",
+"id": "proposal.template.md",
+"title": "<Proposal title>",
+"summary": "Exploratory proposal. This is not an accepted specification.",
+"path": "pack/templates/proposal.template.md",
+"kind": "template",
+"text": "proposal.template.md <proposal title> exploratory proposal. this is not an accepted specification."
+},
+{
+"cat": "templates",
 "id": "session-contract.template.md",
 "title": "Session contract - <workstream>",
 "summary": "Two or more sessions are working this repository at once, in separate worktrees.",
@@ -1170,6 +1197,15 @@ window.PACK_INDEX = {
 "path": "pack/scripts/prompt-log.py",
 "kind": "script",
 "text": "prompt-log.py prompt-log.py — the fast prompt-reuse lens over the project's audit log. a tiny, stdlib-only front-end for browsing, searching, and **reusing** the prompts already recorded in the committed **audit log** (docs/audit/audit-log.jsonl). unified with the audit & change log standard (audit-and-change-log.md): there is **one store of prompts** — the audit log — and this is the reuse lens over it (its arrow-navigable stack + clipboard reuse), the companion to the broader /auditlog timeline/search/change-log/viewer. add log a prompt (writes a kind:prompt entry to the audit log) -> via audit-log.py list show the stack, newest first (label · time) search freeform search; matches contain all terms show print one entry in full (label, time, text) get print one entry's raw text only (for piping/copying) browse interactive stack: up/down move, right expand, left collapse, enter reuse pick like browse, pre-filtered by a search query (powers /searchprompts) reuse model (honest about the medium). a script cannot type into the copilot cli's input line, so \"reuse\" copies the chosen prompt to the clipboard (pbcopy, when present) and prints it — you paste it into your next prompt (cmd+v) and edit before sending. one store. the default store is the committed audit log (docs/audit/audit-log.jsonl), so every prompt the audit mandate records — skill runs, scripts, and prompts you `add` — is reusable here, and there is no second parallel prompt store. `add` writes through audit-log.py (the single writer of record, al0.1) as a kind:prompt entry. override the store with --store or $aiforward_prompt_log (e.g. a legacy <repo>/.aiforward/prompts.jsonl); the reader adapts to either schema. stdlib only; no third-party import. _repo_root resolve_store _ensure_store_dir _adapt display_label filter_raw load_entries append_entry _now_iso _derive_label _fmt_time newest_first filter_entries resolve_one copy_to_clipboard _sibling cmd_add _print_list cmd_list cmd_search cmd_show cmd_get _reuse _run_curses app visible _prompt_filter _interactive_ok cmd_browse cmd_pick cmd_selftest check build_parser main"
+},
+{
+"cat": "scripts",
+"id": "render-markdown.py",
+"title": "render-markdown.py",
+"summary": "Render a human-facing Markdown artifact as a self-contained HTML companion.",
+"path": "pack/scripts/render-markdown.py",
+"kind": "script",
+"text": "render-markdown.py render a human-facing markdown artifact as a self-contained html companion. _safe_href render_inline _cells _strip_frontmatter render_markdown render_document write_atomic main"
 },
 {
 "cat": "scripts",
@@ -1686,6 +1722,15 @@ window.PACK_INDEX = {
 },
 {
 "cat": "graph",
+"id": "adr-0013-conversation-native-interrogation",
+"title": "Use conversation-native decision interrogation",
+"summary": "Chooses shared prompt guidance and native host questions instead of a new decision-runtime subsystem.",
+"path": "docs/adr/0013-conversation-native-interrogation.md",
+"kind": "adr",
+"text": "use conversation-native decision interrogation chooses shared prompt guidance and native host questions instead of a new decision-runtime subsystem. skills conversation refines architecture-decision-interrogation"
+},
+{
+"cat": "graph",
 "id": "api-apply-learnings",
 "title": "API — apply-learnings.py",
 "summary": "apply-learnings.py - the AI-Forward federation / push mechanism.",
@@ -1868,10 +1913,10 @@ window.PACK_INDEX = {
 "cat": "graph",
 "id": "api-index",
 "title": "API reference — the deployed script bundle",
-"summary": "Generated API reference for the pack's public surface — the deployed script bundle. 548 public functions across 44 modules, 47% carrying a docstring.",
+"summary": "Generated API reference for the pack's public surface — the deployed script bundle. 552 public functions across 45 modules, 47% carrying a docstring.",
 "path": "docs/api/index.md",
 "kind": "api",
-"text": "api reference — the deployed script bundle generated api reference for the pack's public surface — the deployed script bundle. 548 public functions across 44 modules, 47% carrying a docstring. api scripts generated index documents architecture"
+"text": "api reference — the deployed script bundle generated api reference for the pack's public surface — the deployed script bundle. 552 public functions across 45 modules, 47% carrying a docstring. api scripts generated index documents architecture"
 },
 {
 "cat": "graph",
@@ -1944,6 +1989,15 @@ window.PACK_INDEX = {
 "path": "docs/api/prompt-log.md",
 "kind": "api",
 "text": "api — prompt-log.py prompt-log.py — the fast prompt-reuse lens over the project's audit log. api scripts generated refines api-index"
+},
+{
+"cat": "graph",
+"id": "api-render-markdown",
+"title": "API — render-markdown.py",
+"summary": "Render a human-facing Markdown artifact as a self-contained HTML companion.",
+"path": "docs/api/render-markdown.md",
+"kind": "api",
+"text": "api — render-markdown.py render a human-facing markdown artifact as a self-contained html companion. api scripts generated refines api-index"
 },
 {
 "cat": "graph",
@@ -2106,6 +2160,15 @@ window.PACK_INDEX = {
 "path": "docs/architecture-agent-coordination.md",
 "kind": "architecture",
 "text": "agent coordination — architecture the architecture for the agent-coordination layer: a git-tracked append-only record of intent, folded on demand with no daemon and no database, enforced at each harness's edit boundary and at the universal commit boundary, with a non-coordinating identifier allocator and a merge driver that regenerates derived artifacts rather than merging them. every load-bearing choice here was settled by an executed spike, several of which overturned the obvious answer. coordination worktrees multi-agent leases allocation hooks merge-driver spikes implements spec-agent-coordination refines architecture relates-to defect-classes relates-to audit-log"
+},
+{
+"cat": "graph",
+"id": "architecture-decision-interrogation",
+"title": "Decision Interrogation Architecture",
+"summary": "Implements decision interrogation as shared skill guidance executed inside the current conversation, with no separate runtime or persistence subsystem.",
+"path": "docs/architecture-decision-interrogation.md",
+"kind": "architecture",
+"text": "decision interrogation architecture implements decision interrogation as shared skill guidance executed inside the current conversation, with no separate runtime or persistence subsystem. skills conversation portability implements spec-decision-interrogation-protocol depends-on adr-0013-conversation-native-interrogation"
 },
 {
 "cat": "graph",
@@ -2574,6 +2637,15 @@ window.PACK_INDEX = {
 "path": "docs/design/coordination-runtime-v2.md",
 "kind": "design",
 "text": "coordination runtime control contracts private append-only controls around the existing bounded acp/native runtime. coordination runtime permissions audit implements spec-coordination-runtime-v2 relates-to plan-coordination-runtime-v2"
+},
+{
+"cat": "graph",
+"id": "design-decision-interrogation",
+"title": "Decision Interrogation Skill Design",
+"summary": "Defines the reusable question table, serial question loop, insertion points, and fast path used by the four authoring skills.",
+"path": "docs/design/decision-interrogation.md",
+"kind": "design",
+"text": "decision interrogation skill design defines the reusable question table, serial question loop, insertion points, and fast path used by the four authoring skills. skills dialogue refines architecture-decision-interrogation implements spec-decision-interrogation-protocol"
 },
 {
 "cat": "graph",
@@ -3177,6 +3249,15 @@ window.PACK_INDEX = {
 "path": "docs/handbook/skill-compile.md",
 "kind": "doc",
 "text": "compile a rough request into a dispatchable prompt use this utility when a prose request is too ambiguous to hand directly to a workflow or worker. it turns the request into a goal state, traced clauses, assumptions and decision requests without adding scope. handbook reader-guide relates-to handbook-workflow"
+},
+{
+"cat": "graph",
+"id": "handbook-skill-create-proposal",
+"title": "Explore an idea before specification",
+"summary": "Use this skill to brainstorm a product or feature idea, compare real alternatives, and make the idea concrete before turning it into accepted requirements.",
+"path": "docs/handbook/skill-create-proposal.md",
+"kind": "doc",
+"text": "explore an idea before specification use this skill to brainstorm a product or feature idea, compare real alternatives, and make the idea concrete before turning it into accepted requirements. handbook reader-guide relates-to handbook-design"
 },
 {
 "cat": "graph",
@@ -4440,6 +4521,15 @@ window.PACK_INDEX = {
 },
 {
 "cat": "graph",
+"id": "proof-decision-interrogation",
+"title": "Decision Interrogation Proof",
+"summary": "Records the executed checks for conversation-native interrogation, create-proposal, HTML companions, and collectknowledge deep-research guidance.",
+"path": "docs/proof/decision-interrogation.md",
+"kind": "proof-pack",
+"text": "decision interrogation proof records the executed checks for conversation-native interrogation, create-proposal, html companions, and collectknowledge deep-research guidance. skills verification tested-by spec-decision-interrogation-protocol tested-by design-decision-interrogation"
+},
+{
+"cat": "graph",
 "id": "proof-docs-explorer-redesign",
 "title": "Docs Explorer Redesign - Proof Pack",
 "summary": "Accepted implementation evidence for the deterministic, local-first Docs Explorer, native Spatial 3D knowledge portal, and bounded grounding packet implementation. The P0/P1 contract is covered by Python, Node, and three-engine browser…",
@@ -4599,6 +4689,15 @@ window.PACK_INDEX = {
 "path": "docs/specs/coordination-runtime-v2.md",
 "kind": "spec",
 "text": "bounded unattended coordination and interactive control runtime control for qualified workers, explicit permission decisions and native live session attachment. coordination runtime permissions sessions refines spec-multi-harness-launch-and-monitor refines spec-acp-coordination relates-to plan-coordination-runtime-v2"
+},
+{
+"cat": "graph",
+"id": "spec-decision-interrogation-protocol",
+"title": "Decision Interrogation Protocol",
+"summary": "Defines a lightweight, question-first dialogue for resolving consequential unknowns in authoring skills without introducing a new persistence, identity, security, or privacy layer.",
+"path": "docs/specs/decision-interrogation-protocol.md",
+"kind": "spec",
+"text": "decision interrogation protocol defines a lightweight, question-first dialogue for resolving consequential unknowns in authoring skills without introducing a new persistence, identity, security, or privacy layer. skills questions workflow"
 },
 {
 "cat": "graph",

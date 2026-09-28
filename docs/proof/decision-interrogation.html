@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Decision Interrogation</title><style>
+:root { color-scheme: light dark; --bg:#f7f5ef; --panel:#fff; --text:#20201d;
+  --muted:#66645f; --line:#d9d5ca; --accent:#3157a4; --code:#f0eee7; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#171816; --panel:#20221f; --text:#f2f1eb; --muted:#b8b6ae;
+    --line:#3d403a; --accent:#8fb0ff; --code:#292c27; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+  font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { width:min(920px,calc(100% - 32px)); margin:32px auto; padding:40px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+h1,h2,h3,h4,h5,h6 { line-height:1.2; margin:1.5em 0 .55em; }
+h1 { margin-top:0; font-size:2.2rem; } h2 { border-bottom:1px solid var(--line); padding-bottom:.3em; }
+a { color:var(--accent); } code { background:var(--code); padding:.12em .35em; border-radius:4px; }
+pre { overflow:auto; padding:16px; background:var(--code); border-radius:8px; }
+pre code { padding:0; } blockquote { margin:1em 0; padding:.2em 1em; color:var(--muted);
+  border-left:4px solid var(--line); }
+table { width:100%; border-collapse:collapse; margin:1em 0; display:block; overflow:auto; }
+th,td { padding:.55em .75em; border:1px solid var(--line); text-align:left; vertical-align:top; }
+th { background:var(--code); } hr { border:0; border-top:1px solid var(--line); }
+.source { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+@media (max-width:640px) { main { width:100%; margin:0; padding:24px 18px; border:0; border-radius:0; } }
+</style></head><body><main><div class="source">Rendered from decision-interrogation.md</div><h1>Proof Pack: Decision Interrogation</h1>
+<h2>Claims</h2>
+<table><thead><tr><th>Claim</th><th>Evidence</th><th>Confidence</th><th>Residual risk</th></tr></thead><tbody><tr><td>The four authoring skills use the shared question table and serial dialogue.</td><td><code>test_decision_interrogation_skills.py</code>; fault injection replacing serial dialogue with a bulk questionnaire failed before restoration.</td><td>Verified</td><td>Host presentation differs, so plain chat remains the fallback.</td></tr><tr><td><code>/create-proposal</code> produces Markdown and HTML proposals with optional mockups.</td><td>Static skill contract tests, handbook coverage, eval schema validation, and synchronized harness surfaces.</td><td>Verified</td><td>The golden task still requires an agent-run workspace to exercise content quality.</td></tr><tr><td>Human-facing Markdown can be rendered as safe self-contained HTML.</td><td><code>test_render_markdown.py</code> covers structure, HTML escaping, unsafe links, CLI output, and atomic writes.</td><td>Verified</td><td>The renderer intentionally implements a practical Markdown subset.</td></tr><tr><td><code>/collectknowledge</code> uses native deep research when available and verifies primary sources.</td><td>Static contract test and synchronized skill surfaces.</td><td>Verified</td><td>Availability remains harness/model dependent.</td></tr></tbody></table>
+<h2>Verification</h2>
+<pre><code class="language-text">python -m pytest -q tests/docs_explorer/test_decision_interrogation_skills.py tests/docs_explorer/test_render_markdown.py tests/docs_explorer/test_verify_skill_contracts.py
+pwsh tools/verify-bundle.ps1</code></pre>
+<p>The focused suite passed 27 tests. The full bundle run passed all functional gates and 1,277 Python tests; its first run found only generated index drift, which was resolved by the final sync and rerun.</p>
+<h2>Gate record</h2>
+<p><code>GATE implement · 2026-09-27 · Test Architect + Python Developer · conversation contract, renderer safety, pack parity, and full repository gates · verdict: PASS</code></p></main></body></html>

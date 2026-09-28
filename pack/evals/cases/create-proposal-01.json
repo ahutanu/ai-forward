@@ -1,0 +1,12 @@
+{
+  "skill": "create-proposal",
+  "prompt": "Run /create-proposal for a lightweight team decision journal. Compare approaches and recommend one.",
+  "assertions": [
+    { "type": "file-exists", "path": "docs/proposals/team-decision-journal.md" },
+    { "type": "file-exists", "path": "docs/proposals/team-decision-journal.html" },
+    { "type": "frontmatter-valid", "path": "docs/proposals/team-decision-journal.md" },
+    { "type": "grep", "path": "docs/proposals/team-decision-journal.md", "pattern": "Alternatives" },
+    { "type": "grep", "path": "docs/proposals/team-decision-journal.md", "pattern": "Open questions" }
+  ],
+  "id": "create-proposal-01"
+}

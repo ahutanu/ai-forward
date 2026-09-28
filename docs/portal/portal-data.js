@@ -1,14 +1,14 @@
 window.PORTAL_DATA = {
   "meta": {
     "counts": {
-      "skills": 28,
+      "skills": 29,
       "personas": 23,
-      "knowledge": 39,
-      "templates": 28,
-      "scripts": 45
+      "knowledge": 40,
+      "templates": 29,
+      "scripts": 46
     },
     "whatIs": "AI-Forward is a committed Markdown methodology pack that installs into a repo so Claude Code, GitHub Copilot, and Grok Build direct work with a shared reasoning spine, adversarial persona review, and a library of workflow skills - nothing runs as a service; everything is versioned files and stdlib scripts.",
-    "skillCount": 28,
+    "skillCount": 29,
     "precisionNote": "This portal is the high-level, user-facing front door. It is a LENS over the repo's core knowledge, not a copy of it: the Foundations, UI, and Architecture sections list and link the structured artifacts (knowledge docs, ADRs, specs, designs) with derived summaries, while the artifacts themselves stay exactly where they are - as structured, individually-owned Markdown. Nothing here is hand-typed content that must be kept in sync; it is generated from those sources, so it cannot drift."
   },
   "sections": [
@@ -25,7 +25,7 @@ window.PORTAL_DATA = {
     {
       "id": "skills",
       "n": "3",
-      "title": "The 28 Skills"
+      "title": "The 29 Skills"
     },
     {
       "id": "agents",
@@ -152,6 +152,13 @@ window.PORTAL_DATA = {
           "when": "Starting in an unfamiliar or high-stakes domain.",
           "produces": "docs/knowledge/<topic>/",
           "handoff": "/adddomainexperts -> /specify"
+        },
+        {
+          "cmd": "/create-proposal",
+          "desc": "Brainstorm an idea into reviewable Markdown and HTML proposals, with optional mockups.",
+          "when": "An idea needs brainstorming, alternatives, or lightweight mockups before requirements are fixed.",
+          "produces": "docs/proposals/<idea>.md + .html",
+          "handoff": "/specify"
         },
         {
           "cmd": "/specify",
@@ -428,6 +435,12 @@ window.PORTAL_DATA = {
             "path": "../../pack/knowledge/communication-and-task-discipline.md"
           },
           {
+            "name": "decision-interrogation",
+            "title": "Decision Interrogation",
+            "summary": "Use this pattern when an unanswered question would materially change the artifact. It is ordinary conversation, not a separate security, privacy, identity, or persistence system.",
+            "path": "../../pack/knowledge/decision-interrogation.md"
+          },
+          {
             "name": "execution-graph-optimization",
             "title": "Execution-Graph Optimization",
             "summary": "Normative keywords (MUST, SHOULD, MAY, MUST NOT) follow RFC 2119.",
@@ -660,6 +673,11 @@ window.PORTAL_DATA = {
             "path": "../../docs/architecture-agent-coordination.md"
           },
           {
+            "title": "Decision Interrogation Architecture",
+            "summary": "Implements decision interrogation as shared skill guidance executed inside the current conversation, with no separate runtime or persistence subsystem.",
+            "path": "../../docs/architecture-decision-interrogation.md"
+          },
+          {
             "title": "Dreaming subsystem — architecture",
             "summary": "Subsystem architecture for AI-Forward's dreaming capability — the offline consolidation pipeline (light/REM/deep) over the committed corpus, the HTML review/approval surface, the promotion oracle, the safe instance→class abstraction, the fleet learnings...",
             "path": "../../docs/architecture-dreaming.md"
@@ -738,6 +756,11 @@ window.PORTAL_DATA = {
             "title": "ADR-0012: Compose the mechanisms that already exist — the harness ships two of them, and the fleet ships three more",
             "summary": "The F8 reconciliation the spec made a condition of pass. Two of the four failure modes are already partly addressed by mechanisms shipped in the harness itself, and three more by scripts in TheTerrace; each is adopted, superseded, or retired explicitly. Also...",
             "path": "../../docs/adr/0012-reuse-existing-mechanisms.md"
+          },
+          {
+            "title": "Use conversation-native decision interrogation",
+            "summary": "Chooses shared prompt guidance and native host questions instead of a new decision-runtime subsystem.",
+            "path": "../../docs/adr/0013-conversation-native-interrogation.md"
           }
         ]
       },
@@ -788,6 +811,11 @@ window.PORTAL_DATA = {
             "title": "Bounded unattended coordination and interactive control",
             "summary": "\"Runtime control for qualified workers, explicit permission decisions and native live session attachment.\"",
             "path": "../../docs/specs/coordination-runtime-v2.md"
+          },
+          {
+            "title": "Decision Interrogation Protocol",
+            "summary": "Defines a lightweight, question-first dialogue for resolving consequential unknowns in authoring skills without introducing a new persistence, identity, security, or privacy layer.",
+            "path": "../../docs/specs/decision-interrogation-protocol.md"
           },
           {
             "title": "Rename /design to /design-slice — Specification",
@@ -903,6 +931,11 @@ window.PORTAL_DATA = {
             "title": "Coordination runtime control contracts",
             "summary": "\"Private append-only controls around the existing bounded ACP/native runtime.\"",
             "path": "../../docs/design/coordination-runtime-v2.md"
+          },
+          {
+            "title": "Decision Interrogation Skill Design",
+            "summary": "Defines the reusable question table, serial question loop, insertion points, and fast path used by the four authoring skills.",
+            "path": "../../docs/design/decision-interrogation.md"
           },
           {
             "title": "Docs Explorer — Grounding and Spatial Navigation Design",
@@ -1967,15 +2000,15 @@ window.PORTAL_DATA = {
           "tokens": 24213
         },
         "skill": {
-          "docs": 18,
-          "tokens": 81869
+          "docs": 19,
+          "tokens": 82489
         },
         "glob": {
           "docs": 6,
           "tokens": 25898
         }
       },
-      "corpusTokens": 182841,
+      "corpusTokens": 183461,
       "alwaysPct": 28
     }
   },
@@ -2083,6 +2116,12 @@ window.PORTAL_DATA = {
         "type": "adr",
         "title": "ADR-0012: Compose the mechanisms that already exist — the harness ships two of them, and the fleet ships three more",
         "summary": "The F8 reconciliation the spec made a condition of pass. Two of the four failure modes are already partly addressed by mechanisms shipped in the harness..."
+      },
+      {
+        "id": "adr-0013-conversation-native-interrogation",
+        "type": "adr",
+        "title": "Use conversation-native decision interrogation",
+        "summary": "Chooses shared prompt guidance and native host questions instead of a new decision-runtime subsystem."
       },
       {
         "id": "api-apply-learnings",
@@ -2208,7 +2247,7 @@ window.PORTAL_DATA = {
         "id": "api-index",
         "type": "api",
         "title": "API reference — the deployed script bundle",
-        "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 548 public functions across 44 modules, 47% carrying a docstring."
+        "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 552 public functions across 45 modules, 47% carrying a docstring."
       },
       {
         "id": "api-marker-lint",
@@ -2257,6 +2296,12 @@ window.PORTAL_DATA = {
         "type": "api",
         "title": "API — prompt-log.py",
         "summary": "prompt-log.py — the fast prompt-reuse lens over the project's audit log."
+      },
+      {
+        "id": "api-render-markdown",
+        "type": "api",
+        "title": "API — render-markdown.py",
+        "summary": "Render a human-facing Markdown artifact as a self-contained HTML companion."
       },
       {
         "id": "api-repo_identity",
@@ -2365,6 +2410,12 @@ window.PORTAL_DATA = {
         "type": "architecture",
         "title": "Agent coordination — architecture",
         "summary": "The architecture for the agent-coordination layer: a git-tracked append-only record of intent, folded on demand with no daemon and no database, enforced at..."
+      },
+      {
+        "id": "architecture-decision-interrogation",
+        "type": "architecture",
+        "title": "Decision Interrogation Architecture",
+        "summary": "Implements decision interrogation as shared skill guidance executed inside the current conversation, with no separate runtime or persistence subsystem."
       },
       {
         "id": "architecture-dreaming",
@@ -2515,6 +2566,12 @@ window.PORTAL_DATA = {
         "type": "design",
         "title": "Coordination runtime control contracts",
         "summary": "Private append-only controls around the existing bounded ACP/native runtime."
+      },
+      {
+        "id": "design-decision-interrogation",
+        "type": "design",
+        "title": "Decision Interrogation Skill Design",
+        "summary": "Defines the reusable question table, serial question loop, insertion points, and fast path used by the four authoring skills."
       },
       {
         "id": "design-docs-explorer-grounding-spatial-navigation",
@@ -2881,6 +2938,12 @@ window.PORTAL_DATA = {
         "type": "doc",
         "title": "Compile a rough request into a dispatchable prompt",
         "summary": "Use this utility when a prose request is too ambiguous to hand directly to a workflow or worker. It turns the request into a goal state, traced clauses,..."
+      },
+      {
+        "id": "handbook-skill-create-proposal",
+        "type": "doc",
+        "title": "Explore an idea before specification",
+        "summary": "Use this skill to brainstorm a product or feature idea, compare real alternatives, and make the idea concrete before turning it into accepted requirements."
       },
       {
         "id": "handbook-skill-define-architecture",
@@ -3855,6 +3918,12 @@ window.PORTAL_DATA = {
         "summary": "Reproducible offline proof, native observations and explicit unsupported runtime capabilities."
       },
       {
+        "id": "proof-decision-interrogation",
+        "type": "proof-pack",
+        "title": "Decision Interrogation Proof",
+        "summary": "Records the executed checks for conversation-native interrogation, create-proposal, HTML companions, and collectknowledge deep-research guidance."
+      },
+      {
         "id": "proof-docs-explorer-redesign",
         "type": "proof-pack",
         "title": "Docs Explorer Redesign - Proof Pack",
@@ -4015,6 +4084,12 @@ window.PORTAL_DATA = {
         "type": "spec",
         "title": "Bounded unattended coordination and interactive control",
         "summary": "Runtime control for qualified workers, explicit permission decisions and native live session attachment."
+      },
+      {
+        "id": "spec-decision-interrogation-protocol",
+        "type": "spec",
+        "title": "Decision Interrogation Protocol",
+        "summary": "Defines a lightweight, question-first dialogue for resolving consequential unknowns in authoring skills without introducing a new persistence, identity,..."
       },
       {
         "id": "spec-design-slice-rename",
@@ -4288,6 +4363,11 @@ window.PORTAL_DATA = {
         "rel": "implements"
       },
       {
+        "from": "adr-0013-conversation-native-interrogation",
+        "to": "architecture-decision-interrogation",
+        "rel": "refines"
+      },
+      {
         "from": "api-apply-learnings",
         "to": "api-index",
         "rel": "refines"
@@ -4433,6 +4513,11 @@ window.PORTAL_DATA = {
         "rel": "refines"
       },
       {
+        "from": "api-render-markdown",
+        "to": "api-index",
+        "rel": "refines"
+      },
+      {
         "from": "api-repo_identity",
         "to": "api-index",
         "rel": "refines"
@@ -4535,6 +4620,16 @@ window.PORTAL_DATA = {
       {
         "from": "architecture-agent-coordination",
         "to": "spec-agent-coordination",
+        "rel": "implements"
+      },
+      {
+        "from": "architecture-decision-interrogation",
+        "to": "adr-0013-conversation-native-interrogation",
+        "rel": "depends-on"
+      },
+      {
+        "from": "architecture-decision-interrogation",
+        "to": "spec-decision-interrogation-protocol",
         "rel": "implements"
       },
       {
@@ -4985,6 +5080,16 @@ window.PORTAL_DATA = {
       {
         "from": "design-coordination-runtime-v2",
         "to": "spec-coordination-runtime-v2",
+        "rel": "implements"
+      },
+      {
+        "from": "design-decision-interrogation",
+        "to": "architecture-decision-interrogation",
+        "rel": "refines"
+      },
+      {
+        "from": "design-decision-interrogation",
+        "to": "spec-decision-interrogation-protocol",
         "rel": "implements"
       },
       {
@@ -5755,6 +5860,11 @@ window.PORTAL_DATA = {
       {
         "from": "handbook-skill-compile",
         "to": "handbook-workflow",
+        "rel": "relates-to"
+      },
+      {
+        "from": "handbook-skill-create-proposal",
+        "to": "handbook-design",
         "rel": "relates-to"
       },
       {
@@ -7261,6 +7371,16 @@ window.PORTAL_DATA = {
         "from": "proof-coordination-runtime-v2",
         "to": "spec-coordination-runtime-v2",
         "rel": "implements"
+      },
+      {
+        "from": "proof-decision-interrogation",
+        "to": "design-decision-interrogation",
+        "rel": "tested-by"
+      },
+      {
+        "from": "proof-decision-interrogation",
+        "to": "spec-decision-interrogation-protocol",
+        "rel": "tested-by"
       },
       {
         "from": "proof-docs-explorer-redesign",

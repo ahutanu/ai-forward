@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Decision Interrogation Protocol</title><style>
+:root { color-scheme: light dark; --bg:#f7f5ef; --panel:#fff; --text:#20201d;
+  --muted:#66645f; --line:#d9d5ca; --accent:#3157a4; --code:#f0eee7; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#171816; --panel:#20221f; --text:#f2f1eb; --muted:#b8b6ae;
+    --line:#3d403a; --accent:#8fb0ff; --code:#292c27; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+  font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { width:min(920px,calc(100% - 32px)); margin:32px auto; padding:40px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+h1,h2,h3,h4,h5,h6 { line-height:1.2; margin:1.5em 0 .55em; }
+h1 { margin-top:0; font-size:2.2rem; } h2 { border-bottom:1px solid var(--line); padding-bottom:.3em; }
+a { color:var(--accent); } code { background:var(--code); padding:.12em .35em; border-radius:4px; }
+pre { overflow:auto; padding:16px; background:var(--code); border-radius:8px; }
+pre code { padding:0; } blockquote { margin:1em 0; padding:.2em 1em; color:var(--muted);
+  border-left:4px solid var(--line); }
+table { width:100%; border-collapse:collapse; margin:1em 0; display:block; overflow:auto; }
+th,td { padding:.55em .75em; border:1px solid var(--line); text-align:left; vertical-align:top; }
+th { background:var(--code); } hr { border:0; border-top:1px solid var(--line); }
+.source { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+@media (max-width:640px) { main { width:100%; margin:0; padding:24px 18px; border:0; border-radius:0; } }
+</style></head><body><main><div class="source">Rendered from decision-interrogation-protocol.md</div><h1>Decision Interrogation Protocol</h1>
+<h2>Goal</h2>
+<p>Help the human and AI make important decisions early, without slowing down work that is already clear. This is a conversational workflow. It has the same trust, privacy, and persistence characteristics as the surrounding prompt conversation.</p>
+<h2>Required behavior</h2>
+<ol><li><code>/specify</code> and <code>/ui-design</code> identify consequential unknowns before they settle the affected</li></ol>
+<p>requirement or visual direction.</p>
+<ol><li><code>/specify</code>, <code>/ui-design</code>, <code>/define-architecture</code>, and <code>/design-slice</code> run a closure check before</li></ol>
+<p>handoff.</p>
+<ol><li>If no consequential question remains, the skill continues without extra ceremony.</li><li>If questions remain, the skill first shows one compact table:</li></ol>
+<table><thead><tr><th>Question</th><th>Needed for</th><th>Recommendation</th></tr></thead><tbody></tbody></table>
+<ol><li>The skill then asks the questions one at a time using the harness&#x27;s structured question tool</li></ol>
+<p>when available, or one ordinary chat question at a time otherwise.</p>
+<ol><li>Each question offers a recommendation and a short reason. The human may accept it, choose</li></ol>
+<p>another answer, defer it, or provide a free-form answer.</p>
+<ol><li>After each answer, the skill updates its understanding and removes questions that are no longer</li></ol>
+<p>relevant.</p>
+<ol><li>A deferred question blocks only the artifact section that genuinely depends on it. The skill</li></ol>
+<p>marks that section unresolved rather than inventing an answer.</p>
+<ol><li>The final artifact records the decisions that shaped it and lists any remaining open questions.</li></ol>
+<h2>Non-goals</h2>
+<ul><li>No custom decision ledger, Git ref, signing system, identity proof, provider router, or background</li></ul>
+<p>workflow.</p>
+<ul><li>No duplicate security or privacy model beyond the current conversation and repository.</li><li>No interrogation for facts the agent can cheaply establish itself.</li><li>No bulk questionnaire when later questions depend on earlier answers.</li></ul>
+<h2>Acceptance criteria</h2>
+<ul><li>A clear task completes without an interrogation round.</li><li>A consequential unknown produces the summary table before the first question.</li><li>Questions are asked serially, and later questions may change after an answer.</li><li>Every question says what decision it enables and includes a recommendation.</li><li>The four target skills run the closure check before handoff.</li><li><code>/specify</code> and <code>/ui-design</code> also use the protocol during authoring when an early answer prevents</li></ul>
+<p>wasted work.</p>
+<ul><li>The behavior works in Copilot, Claude Code, Codex, Grok, and Agy by using each host&#x27;s native</li></ul>
+<p>question mechanism or plain chat fallback.</p>
+<h1>Part B - UX</h1>
+<p>The interaction is a short guided sequence: orientation table, one active question, answer, updated next question, closure summary. The user can accept the recommendation quickly or provide another answer. Progress is shown as <code>Question N of M</code> only when the remaining count is known.</p>
+<h1>Part C - UI</h1>
+<p>The primary surface is the host conversation. No custom application UI is required. Tables, structured choices, and concise status text use native host rendering.</p></main></body></html>

@@ -30,6 +30,7 @@
     "end-to-end-integrity": "Reasoning constitution",
     "spike-protocol": "Reasoning constitution",
     "communication-and-task-discipline": "Discipline & optimization",
+    "decision-interrogation": "Discipline & optimization",
     "execution-graph-optimization": "Discipline & optimization",
     "instrumentation-over-inference": "Discipline & optimization",
     "session-worktree-discipline": "Discipline & optimization",
@@ -146,6 +147,12 @@
       "group": "Collect & frame",
       "when": "The domain needs subject-matter lenses beyond the general engineering ones.",
       "produces": "docs/domain-experts.md",
+      "handoff": "/specify"
+    },
+    "create-proposal": {
+      "group": "Collect & frame",
+      "when": "An idea needs brainstorming, alternatives, or lightweight mockups before requirements are fixed.",
+      "produces": "docs/proposals/<idea>.md + .html",
       "handoff": "/specify"
     },
     "specify": {
