@@ -126,7 +126,7 @@ representation-contract failure, not a reason to bypass merges for authored file
 4. A control is not a control until it has been **observed failing** on the un-fixed code.
 5. If the class would help any project — not just this one — raise it upstream via `/extendaibundle` (CI8).
 
-**Status counts:** project classes: controlled `35` · partially-controlled `23` · uncontrolled `8`; inherited table: controlled `11` · partially-controlled `4` · uncontrolled `22`
+**Status counts:** project classes: controlled `36` · partially-controlled `23` · uncontrolled `8`; inherited table: controlled `11` · partially-controlled `4` · uncontrolled `22`
 *Checked, not trusted: `tests/docs_explorer/test_defect_register_counts.py` tallies each entry's leading status and fails when this line disagrees, printing the corrected line (FR-076, class REC-A). Change a status, change this line. A status is one of the three schema values; a qualifier after it does not change the count.*
 **Recurrence since last review:** `0` — *a second occurrence of a known class means the control was wrong, not that someone was careless (CI4).*
 
@@ -843,6 +843,35 @@ representation-contract failure, not a reason to bypass merges for authored file
   Private export rechecks the raw evidence before publication. A process listing alone
   is never renewal evidence; native `leader_renewed` facts corrected the failed report.
   See `docs/proof/coordination-end-to-end.md` for the finite boundary and reproduction.
+
+### RUN-B — A liveness check's timeout is tighter than the host's load-time variance, so load reads as lost authority
+- **Signature:** a bounded subprocess liveness/renewal check carries a fixed timeout picked
+  without reference to measured host-load variance; under load the check itself is still
+  correct (the lease is live, the epoch is unchanged) but the bound kills it before it can
+  answer, and the caller reads that kill as RUN-LEADER — a live lease is reported lost.
+- **Why it survives:** an idle-host smoke test never exercises the tight bound, so CI stays
+  green while a loaded host (parallel workers, a concurrent build) fails intermittently and
+  looks like a real leadership loss; the fixed number reads as deliberate, not as a defect,
+  until someone measures the check's own latency under load.
+- **Instances (2026-09-29):** `pack/scripts/coord-runner.py`'s `leader()`/`fence()`/the
+  in-run renewal call bounded every leader check to a fixed 2 s regardless of the lease's
+  remaining time; measured 144-246 ms idle and up to 1352 ms under one parallel test run on
+  a 28-core host (x-harness-x-model-bench, 2026-09-29), and two Agy worker runs were
+  cancelled RUN-LEADER within 4 s of each other under four workers plus a dotnet build,
+  with the lease live before and after (brief al-01M3Q4K73M91FWPR48PACHH04W).
+- **Control:** `pack/scripts/coord-runner.py` — `LEADER_CHECK_TIMEOUT` (a per-attempt bound
+  sized to measured worst-case load, not a guess) and `Runner.leader_retrying` (retries a
+  bounded-subprocess timeout, `LeaderCheckSlow`, while a check's deadline still allows it;
+  a genuine epoch change or non-live answer still ends the retry immediately). The
+  pre-dispatch `admitted()` check in `attach_owned` keeps the same fixed-bound shape
+  (single check, no retry) but with the same load-tolerant bound. Tests:
+  `tests/docs_explorer/test_coord_runner.py::test_slow_leader_check_does_not_cancel_a_valid_lease`
+  (red-first: a check slower than the old 2 s bound, lease valid, run must not cancel) and
+  `::test_epoch_change_still_cancels_despite_a_slow_check` (a real epoch change observed
+  once a slow check completes still cancels — the retry tolerance must not mask it).
+- **Status:** `controlled` for `coord-runner.py`'s leader/fence/renewal path. Sweep any
+  other bounded liveness/health check whose timeout was picked without a measured host-load
+  figure; none else identified in this pass.
 
 ### PROC-A — Process-group cleanup mistakes an exited child for an uncontained process
 - **Signature:** a direct child exits between the process-state check and group signalling;

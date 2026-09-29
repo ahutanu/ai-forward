@@ -56,6 +56,10 @@ The existing coordinator remains responsible for decisions and semantic review.
 
 _(no docstring — coverage gap)_
 
+### `LeaderCheckSlow`
+
+A bounded leader-check subprocess did not finish inside its timeout. Carries the
+
 ### `Runner`
 
 _(no docstring — coverage gap)_
