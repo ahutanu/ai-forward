@@ -436,6 +436,58 @@ class RunnerTests(unittest.TestCase):
         with self.assertRaises(ProcessLookupError):
             os.kill(int(marker.read_text(encoding="utf-8")), 0)
 
+    def slow_leader_ref_read_once(self, seconds):
+        """Delay exactly the next `git rev-parse ... refs/coord/leader` read by `seconds`,
+        then behave normally -- one transient slow leader check, not a sustained outage."""
+        script = self.scripts / "coord-core.py"
+        source = script.read_text(encoding="utf-8")
+        source = source.replace(
+            'def _git_status(repo, *args, stdin=None):',
+            'def _git_status(repo, *args, stdin=None):\n'
+            '    marker = Path(repo) / "slow-leader-once"\n'
+            '    if marker.exists() and args[:1] == ("rev-parse",) and "refs/coord/leader" in args:\n'
+            '        marker.unlink()\n'
+            '        time.sleep({})\n'.format(seconds))
+        script.write_text(source, encoding="utf-8")
+
+    def test_slow_leader_check_does_not_cancel_a_valid_lease(self):
+        # RUN-B: a leader check slower than the old fixed 2 s bound (here 7 s, past
+        # LEADER_CHECK_TIMEOUT too, so the first attempt is genuinely killed and retried)
+        # must not cancel a run whose lease (TTL 300 s via pin()) is still live.
+        self.slow_leader_ref_read_once(7)
+        self.contract["workers"][0]["argv"][-1] = "delay"
+        self.contract["workers"][0]["prompts"] *= 3
+        self.contract["workers"][0]["deadline_seconds"] = 20
+        process, marker = self.running()
+        (self.repo / "slow-leader-once").write_text("fault", encoding="utf-8")
+        stdout, stderr = process.communicate(timeout=25)
+        self.assertEqual(process.returncode, 0, stdout + stderr)
+        result = json.loads(stdout.splitlines()[-1])
+        self.assertEqual(result["state"], "ready_for_review", stdout + stderr)
+        self.assertIsNone(result["code"])
+
+    def test_epoch_change_still_cancels_despite_a_slow_check(self):
+        # The retry that tolerates a slow check (above) must not mask or delay past a
+        # real loss of authority: an epoch change observed once the slow check finally
+        # completes still cancels the run.
+        self.slow_leader_ref_read_once(3)
+        self.contract["workers"][0]["argv"][-1] = "hang"
+        self.contract["workers"][0]["deadline_seconds"] = 10
+        process, marker = self.running()
+        (self.repo / "slow-leader-once").write_text("fault", encoding="utf-8")
+        current = json.loads(self.git("show", "refs/coord/leader").stdout)
+        current.update(leader="successor", epoch=current["epoch"] + 1)
+        blob = subprocess.run(["git", "hash-object", "-w", "--stdin"], cwd=self.repo,
+            input=json.dumps(current), capture_output=True, text=True, encoding="utf-8", check=True).stdout.strip()
+        self.git("update-ref", "refs/coord/leader", blob)
+        stdout, stderr = process.communicate(timeout=10)
+        self.assertEqual(process.returncode, 3, stdout + stderr)
+        result = json.loads(stdout.splitlines()[-1])
+        self.assertNotEqual(result["state"], "ready_for_review")
+        self.assertEqual(result["code"], "RUN-LEADER")
+        with self.assertRaises(ProcessLookupError):
+            os.kill(int(marker.read_text(encoding="utf-8")), 0)
+
     def test_blocked_git_does_not_hold_attempt_cleanup(self):
         script = self.scripts / "coord-core.py"
         source = script.read_text(encoding="utf-8")
