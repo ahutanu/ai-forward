@@ -126,7 +126,7 @@ representation-contract failure, not a reason to bypass merges for authored file
 4. A control is not a control until it has been **observed failing** on the un-fixed code.
 5. If the class would help any project — not just this one — raise it upstream via `/extendaibundle` (CI8).
 
-**Status counts:** project classes: controlled `36` · partially-controlled `23` · uncontrolled `8`; inherited table: controlled `11` · partially-controlled `4` · uncontrolled `22`
+**Status counts:** project classes: controlled `37` · partially-controlled `23` · uncontrolled `8`; inherited table: controlled `11` · partially-controlled `4` · uncontrolled `22`
 *Checked, not trusted: `tests/docs_explorer/test_defect_register_counts.py` tallies each entry's leading status and fails when this line disagrees, printing the corrected line (FR-076, class REC-A). Change a status, change this line. A status is one of the three schema values; a qualifier after it does not change the count.*
 **Recurrence since last review:** `0` — *a second occurrence of a known class means the control was wrong, not that someone was careless (CI4).*
 
@@ -742,6 +742,33 @@ representation-contract failure, not a reason to bypass merges for authored file
   final event. Correction → end each session from its registered checkout. Control →
   `verify-native-ownership.py` requires the exact session/worktree closure map and rejects
   a wrong-cwd mutation; a green global session list alone cannot prove worker closure.
+
+### WT-D — A process rule's trigger is broader than the risk it controls, so the deliverable diverts
+- **Signature:** WT1 read "a new session starts in a new worktree" — a trigger of *session-newness*,
+  not of the *concurrency risk* the rule exists to prevent (two writers sharing one checkout). A
+  single-agent benchmark cell, a fresh clone, or a prompt naming the checkout to change are all
+  cases with no concurrent writer, yet the old trigger fired anyway and moved the change into a
+  worktree the requester never opened — a diverted deliverable that was honestly reported as
+  "the code is elsewhere, uncommitted" and still scored as a failure.
+- **Why it survives:** every session run in isolation looks correct — a clean worktree, a real
+  commit, no lost work — so the rule reads as working. The harm is visible only from the
+  requester's side, comparing what they asked to change against what they can see; nothing inside
+  the session's own run ever produces that comparison.
+- **Instances:** harness-bench grid-1, pack revision 97 — 7 of 14 pack-on failures were a delivery
+  diverted into a worktree the requester never saw: D1 (a .NET feature task) Copilot ×2 and
+  Codex ×1, F1 Claude Code ×3, C1 Codex ×1. 22 of 54 pack-on cells created a worktree at all;
+  0 of the matched pack-off cells did (`x-harness-x-model-bench`,
+  `docs/proposals/pack-onoff-analysis.html`).
+- **Control:** `session-worktree-discipline.md` WT1 rescoped to the concurrent-writer risk (not
+  session-newness); WT1b names "work in place" as the default, not a recorded exception, when the
+  checkout was provisioned for the task or the prompt names it; WT1c makes a worktree-based change
+  undone until it is integrated into the checkout the requester named, or handed back explicitly as
+  not delivered. `tools/check-consistency.py::check_directive_ranges` now covers the `WT` prefix
+  (previously unregistered), so a citation of the rule that outruns its defined directives fails the
+  gate.
+- **Status:** `controlled` — the trigger, the default, and the done-when are each restated; no
+  automated check yet proves a live session chose correctly between WT1/WT1b/WT4 (that would need a
+  harness-side observation, not a pack-source one) — see the residual note in this fix's commit.
 
 ### HOST-A — A host loads our config file and silently ignores the entries whose shape is not the host's
 - **Signature:** an adapter config is written to a host's documented path with the right event names and commands; the loader logs success (`loaded 5 named hooks from 2 hooks.json file(s)`), the file is byte-identical to the pack source — and a section never fires, because the host's schema differs *per event* (Antigravity: tool events take `[{matcher, hooks:[handler]}]`, lifecycle events take `[handler]`) or its reply is parsed strictly (protojson: `injectSteps` items are objects, never strings). Nothing is logged for the entry that does not fit; the only trace is absence.

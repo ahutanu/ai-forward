@@ -50,15 +50,19 @@ every non-trivial task.
   a backfill never guesses. `.github/instructions/domain-and-data-modelling.instructions.md`
   (DM1–DM18); evidence in `docs/knowledge/domain-and-data-modelling/`; the **Data & Persistence
   Architect** holds the veto.
-- **A new session starts in a new worktree.** Any session that will **write** to the repo begins
-  by creating and entering its **own git worktree on its own branch** — two agents in one checkout
-  share an index, a HEAD and one set of generated artifacts, so a stash in one silently reaches
-  into the other's uncommitted work and nothing fails loudly. Working in the primary checkout is
-  the **recorded exception**, not the default. More trees are fine when the work needs them; each
-  follows the same lifecycle. **Cleanup is the half that rots**, so it is fail-safe: a tree is
-  removable only when it is not primary, not your cwd, **clean including untracked**, carries no
-  commit that exists nowhere else, and is unheld — anything else is *reported, never removed*, and
-  deletion is opt-in (`--remove`). `coord worktree new|list|cleanup`;
+- **Isolate on concurrent-writer risk, not on session-newness.** Create and enter an own git
+  worktree, on its own branch, only when another live agent/session or the pack's coordination
+  runner might write the same checkout — two writers sharing one checkout is how a stash in one
+  silently reaches into the other's uncommitted work. With **no** such risk — the checkout was
+  provisioned for this task, or the prompt names it — work in place; that's the default, no
+  exception needed (WT1b). Staying in a shared checkout under a real risk is the recorded exception
+  (WT4). **A worktree used for a requested change is not done until it reaches the checkout the
+  requester named**, merged or applied — or is handed back explicitly as not delivered (WT1c). More
+  trees are fine when the work needs them; each follows the same lifecycle. **Cleanup is the half
+  that rots**, so it is fail-safe: a tree is removable only when it is not primary, not your cwd,
+  **clean including untracked**, carries no commit that exists nowhere else, and is unheld —
+  anything else is *reported, never removed*, and deletion is opt-in (`--remove`).
+  `coord worktree new|list|cleanup`;
   `.github/instructions/session-worktree-discipline.instructions.md` (WT1–WT12).
 - **Agent coordination (the Owner / Coordinator / Sub-Agent doctrine):** seats and the capability floor,
   the two control relationships, the invariants each traceable to a measurement, the protocol objects

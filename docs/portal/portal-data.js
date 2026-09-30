@@ -1993,7 +1993,7 @@ window.PORTAL_DATA = {
       "tiers": {
         "always": {
           "docs": 14,
-          "tokens": 50861
+          "tokens": 50963
         },
         "reference": {
           "docs": 2,
@@ -2008,7 +2008,7 @@ window.PORTAL_DATA = {
           "tokens": 25898
         }
       },
-      "corpusTokens": 183461,
+      "corpusTokens": 183563,
       "alwaysPct": 28
     }
   },

@@ -689,6 +689,7 @@ def check_directive_ranges(findings):
         "CI": "continuous-improvement", "NG": "no-guessing-protocol", "OB": "obsidian-lens",
         "GK": "code-knowledge-graph", "L": "solution-selection-ladder",
         "V": "knowledge-visualization", "O": "observability-and-instrumentation",
+        "WT": "session-worktree-discipline",
     }
     highest = {}
     for prefix, doc in prefixes.items():

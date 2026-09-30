@@ -579,6 +579,50 @@ class DirectiveRangeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             self.assertEqual(self._run(self._root(temp, highest=10, cited=6)), [])
 
+
+class DirectiveRangeWTPrefixTests(unittest.TestCase):
+    """Class WT-D (docs/lessons/defect-classes.md). The `prefixes` map in
+    `check_directive_ranges` did not carry a `WT` -> `session-worktree-discipline` entry, so a
+    `WT1-WTn` citation that outran the standard (e.g. after a directive is renumbered or
+    removed) went unchecked — the same shape `S1-S18` was for the `S` prefix (FR-035), just for
+    the one standard this fix touches. Registering WT closes that specific gap; this pins it so
+    it cannot silently reopen."""
+
+    def setUp(self):
+        self.module = load_module()
+
+    def _root(self, temp, highest=12, cited=12):
+        root = Path(temp)
+        k = root / "pack" / "knowledge"
+        k.mkdir(parents=True, exist_ok=True)
+        body = "\n".join(f"**WT{n} — directive {n}.** text" for n in range(1, highest + 1))
+        (k / "session-worktree-discipline.md").write_text(body, encoding="utf-8")
+        c = root / "pack" / "adapters" / "managed-blocks"
+        c.mkdir(parents=True, exist_ok=True)
+        (c / "AGENTS.block.md").write_text(
+            f"session-worktree-discipline.instructions.md (WT1–WT{cited}).\n",
+            encoding="utf-8")
+        return root
+
+    def _run(self, root):
+        findings = []
+        with mock.patch.object(self.module, "ROOT", str(root)), mock.patch.object(
+            self.module, "PACK", str(root / "pack")
+        ):
+            self.module.check_directive_ranges(findings)
+        return findings
+
+    def test_wt_accurate_range_is_clean(self):
+        with tempfile.TemporaryDirectory() as temp:
+            self.assertEqual(self._run(self._root(temp, highest=12, cited=12)), [])
+
+    def test_wt_citation_that_outruns_the_standard_is_reported(self):
+        with tempfile.TemporaryDirectory() as temp:
+            findings = self._run(self._root(temp, highest=12, cited=13))
+            self.assertTrue(findings, "WT1-WT13 against a WT12 standard must fail")
+            self.assertIn("WT12", findings[0])
+
+
 class ProofCoverageTests(unittest.TestCase):
     """FR-049 / class RIG-C, fourth occurrence. FR-046 raised 'a deployed control with no
     test' and only the named instance was fixed; the class was never swept, so five scripts
