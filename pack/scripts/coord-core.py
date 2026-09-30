@@ -3017,7 +3017,7 @@ def cmd_request(root, action, now, session, agent, args, repo=None):
 # --- worktree lifecycle (session-worktree-discipline.md WT1-WT12) ------------
 # This file already resolves the primary checkout from any tree and keys occupancy by
 # worktree, so the lifecycle belongs here rather than in a parallel tool. WT1 makes a fresh
-# worktree the DEFAULT unit of session isolation; WT6-WT12 close the half that actually rots:
+# worktree the default response to a concurrent-writer risk; WT6-WT12 close the half that actually rots:
 # an isolation mechanism nobody cleans up becomes a disk of half-finished trees, one of which
 # is eventually the only copy of some real work.
 
@@ -3202,7 +3202,7 @@ def cmd_worktree(root, repo, action, cwd, now, session=None, agent=None,
         # ALWAYS resolve explicitly, including the default. With no --base, `git -C
         # <primary> worktree add` uses the PRIMARY's HEAD while the help promises
         # "current HEAD" -- so the documented contract and the behaviour disagreed in
-        # exactly the case WT1 makes the normal one. Resolving here makes them agree.
+        # exactly the case WT1 makes common under concurrency. Resolving here makes them agree.
         sha, base_err = base_commit(cwd, repo, base or "HEAD")
         if base_err:
             print("COORD-WORKTREE-BASE-UNRESOLVED: {}\n"

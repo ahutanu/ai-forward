@@ -367,7 +367,7 @@ class Applier(object):
 
         `--project` still wins. Without it this used the target directory's basename, which
         stamps a WORKTREE folder into the target's committed `docs/index.html` and `AGENTS.md`
-        whenever the install is run from a worktree -- which WT1 requires it to be.
+        whenever the install is run from a worktree -- which WT1 often makes it.
         """
         here = os.path.dirname(os.path.abspath(__file__))
         if here not in sys.path:
