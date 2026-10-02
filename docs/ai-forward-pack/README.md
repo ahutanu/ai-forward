@@ -6,11 +6,15 @@ Works with **Claude Code**, **GitHub Copilot**, **Grok Build**, **Antigravity**,
 
 ---
 
-**Codex users:** invoke `$collectknowledge` or `$specify` (CLI/IDE: `/skills` or `$`).
+**Start with one outcome:** use `/deliver <goal>`; in Codex use `$deliver` (CLI/IDE: `/skills` or `$`).
 Skills live in `.agents/skills/`; `AGENTS.md` supplies project instructions.
 See the [Codex setup and troubleshooting guide](adapters/codex/codex.md).
 
 ## Why this pack exists
+
+You do not need to learn the stage sequence before using the pack. `/deliver` selects
+the applicable existing skills and continues through approved work. A real human
+decision or review veto remains a pause, with the same outcome preserved for resume.
 
 The Agent Knowledge Pack you already have is excellent at one half of engineering judgment: it defines eleven **adversarial** reviewer personas whose job is to find the flaw in a design before it becomes code. But a flaw-finding council can only *review* a proposal — it cannot *author* one. The strongest multi-agent software teams in the research literature (MetaGPT, ChatDev) run a **cooperative phase** — product, architecture, and engineering reasoning together as peers — and *then* an **adversarial phase** that attacks the result. This pack supplies the missing cooperative half, the rule for switching between the two, and a rigorous reasoning protocol that governs both.
 
@@ -20,7 +24,7 @@ It adds three things and nothing you have to relearn:
 2. **The dual-mode persona model** — collaborating peers plus the rule for moving between collaboration and adversarial review (`knowledge/collaborative-personas.md`), including three new peer-first roles your all-adversary catalog lacks.
 3. **The Spike Protocol** — read-the-code and run-a-PoC discipline for unfamiliar APIs, SDKs, and MCP servers (`knowledge/spike-protocol.md`), so designs rest on established contracts rather than guessed semantics.
 
-On top of these sit **twenty-nine skills** that any developer can invoke — **seven delivery workflows** that carry a piece of work from idea exploration to shipped code (including `/create-proposal` and `/ui-design`), **eight supporting skills** (domain knowledge, persona tailoring, execution-graph planning, documentation, brownfield adoption, whole-repo forensic review, characterization-first migration, and code-hygiene review/fix), **three pack-lifecycle skills** that manage the pack itself (install, update, and extend), **three utility skills** — `/auditlog`, the command-line lens over the project's durable **audit & change log**, `/also`, which appends a late addition to the prior prompt without derailing the work in flight, and `/compile`, which turns the operator's prose into the harness-specific starting prompt without adding scope (stage CO-S0) — and **two prompt-log utilities** (`/prompts` and `/searchprompts`) for reusing prior prompts.
+On top of these sit **30 skills** that any developer can invoke — **seven delivery workflows** that carry a piece of work from idea exploration to shipped code (including `/create-proposal` and `/ui-design`), **eight supporting skills** (domain knowledge, persona tailoring, execution-graph planning, documentation, brownfield adoption, whole-repo forensic review, characterization-first migration, and code-hygiene review/fix), **three pack-lifecycle skills** that manage the pack itself (install, update, and extend), **three utility skills** — `/auditlog`, the command-line lens over the project's durable **audit & change log**, `/also`, which appends a late addition to the prior prompt without derailing the work in flight, and `/compile`, which turns the operator's prose into the harness-specific starting prompt without adding scope (stage CO-S0) — and **two prompt-log utilities** (`/prompts` and `/searchprompts`) for reusing prior prompts.
 
 ---
 
@@ -44,6 +48,7 @@ Six stages: **0 Rush Interdiction** (no conclusion without a confidence label) �
 
 | Skill | Turns… | …into | Peers (author) | Adversaries (review) |
 |---|---|---|---|---|
+| **/deliver** | one desired outcome | applicable workflows, validated pause/resume and acceptance evidence | applicable existing peers | applicable independent reviewers |
 | **/specify** | a prompt or idea | a testable spec with acceptance criteria | Product Strategist, Domain Researcher (+ Privacy if data) | Simplifier, Test Architect, Security (+ Privacy / AI Systems if data or model) |
 | **/define-architecture** | a spec | the top-level architecture + ADRs | Enterprise + Distributed + Security architects, Tech Lead, Domain Researcher, AI Systems, Data & Persistence | full architect council, Patterns Expert, SRE, Privacy, Release |
 | **/design-slice** | a spec/component | a detailed component design | Patterns Expert, Simplifier, language Dev, Domain Researcher, AI Systems (prompt/eval), Data (schema) | + Security, Distributed, Test Architect |
@@ -100,7 +105,7 @@ ai-forward-pack/
 │  └─ + 7 vendored Agent-Knowledge-Pack foundation docs (so the bundle is self-contained):
 │       body-of-knowledge · rules-of-the-road · persona-catalog · layered-optimized-architecture ·
 │       engineering-governance · testing-strategy · csharp-style-guide
-├─ commands/                         ← the twenty-nine skills (SKILL.md + reference/ each)
+├─ commands/                         ← the 30 skills (SKILL.md + reference/ each)
 │  ├─ specify/  define-architecture/  design/  implement/  investigate/
 │  ├─ collectknowledge/              ← deep domain research before design → docs/knowledge/
 │  ├─ adddomainexperts/              ← tailors the roster to your project's domain
@@ -146,6 +151,6 @@ Both tools share one model: **knowledge** = always-on reference, **skills** = wo
 
 ## How it fits the Agent Knowledge Pack
 
-This pack is an **extension, not a replacement**. It speaks your pack's vocabulary throughout — the three Prime Directives (D1 correctness over completion, D2 no guessing at contracts, D3 verification never self-certified), Coning and Iterative Critical Thinking, the Proof Pack and the phase gates, the capability tiers and the LOA principles P1–P11 and conformance criteria C1–C11, the persona names and the veto matrix, the Testing Strategy triggers, and the Deviation Protocol. The eleven adversaries ship with your existing pack; this one adds their peer mode, three new authoring personas, four further adversaries that close audited coverage gaps, four more for the UI/app and documentation surface, a Persona Operating Standard that makes every lens uniform and machine-routable, the reasoning protocol they all run, and the twenty-nine skills that put them to work.
+This pack is an **extension, not a replacement**. It speaks your pack's vocabulary throughout — the three Prime Directives (D1 correctness over completion, D2 no guessing at contracts, D3 verification never self-certified), Coning and Iterative Critical Thinking, the Proof Pack and the phase gates, the capability tiers and the LOA principles P1–P11 and conformance criteria C1–C11, the persona names and the veto matrix, the Testing Strategy triggers, and the Deviation Protocol. The eleven adversaries ship with your existing pack; this one adds their peer mode, three new authoring personas, four further adversaries that close audited coverage gaps, four more for the UI/app and documentation surface, a Persona Operating Standard that makes every lens uniform and machine-routable, the reasoning protocol they all run, and the 30 skills that put them to work.
 
 New here? **`OVERVIEW.md`** is the practical start — how to install, what's inside, and how to use the skills. Then `research-synthesis.md` for the *why* behind every choice, `knowledge/rigor-protocol.md` for the *how*, and `adapters/INSTALL.md` to wire it in by hand.

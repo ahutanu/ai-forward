@@ -25,6 +25,26 @@ what is still unknown. Research cannot substitute for a product decision, a desi
 cannot prove a running feature, and an implementation cannot silently settle a
 question you intended to review.
 
+## Let the entry point choose the next stage
+
+Use [deliver](#skill-deliver) when you want one task completed without choosing every
+workflow yourself:
+
+```text
+/deliver Add CSV export for the current project and filter. Export all matches, not only the current page. Do not expand reporting scope.
+```
+
+In Codex, use `$deliver`. The agent grounds in the project, selects stages from real
+uncertainty and risk, and continues through the approved path. A small known change
+can skip unnecessary artifacts; migration keeps characterization and investigation
+keeps its required repair-review decision. Existing expert commands below remain
+available when you want to control a particular stage.
+
+Human decisions are pauses, not abandoned tasks. Reply in the same conversation or
+ask `deliver` to resume the recorded task in a fresh session. The checkpoint is
+validated before old work is reused. Changed requirements or evidence do not become
+silently accepted because an earlier stage once reported success.
+
 ## State the finish line
 
 Begin with the outcome, a checkable completion condition and exclusions. Include

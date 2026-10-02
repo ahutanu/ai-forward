@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>One Command Adoption</title><style>
+:root { color-scheme: light dark; --bg:#f7f5ef; --panel:#fff; --text:#20201d;
+  --muted:#66645f; --line:#d9d5ca; --accent:#3157a4; --code:#f0eee7; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#171816; --panel:#20221f; --text:#f2f1eb; --muted:#b8b6ae;
+    --line:#3d403a; --accent:#8fb0ff; --code:#292c27; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+  font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { width:min(920px,calc(100% - 32px)); margin:32px auto; padding:40px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+h1,h2,h3,h4,h5,h6 { line-height:1.2; margin:1.5em 0 .55em; }
+h1 { margin-top:0; font-size:2.2rem; } h2 { border-bottom:1px solid var(--line); padding-bottom:.3em; }
+a { color:var(--accent); } code { background:var(--code); padding:.12em .35em; border-radius:4px; }
+pre { overflow:auto; padding:16px; background:var(--code); border-radius:8px; }
+pre code { padding:0; } blockquote { margin:1em 0; padding:.2em 1em; color:var(--muted);
+  border-left:4px solid var(--line); }
+table { width:100%; border-collapse:collapse; margin:1em 0; display:block; overflow:auto; }
+th,td { padding:.55em .75em; border:1px solid var(--line); text-align:left; vertical-align:top; }
+th { background:var(--code); } hr { border:0; border-top:1px solid var(--line); }
+.source { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+@media (max-width:640px) { main { width:100%; margin:0; padding:24px 18px; border:0; border-radius:0; } }
+</style></head><body><main><div class="source">Rendered from one-command-adoption.md</div><h1>Proof Pack: one-command adoption</h1>
+<ul><li><strong>Change:</strong> <code>feat/one-command-adoption</code></li><li><strong>Spec / design:</strong> <code>docs/specs/one-command-adoption.md</code> · <code>docs/design/one-command-adoption.md</code></li><li><strong>Tier:</strong> T2 (load-bearing workflow boundaries, local state and cross-platform installation)</li><li><strong>Author / date:</strong> @ahutanu · 2026-10-02</li></ul>
+<h2>Claims and evidence</h2>
+<h3>Claim 1: one named skill selects an applicable route without silently changing the finish line</h3>
+<ul><li><strong>Evidence:</strong> focused delivery, evaluator and adoption controls exercise T0/T1/T2, six</li></ul>
+<p>explicit risk floors, load-bearing architecture, coordination, defect review, characterization-before-coordinated-migration, plain-project state, fresh-process resume, drift refusal, bound receipts and exact criteria closure.</p>
+<ul><li><strong>Oracle:</strong> real CLI subprocesses against disposable Git/plain projects and the</li></ul>
+<p>protected golden-case oracle. The controls fail when stages are reordered, evidence changes, the contract changes, an author clears an applicable veto, the verifier is changed, or product behavior exits before all boundary checks finish.</p>
+<ul><li><strong>Red observed before green:</strong> yes; routing, proportional review, active-author and</li></ul>
+<p>oracle counterexamples were executed against the pre-fix source.</p>
+<ul><li><strong>Confidence:</strong> [Verified] for deterministic routing/checkpoint mechanics.</li><li><strong>Residual risk:</strong> actor/source labels and hashes are cooperative structural controls,</li></ul>
+<p>not proof of semantic correctness or authentic human consent. Model compliance is a separate native-host observation.</p>
+<h3>Claim 2: setup is one cross-shell command and preserves product work</h3>
+<ul><li><strong>Evidence:</strong> current committed-source fixtures install into both plain and Git</li></ul>
+<p>projects, preserve dirty product bytes and an existing product graph, deploy the exact canonical <code>deliver</code> skill/helper, create no audit log, and produce byte-identical repeat installs. Focused controls cover worktrees, exact refs and hidden commits, malformed policy, nonregular paths, rollback, installed-state readback and failures.</p>
+<ul><li><strong>Oracle:</strong> source-map-derived plans, a disposable staging target, pre-promotion drift</li></ul>
+<p>checks and exact installed-byte readback. Tests explicitly fail if the bootstrap scans dependency trees, initializes Git, leaks URL credentials, executes project module shadows, overwrites existing named hooks, removes unverified instructions, changes an existing Git policy, or rewrites active product checks.</p>
+<ul><li><strong>Red observed before green:</strong> yes; each listed preservation/privacy failure was</li></ul>
+<p>reproduced against the earlier wrapper/source behavior before its regression turned green.</p>
+<ul><li><strong>Confidence:</strong> [Verified] on Linux and [Flagged] pending actual final GitHub-hosted</li></ul>
+<p>Linux/macOS/Windows matrix readback.</p>
+<ul><li><strong>Residual risk:</strong> selected source is trusted executable code; cooperative drift</li></ul>
+<p>detection is not a concurrent-writer lock or a power-loss transaction. Unsafe legacy transformations deliberately stop for reconciliation rather than guess ownership.</p>
+<h3>Claim 3: the installed entry point can complete a real small task and resume interruptions</h3>
+<ul><li><strong>Evidence:</strong> an installed <code>/deliver</code> skill in GitHub Copilot CLI grounded a README-only</li></ul>
+<p>T0 correction, stopped when a required command permission was unavailable, resumed the same task after permission was supplied, survived one transient model connection timeout, changed the exact requested bytes, and passed the unchanged verifier. No owned audit log or product graph was created.</p>
+<ul><li><strong>Oracle:</strong> a pre-existing verifier was observed red before the task and its original</li></ul>
+<p>SHA-256 was read back after completion; exact README bytes were asserted separately.</p>
+<ul><li><strong>Red observed before green:</strong> yes.</li><li><strong>Confidence:</strong> [Verified] for this one installed native scenario.</li><li><strong>Residual risk:</strong> this is not proof for every host/model/backend. The host&#x27;s ignored</li></ul>
+<p>session-start timing marker is inherited runtime plumbing, not an authored audit entry.</p>
+<h2>Boundary coverage</h2>
+<table><thead><tr><th>Boundary</th><th>Evidence</th></tr></thead><tbody><tr><td>Empty request / review-only request</td><td>skill contract and reference tests</td></tr><tr><td>T0 proportional path / T1-T2 reviewed paths</td><td>route + checkpoint CLI tests</td></tr><tr><td>Defect, migration, UI, architecture, coordination</td><td>route matrix and ordered transition tests</td></tr><tr><td>Human decision, permission, veto, release</td><td>bound positive/negative receipt controls</td></tr><tr><td>Plain project, Git root, linked worktree, subdirectory</td><td>bootstrap/checkpoint integration tests</td></tr><tr><td>Dirty/untracked work, local policy, generated product data</td><td>preservation and conflict-refusal probes</td></tr><tr><td>Symlink, hardlink, FIFO, directory conflict, Windows reparse</td><td>path-safety fixtures; native junction remains matrix evidence</td></tr><tr><td>Initial/repeat/preview/unknown ref/hidden commit/I/O failure</td><td>bootstrap CLI tests and committed-source fixtures</td></tr><tr><td>UTF-8/legacy console/cross-shell command shape</td><td>portability gates and native shell workflow</td></tr><tr><td>Evaluator tampering / early exit / final-state mutation</td><td>trusted pre/behavior/post oracle assertions</td></tr></tbody></table>
+<h2>Failure modes addressed</h2>
+<ul><li>Conditional routing does not become a blind all-skills conveyor belt.</li><li>Checkpoint transport, model completion or matching JSON structure are not acceptance.</li><li>Unanswered/denied/stale/wrong-author decisions do not become consent.</li><li>A remote wrapper cannot silently substitute <code>main</code> for an unresolved requested ref.</li><li>Product policy and safety checks are not treated as disposable because their filenames</li></ul>
+<p>once belonged to the pack.</p>
+<ul><li>Project modules cannot shadow stdlib imports during a no-write bootstrap preview.</li><li>Worker-writable verifiers cannot approve an unimplemented or prematurely exiting product.</li></ul>
+<h2>Remaining evidence before final acceptance</h2>
+<ul><li>The complete local bundle finished with **1,500 passed, 42 skipped and 833</li></ul>
+<p>subtests passed<strong>; all </strong>18/18** consistency, portability, source-sync, Python, Node, graph, doctor, eval-shape and budget gates passed.</p>
+<ul><li>The complete local Playwright result on the final artifact set is **264 passed,</li></ul>
+<p>12 deliberately skipped** across Chromium, Firefox and WebKit.</p>
+<ul><li>Read back the required GitHub Actions matrix on the exact pushed fork commit, including</li></ul>
+<p>Windows cmd, native Windows junction behavior, macOS and repeat remote HTTPS setup.</p>
+<ul><li>Record the final complete bundle result and remote commit identity below.</li></ul>
+<h2>Final acceptance readback</h2>
+<p>Pending the exact pushed commit and its CI run; this Proof Pack must not be cited as final platform qualification while this section remains pending.</p></main></body></html>

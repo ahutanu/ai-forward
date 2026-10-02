@@ -4,10 +4,49 @@ Start with a repository you understand and a change you can review. The first us
 result is not a large plan or a swarm of agents. It is seeing whether the pack helps
 you frame a small request, inspect the output, and keep a reliable next step.
 
-You need Git, a working Python 3 interpreter, a supported coding-agent application,
-and permission to change the target repository. Some maintenance operations use
-PowerShell. The agent application still needs its own account, model access and
-tool permissions; installing AI-Forward does not supply or bypass those.
+The one-line setup uses [uv](https://docs.astral.sh/uv/getting-started/installation/)
+and Git. uv supplies a suitable Python interpreter without installing your project's
+dependencies. You also need a supported coding application and permission to change
+the project. Its account, model access and tool permissions remain separate;
+installing AI-Forward does not supply or bypass those.
+
+## The short path: install, then describe your outcome
+
+From your project directory, the same line works in Windows PowerShell/cmd and
+macOS/Linux shells:
+
+```text
+uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py
+```
+
+The launcher fetches committed pack source, previews the existing deployment map,
+preserves project decisions, verifies the install and reports its revision and source
+commit. It does not initialize Git, commit, push or grant trust. Conflicts stop the
+install rather than forcing a uniform policy. Use `--dry-run` for a no-write preview
+and `--ref <commit>` to pin the pack source. The program also works in a plain project.
+
+For existing projects, safe additions are automatic; conflicting policy is not.
+The command refuses changes to custom named hooks, unverified local-instruction
+removals, existing Git attributes or active product-check rewrites before touching
+the project. Reconcile the named conflict rather than granting blanket force.
+Use a credential-free source URL with the Git credential helper, never an embedded token.
+
+**Before this contribution is merged upstream**, use the runnable fork preview:
+
+```text
+uv run --no-config --no-project --script https://raw.githubusercontent.com/ahutanu/ai-forward/feat/one-command-adoption/bootstrap.py --repo https://github.com/ahutanu/ai-forward.git --ref feat/one-command-adoption
+```
+
+Refresh your coding application's skill discovery if needed, then ask for one outcome:
+
+```text
+/deliver Add CSV export for the active project and filter. Export all 63 matching tasks, not only the 20 visible rows. Do not add scheduling or new roles.
+```
+
+In Codex, use `$deliver`. [Deliver](#skill-deliver) chooses the applicable workflows;
+you do not need to choose their sequence. It continues between approved stages and
+pauses for consequential human decisions, permissions or hard review objections.
+One command does not mean those gates have been auto-approved.
 
 ## Choose where you are starting
 
@@ -35,16 +74,14 @@ Do not overwrite local policies merely to make the install look uniform.
 
 ## Understand what installation gives you
 
-For a first adoption into an existing application, the short path is:
+The short path is setup once, then `deliver` for a bounded outcome. The source-clone
+and individual-skill paths above remain available when you want to guide a specific
+stage. `/adopt` is useful when you want an architectural map of an existing project;
+it is not a prerequisite for every task or a side effect of installation.
 
-1. From the AI-Forward clone, use `/addpacktorepo` with the application's path.
-2. Open the application repository and use `/adopt` to orient its existing code and
-   documentation. Review the resulting map and gaps.
-3. Choose one small task. For a new feature like the export example below, use
-   `/specify`; for broken behavior, use `/investigate` instead.
-
-In Codex, use the corresponding `$skill` invocation. This is a first-adoption recipe,
-not a requirement to reinstall or repeat adoption every time you work.
+For deliberately staged work, use `/specify` for new behavior and `/investigate` for
+broken behavior. In Codex, use `$specify` or `$investigate`. These expert controls are
+optional ways to direct the work, not commands a newcomer must memorize first.
 
 The pack supplies project instructions, skills, specialist personas, knowledge
 standards, templates and scripts. Different harnesses discover different installation

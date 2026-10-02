@@ -1537,6 +1537,9 @@ test("IME composition defers rerender until composition ends", async ({ page }) 
   let search = page.getByRole("searchbox", { name: "Search artifacts and knowledge surfaces" });
   await search.fill("root");
   await expect(page.locator("[data-search-match='true']")).not.toHaveCount(0);
+  // The initial unfiltered render already has matches. Settle the preceding
+  // debounced search before testing whether composition changes its status.
+  await expect(page.getByRole("status")).toContainText('Search results available for "root"');
   search = page.getByRole("searchbox", { name: "Search artifacts and knowledge surfaces" });
   const identityBefore = await search.evaluate((element) => {
     window.__searchElement = element;
@@ -1597,6 +1600,10 @@ test("context styling, fitting, and label ceilings preserve the highest-priority
   await expect(page.locator('[data-node-id="root"]')).toHaveClass(/context/);
   await expect(page.locator('[data-node-id="child"]')).toHaveClass(/depth-1/);
   await expect(page.locator('[data-node-id="outside"]')).toHaveClass(/unrelated/);
+  // Put the engine in keyboard modality before programmatically targeting the
+  // de-emphasized SVG control; WebKit's :focus-visible heuristic is otherwise
+  // nondeterministic for element.focus() after a pointer click.
+  await page.keyboard.press("Tab");
   await page.locator('[data-node-id="outside"]').evaluate((element) => {
     element.tabIndex = 0;
     element.focus();

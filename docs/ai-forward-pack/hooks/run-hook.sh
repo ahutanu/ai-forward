@@ -29,5 +29,10 @@ fi
 script="${up}docs/ai-forward-pack/hooks/$1"
 shift
 py=$(python3 -c 'import sys;print(sys.executable)' 2>/dev/null)
-[ -x "$py" ] || py=$(python -c 'import sys;print(sys.executable)')
+[ -x "$py" ] || py=$(python -c 'import sys;print(sys.executable)' 2>/dev/null)
+# The portable bootstrap may supply Python through uv without adding Python to PATH.
+# Keep native Python preferred; uv isolates this hook from the project's dependencies.
+if [ ! -x "$py" ] && command -v uv >/dev/null 2>&1; then
+  exec uv run --no-config --no-project --python '>=3.10' "$script" "$@"
+fi
 exec "$py" "$script" "$@"

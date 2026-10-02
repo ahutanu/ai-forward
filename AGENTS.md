@@ -196,8 +196,9 @@ every non-trivial task.
 - **Personas (dual-mode):** author in Peer Mode, review in Adversary Mode; the author never
   clears its own hard veto. Agents in `.github/agents/`; the operating standard in the
   `persona-audit` / `persona-cards` instructions.
-- **Workflows (29):** the prompts in `.github/prompts/` — twenty-four reasoning workflows
-  (`collectknowledge`, `adddomainexperts`, `create-proposal`, `specify`, `define-architecture`, `design-slice`, `ui-design`,
+- **Workflows (30):** start with `/deliver <outcome>` (Codex `$deliver`) for conditional
+  end-to-end work, preserving human gates and validated pause/resume. Expert reasoning workflows
+  (`deliver`, `collectknowledge`, `adddomainexperts`, `create-proposal`, `specify`, `define-architecture`, `design-slice`, `ui-design`,
   `visualize`, `implement`, `investigate`, `document`, `adopt`, `forensicreview`, `code-hygiene`, `migrate`,
   `updatepack`, `addpacktorepo`, `extendaibundle`, `optimize-graph`, `dream`, `apply-learnings`, `session-profiler`,
   `prepare-for-coordination`, `execute-with-coordination`),

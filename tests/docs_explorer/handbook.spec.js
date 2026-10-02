@@ -23,6 +23,9 @@ test("a newcomer finds purpose, a first task and the next workflow without histo
   await expect(page.getByRole("heading", { name: "Try AI-Forward on one small task", exact: true })).toBeVisible();
   await expect(page.locator("#article")).toContainText("63");
   await expect(page.locator("#article")).toContainText("$specify");
+  await expect(page.locator("#article")).toContainText("$deliver");
+  await expect(page.locator("#article")).toContainText("uv run --no-config --no-project --script");
+  await expect(page.locator("#article")).toContainText("bootstrap.py");
   expect(external).toEqual([]);
 });
 
@@ -50,7 +53,9 @@ test("planning and compilation are explained in the actual coordination journey"
 test("all skill references render complete practical sections", async ({ page }) => {
   const data = JSON.parse(html().match(dataPattern)[2]);
   const skills = data.pages.filter(entry => entry.kind === "skill");
-  expect(skills.length).toBe(28);
+  const commands = path.join(process.cwd(), "pack", "commands");
+  const canonical = fs.readdirSync(commands).filter(name => fs.existsSync(path.join(commands, name, "SKILL.md")));
+  expect(skills.map(skill => skill.id).sort()).toEqual(canonical.map(name => "skill-" + name).sort());
   for (const skill of skills) {
     await page.goto(url + "#" + skill.id);
     await expect(page.locator("#article h1")).toHaveText(skill.title);

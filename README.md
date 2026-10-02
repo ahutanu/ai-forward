@@ -13,7 +13,7 @@ This repo is two things at once:
    `.grok/`, `.agents/`, `docs/`) so the skills, agents, and knowledge are active in Claude Code, Copilot,
    Grok Build, Antigravity, and Codex *while you work on the pack itself*. Dogfooding: the pack is built using the pack.
 
-For the pack's own story — why it exists, what's inside, how to use the twenty-nine skills — read
+For the pack's own story — why it exists, what's inside, how to use the 30 skills — read
 [`pack/README.md`](pack/README.md) and [`pack/OVERVIEW.md`](pack/OVERVIEW.md).
 
 For a newcomer-oriented learning path, use the
@@ -27,6 +27,45 @@ generates the public reader and its documentation-graph copies.
 Skills live in `.agents/skills/`; `AGENTS.md` supplies project instructions.
 See the [Codex setup and troubleshooting guide](docs/ai-forward-pack/codex.md).
 
+## Start with one outcome
+
+From your project directory, install with one line (Git and [uv](https://docs.astral.sh/uv/getting-started/installation/) required):
+
+```text
+uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py
+```
+
+Then use `/deliver <desired outcome>` in a slash-command harness, or `$deliver` in
+Codex. Copilot CLI can select the same skill with `Use the /deliver skill ...`.
+The agent chooses applicable workflows, continues between approved stages, and
+keeps the original finish line. It pauses for real human decisions, permissions,
+hard review objections and release gates, then resumes the same task.
+
+```text
+/deliver Add CSV export for the current project and filter. Export every matching task, not only the visible page. Do not add scheduling or new roles.
+```
+
+The bootstrap uses the existing deployment map and committed source, verifies the
+install, and preserves project decisions. `--dry-run` previews without project writes;
+`--ref <commit>` pins the pack source. It does not initialize Git, invent identity,
+commit, push, grant trust or install your project's dependencies.
+
+Existing custom policy is not an installation permission slip. The bootstrap stops
+before writes when the source map would alter an existing named hook bundle, delete
+unverified local instructions, change existing Git attributes, or rewrite active
+product checks. It names the conflict for reconciliation; there is no automatic
+force/approval workaround. Credential-bearing source URLs are refused.
+
+**Fork preview, before upstream merge:**
+
+```text
+uv run --no-config --no-project --script https://raw.githubusercontent.com/ahutanu/ai-forward/feat/one-command-adoption/bootstrap.py --repo https://github.com/ahutanu/ai-forward.git --ref feat/one-command-adoption
+```
+
+Refresh the coding application's skill discovery after installation when needed.
+Individual skills and source-clone installation remain available for expert control;
+there is no requirement to learn their sequence before the first task.
+
 ## Layout
 
 ```
@@ -34,7 +73,7 @@ ai-forward/
 ├─ pack/                  ← CANONICAL SOURCE — edit here to expand the pack
 │   ├─ README.md  OVERVIEW.md  research-synthesis.md
 │   ├─ knowledge/         ← the reasoning spine + 23-persona roster + vendored foundation
-│   ├─ commands/          ← the 29 skills (SKILL.md + reference/ each)
+│   ├─ commands/          ← the 30 skills (SKILL.md + reference/ each)
 │   ├─ templates/         ← the artifacts each skill produces
 │   ├─ adapters/          ← INSTALL.md + Claude Code / Copilot agents + prompts + managed blocks
 │   ├─ evals/             ← the pack's own regression suite
