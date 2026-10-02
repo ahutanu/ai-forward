@@ -10745,7 +10745,7 @@ window.DOCS_INDEX = {
       "path": "docs/proof/one-command-adoption.md",
       "title": "Proof Pack — one-command adoption",
       "type": "proof-pack",
-      "status": "draft",
+      "status": "accepted",
       "owner": "@ahutanu",
       "phase": "pack-adoption",
       "reviewBy": "2027-01-01",
@@ -10768,7 +10768,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "c50381f6d8230679aacbc5a0b7d0953ed204ada7daa7ca3559fddbb27bd29434"
+      "sourceSha256": "c0f832f390dbe1aa11d08bee2c0cad1c40bc0de6f8f435a8cb8c900ef7b5f69e"
     },
     {
       "id": "spec-acp-coordination",
@@ -12236,5 +12236,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "c9bb130a8e1d95d08d5246375d14eee6f92ef614915f1f4058f4a2ee5cd4f68e"
+  "graphSha256": "078f03ae66048ddbaf8b92edf78fb5d63b5c44bbbe808fff88571790ee84f8a4"
 };

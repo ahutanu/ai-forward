@@ -2,7 +2,7 @@
 id: proof-one-command-adoption
 title: "Proof Pack — one-command adoption"
 type: proof-pack
-status: draft
+status: accepted
 owner: "@ahutanu"
 phase: "pack-adoption"
 tags: [adoption, delivery, installation, portability]
@@ -24,15 +24,18 @@ summary: >-
 
 ## Revision 99 quality follow-up
 
-This candidate is under verification. A further outcome and customer-journey review
+An outcome and customer-journey review
 reproduced five boundary gaps in the earlier revision: an existing instruction archive
 could be replaced, inherited Git attributes could change, review repairs could strand
 a saved task, nested submodule edits could escape drift checks, and an older native
 Python could be selected. The earlier positive tests did not cover those conditions.
 
-The claims below preserve the earlier scoped evidence; they are not final acceptance
-of this candidate. New regression, independent-review, installation and native-platform
-results must be recorded before accepting revision 99.
+Revision 99 repairs those gaps. The follow-up adversarial review also found and closed
+hardlink/FIFO repair-scope aliases, stale or incompatible `UV_PYTHON` selectors and
+generated API drift. Exact-hash closure probes found no remaining P0–P2 issue in those
+repairs. A cold-reader review checked twenty onboarding, recovery, proof and tone gaps;
+all local gaps passed, and post-push branch plus exact-commit installs closed the three
+publication checks. This revision is accepted on the evidence below.
 
 ## Claims and evidence
 
@@ -65,8 +68,8 @@ results must be recorded before accepting revision 99.
   existing Git policy, or rewrites active product checks.
 - **Red observed before green:** yes; each listed preservation/privacy failure was
   reproduced against the earlier wrapper/source behavior before its regression turned green.
-- **Confidence:** [Verified] on Linux and [Flagged] pending actual final GitHub-hosted
-  Linux/macOS/Windows matrix readback.
+- **Confidence:** [Verified] on actual GitHub-hosted Linux, macOS and Windows, including
+  real Python 3.9/3.11 selector controls and the literal Windows `cmd.exe` one-liner.
 - **Residual risk:** selected source is trusted executable code; cooperative drift
   detection is not a concurrent-writer lock or a power-loss transaction. Unsafe legacy
   transformations deliberately stop for reconciliation rather than guess ownership.
@@ -112,18 +115,27 @@ results must be recorded before accepting revision 99.
 
 ## Final acceptance readback
 
-- The complete local bundle finished with **1,500 passed, 42 skipped and 833
+- The complete local bundle finished with **1,535 passed, 44 skipped and 872
   subtests passed**; all **18/18** consistency, portability, source-sync,
   Python, Node, graph, doctor, eval-shape and budget gates passed.
 - The complete local Playwright result on the final artifact set is **264 passed,
   12 deliberately skipped** across Chromium, Firefox and WebKit.
 
-- **Qualified implementation commit:** `049d234b5e64cd8fd04d354c071c6ec99aaffab3`,
+- **Original qualified implementation:** `049d234b5e64cd8fd04d354c071c6ec99aaffab3`.
+- **Revision 99 quality qualification:** `888942d656343643117999fe7c4e1b7da951a36b`,
   authored as `Alex Hutanu <alex@hutanu.net>`.
-- **Native matrix:** [GitHub Actions run 37055642430](https://github.com/ahutanu/ai-forward/actions/runs/37055642430)
-  completed successfully for Ubuntu, macOS and Windows on that exact SHA.
+- **Native matrix:** [GitHub Actions run 37077090769](https://github.com/ahutanu/ai-forward/actions/runs/37077090769)
+  completed successfully for Ubuntu, macOS and Windows on the revision 99 quality SHA.
 - Every platform passed routing/resume/preservation/deployment tests and an actual
   HTTPS exact-SHA one-line install plus repeat install in a plain project. Windows
   additionally passed the exact `cmd.exe` one-liner and native junction fixture.
-- A separate public exact-SHA smoke retained dirty product bytes, initialized no Git
-  repository, installed revision 98, and repeated byte-identically.
+- Public branch and exact-SHA smoke runs both installed revision 99 from
+  `888942d656343643117999fe7c4e1b7da951a36b`, initialized no Git repository,
+  delivered byte-matching customer pages and repeated byte-identically.
+- Independent code closure rejected hardlink/FIFO aliases, preserved regular
+  create/modify/delete behavior, exercised stale/old/compatible uv selectors with
+  stdin/arguments/exit status intact, and found no remaining bounded P0–P2 issue.
+- Independent reader closure verified the live preview command, installed guidance,
+  host-specific next steps, missing-checkpoint recovery, proof limits and qualified
+  cross-host claims. File installation remains bounded mechanical evidence, not
+  universal model compliance or authenticated consent.
