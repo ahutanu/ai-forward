@@ -10,22 +10,38 @@ Owner: @ahutanu. No global configuration, commits, or trust changes.
 import sys
 
 # Isolate the CLI before even argparse/json can find a project module. Only sys
-# and the interpreter's built-in OS module are used until the same wrapper is
-# restarted; no project/source path or environment flag can bypass this guard.
-# Importing helpers is a trusted-caller API; our planning caller uses -I -B.
-if __name__ == "__main__" and not (sys.flags.isolated and sys.flags.dont_write_bytecode):
+# and the interpreter's built-in OS module are used until the guard is
+# established; no project/source import participates. POSIX restarts with
+# interpreter isolation. Windows sanitizes import/startup state in-process
+# because the CRT spawn/exec command line loses quoted paths with spaces.
+if __name__ == "__main__" and sys.platform == "win32":
     try:
-        _entry_os_name = "nt" if sys.platform == "win32" else "posix"
-        if _entry_os_name not in sys.builtin_module_names or not sys.executable or not __file__:
+        _entry_nt = __import__("nt")
+        _entry_prefix = sys.base_prefix.rstrip("\\/").casefold() + "\\"
+        sys.path[:] = [item for item in sys.path
+                       if item and item.replace("/", "\\").casefold().startswith(_entry_prefix)]
+        sys.dont_write_bytecode = True
+        for _entry_key in ("PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP", "PYTHONUSERBASE",
+                           "PYTHONEXECUTABLE"):
+            try:
+                _entry_nt.unsetenv(_entry_key)
+            except OSError:
+                pass
+        _entry_nt.putenv("PYTHONNOUSERSITE", "1")
+        _AI_FORWARD_ENTRY_ISOLATED = True
+    except (OSError, RuntimeError, AttributeError) as exc:
+        print(f"AI-Forward bootstrap failed: cannot isolate entry interpreter: {exc}; "
+              "run the saved wrapper with Python 3.10+ -I -B", file=sys.stderr)
+        sys.exit(1)
+elif __name__ == "__main__" and not (sys.flags.isolated and sys.flags.dont_write_bytecode):
+    try:
+        if "posix" not in sys.builtin_module_names or not sys.executable or not __file__:
             raise RuntimeError("a supported interpreter and saved wrapper file are required")
-        _entry_os = __import__(_entry_os_name)
+        _entry_os = __import__("posix")
         # __file__, not caller-controlled argv[0], identifies the already-running
-        # wrapper. -- protects option-looking filenames; stdin, cwd and arguments
-        # are inherited without a shell. POSIX overlays; Windows' low-level execv
-        # does not reliably propagate the child status, so wait and return it.
+        # wrapper. -- protects option-looking filenames; stdin, cwd, arguments
+        # and status are inherited without a shell.
         _entry_args = [sys.executable, "-I", "-B", "--", __file__, *sys.argv[1:]]
-        if _entry_os_name == "nt":
-            sys.exit(_entry_os.spawnv(_entry_os.P_WAIT, sys.executable, _entry_args))
         _entry_os.execv(sys.executable, _entry_args)
     except (OSError, RuntimeError, AttributeError) as exc:
         print(f"AI-Forward bootstrap failed: cannot isolate entry interpreter: {exc}; "

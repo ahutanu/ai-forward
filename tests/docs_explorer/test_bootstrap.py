@@ -195,8 +195,8 @@ class BootstrapTests(unittest.TestCase):
         probe = ('if __name__ == "__main__":\n'
                  '    print(json.dumps({"args": sys.argv[1:], "stdin": sys.stdin.buffer.read().hex(),\n'
                  '                      "cwd": str(Path.cwd()), "interpreter": sys.executable,\n'
-                 '                      "isolated": sys.flags.isolated,\n'
-                 '                      "no_bytecode": sys.flags.dont_write_bytecode}))\n'
+                 '                      "isolated": int(sys.flags.isolated or globals().get("_AI_FORWARD_ENTRY_ISOLATED", False)),\n'
+                 '                      "no_bytecode": int(sys.dont_write_bytecode)}))\n'
                  '    sys.exit(7)\n')
         text = SCRIPT.read_text(encoding="utf-8")
         self.assertEqual(1, text.count(footer))
@@ -448,12 +448,19 @@ class BootstrapTests(unittest.TestCase):
         self.git("add", "-f", "scripts/tracked-parity.ps1")
         self.git("commit", "-m", "Fixture: tracked ignored control")
         index = (self.target / ".git/index").read_bytes()
-        before = self.snapshot()
+        head = self.git("rev-parse", "HEAD")
+        status = self.git("status", "--porcelain=v1")
+        before = {path: value for path, value in self.snapshot().items()
+                  if not path.startswith(".git/")}
         result = self.run_bootstrap()
         self.assertNotEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("REVIEW", result.stderr)
         self.assertIn("scripts/tracked-parity.ps1", result.stderr)
-        self.assertEqual(before, self.snapshot())
+        after = {path: value for path, value in self.snapshot().items()
+                 if not path.startswith(".git/")}
+        self.assertEqual(before, after)
+        self.assertEqual(head, self.git("rev-parse", "HEAD"))
+        self.assertEqual(status, self.git("status", "--porcelain=v1"))
         self.assertEqual(index, (self.target / ".git/index").read_bytes())
         self.assertEqual(original, (self.target / "scripts/tracked-parity.ps1").read_text(encoding="utf-8"))
         self.assertFalse((self.target / "docs/ai-forward-pack/retired/tracked-parity.ps1").exists())
