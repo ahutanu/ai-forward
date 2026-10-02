@@ -82,7 +82,7 @@ class BootstrapError(RuntimeError):
 
 def run(command, cwd=None, timeout=180):
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0", PYTHONDONTWRITEBYTECODE="1",
-               PYTHONNOUSERSITE="1")
+               PYTHONIOENCODING="utf-8", PYTHONNOUSERSITE="1")
     # Installer children and their descendants must not import target-selected
     # startup modules. Immediate Python children also use -I -B; clearing the
     # inherited startup path protects nested source-applier subprocesses.
