@@ -400,7 +400,7 @@ def consume_start(root, session, skill=None):
 
 
 
-# pack-onoff-analysis.html #3 (class PK-03, F-6): 23 of 54 pack-on cells in one grid added
+# pack-onoff-analysis.html #3 (class PK-03, F-6): 11 of 54 pack-on cells in grid-1 (23 of 138 in grid-3) added
 # docs/audit/ -- and often docs/docs-index.js -- into repos that never asked for it, because
 # this default autocreated docs/audit/ on first use regardless of whether the repo had opted
 # in. An explicit --root is a direct ask and is honoured exactly as given, unchanged. The
