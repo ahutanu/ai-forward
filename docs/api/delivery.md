@@ -29,15 +29,18 @@ Conditional delivery routing and local checkpoint integrity, not a workflow runn
 | `--actor` | _(no help text — coverage gap)_ |
 | `--audit-root` | _(no help text — coverage gap)_ |
 | `--authority` | _(no help text — coverage gap)_ |
+| `--authorization` | _(no help text — coverage gap)_ |
 | `--closure` | _(no help text — coverage gap)_ |
 | `--compiled-id` | _(no help text — coverage gap)_ |
 | `--evidence` | _(no help text — coverage gap)_ |
 | `--facts` | _(no help text — coverage gap)_ |
 | `--input` | _(no help text — coverage gap)_ |
 | `--kind` | _(no help text — coverage gap)_ |
+| `--path` | _(no help text — coverage gap)_ |
 | `--question` | _(no help text — coverage gap)_ |
 | `--receipt` | _(no help text — coverage gap)_ |
 | `--repo` | _(no help text — coverage gap)_ |
+| `--review` | _(no help text — coverage gap)_ |
 | `--stage` | _(no help text — coverage gap)_ |
 | `--state-root` | _(no help text — coverage gap)_ |
 | `--task` | _(no help text — coverage gap)_ |
@@ -64,13 +67,17 @@ Conditional delivery routing and local checkpoint integrity, not a workflow runn
 
 **Coverage gap** — no docstring in the source.
 
-### `snapshot(repo, local_area=…)`
+### `snapshot(repo, local_area=…, details=…, _depth=…)`
 
 **Coverage gap** — no docstring in the source.
 
 ### `file_record(path)`
 
 **Coverage gap** — no docstring in the source.
+
+### `validate_scoped_product_path(path, root)`
+
+Refuse aliases and special files; a missing leaf remains a valid create/delete scope.
 
 ### `check_records(records, label)`
 
@@ -112,6 +119,14 @@ Conditional delivery routing and local checkpoint integrity, not a workflow runn
 
 **Coverage gap** — no docstring in the source.
 
+### `begin_repair(state, args)`
+
+**Coverage gap** — no docstring in the source.
+
+### `recheck_repair(state, args)`
+
+**Coverage gap** — no docstring in the source.
+
 ### `close_outcome(state, path)`
 
 **Coverage gap** — no docstring in the source.
@@ -126,5 +141,5 @@ Conditional delivery routing and local checkpoint integrity, not a workflow runn
 
 ## Coverage
 
-- Public functions: **20** · documented: **0** (**0%**)
-- Undocumented (recorded, not invented): `route`, `read_json`, `digest`, `git`, `identity`, `snapshot`, `file_record`, `check_records`, `compiler`, `contract`, `local_area`, `state_path`, `save`, `view`, `load`, `new_gate`, `resume`, `close_outcome`, `execute`, `locked_execute`
+- Public functions: **23** · documented: **1** (**4%**)
+- Undocumented (recorded, not invented): `route`, `read_json`, `digest`, `git`, `identity`, `snapshot`, `file_record`, `check_records`, `compiler`, `contract`, `local_area`, `state_path`, `save`, `view`, `load`, `new_gate`, `resume`, `begin_repair`, `recheck_repair`, `close_outcome`, `execute`, `locked_execute`

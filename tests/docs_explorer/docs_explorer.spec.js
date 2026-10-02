@@ -568,6 +568,7 @@ test("Spatial 3D selects and focuses a node without changing relationship semant
 
   const spatial = page.getByRole("region", { name: "Spatial 3D project graph" });
   await expect(spatial).toBeVisible();
+  await page.addStyleTag({ content: ":root { --motion-context: 2000ms !important; }" });
   await spatial.locator('[data-action="select"][data-node-id="child"]').click();
   await expect(spatial.locator("[data-spatial-svg]")).toHaveAttribute("data-camera-target-id", "child");
   await expect(spatial.locator("[data-spatial-svg]")).toHaveAttribute("data-camera-transitioning", "true");

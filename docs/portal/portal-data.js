@@ -2270,7 +2270,7 @@ window.PORTAL_DATA = {
         "id": "api-index",
         "type": "api",
         "title": "API reference — the deployed script bundle",
-        "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 573 public functions across 46 modules, 46% carrying a docstring."
+        "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 576 public functions across 46 modules, 45% carrying a docstring."
       },
       {
         "id": "api-marker-lint",
@@ -2858,7 +2858,7 @@ window.PORTAL_DATA = {
         "id": "handbook-get-started",
         "type": "doc",
         "title": "Try AI-Forward on one small task",
-        "summary": "Start with a repository you understand and a change you can review. The first useful result is not a large plan or a swarm of agents. It is seeing whether the..."
+        "summary": "Start with a project you understand and a change you can review. You do not need to learn the skill sequence or manage a team of agents. Install the pack,..."
       },
       {
         "id": "handbook-glossary",
@@ -3110,7 +3110,7 @@ window.PORTAL_DATA = {
         "id": "handbook-workflow",
         "type": "doc",
         "title": "From request to reviewed change",
-        "summary": "A useful request tells the agent what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward's workflows..."
+        "summary": "A useful request says what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward helps turn that intent..."
       },
       {
         "id": "hygiene-backlog",

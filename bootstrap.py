@@ -119,13 +119,30 @@ def run(command, cwd=None, timeout=180):
         raise BootstrapError(f"Cannot complete {Path(command[0]).name}: {exc}") from exc
 
 
-def pack(source, target, mode, project=None, no_baselines=False):
+def pack(source, target, mode, project=None, no_baselines=False, attributes=None):
     command = [sys.executable, "-I", "-B", str(source / "pack/scripts/pack-apply.py"), mode,
                "--source", str(source), "--target", str(target), "--install", "--json"]
     if project:
         command.extend(["--project", project])
     if no_baselines:
         command.append("--no-baselines")
+    if mode == "apply" and attributes is not None:
+        # Keep policy payloads out of argv (Windows command-line length limit).
+        # This trusted launcher lives beside the disposable source, not in the project.
+        launcher = source.parent / "bootstrap-apply.py"
+        launcher.write_text(
+            "import importlib.util,json,sys\n"
+            "from pathlib import Path\n"
+            "def load(name,path):\n"
+            " spec=importlib.util.spec_from_file_location(name,path)\n"
+            " module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)\n"
+            " return module\n"
+            "wrapper=load('bootstrap',sys.argv[1])\n"
+            "deployment=load('bootstrap_pack_apply',sys.argv[2])\n"
+            "wrapper.configure_attributes(deployment,json.loads(Path(sys.argv[3]).read_text(encoding='utf-8')))\n"
+            "sys.exit(deployment.main(sys.argv[4:]))\n", encoding="utf-8", newline="\n")
+        command = [sys.executable, "-I", "-B", str(launcher), str(Path(__file__).resolve()),
+                   str(source / "pack/scripts/pack-apply.py"), str(attributes), *command[4:]]
     if mode == "plan":
         # Isolate source imports and retain run()'s clean Git environment/time limit.
         command = [sys.executable, "-I", "-B", "-c",
@@ -273,6 +290,26 @@ def validate_paths(target, paths):
                 raise BootstrapError(f"Unsupported non-regular managed path: {relative}; resolve it before installing")
 
 
+def configure_attributes(deployment, lines):
+    """Adapt only Git policy; every deployment path still comes from the source map."""
+    def scoped_attributes(app):
+        path = Path(app.target) / ".gitattributes"
+        current = deployment.read(str(path)) or ""
+        have = {" ".join(line.split()) for line in deployment.norm_nl(current).splitlines()}
+        missing = [line for line in lines if " ".join(line.split()) not in have]
+        if not missing:
+            app.row("bundle", ".gitattributes", "UNCHANGED", "ok")
+            return
+        text = deployment.norm_nl(current)
+        if text and not text.endswith("\n"):
+            text += "\n"
+        text += "\n# AI-Forward bootstrap: LF for source-mapped pack files only.\n" + "\n".join(missing) + "\n"
+        app._write(str(path), text)
+        app.row("bundle", ".gitattributes", "UPDATE", "ok", "pack-scoped LF policy")
+
+    setattr(deployment.Applier, "_gitattributes", scoped_attributes)
+
+
 def deployment_plan(source, target, project):
     """Observe the source's dry map, including writes omitted from action rows.
 
@@ -354,11 +391,17 @@ def deployment_plan(source, target, project):
     # Do not mutate the process-global os module used by the launcher.
     setattr(deployment, "os", types.SimpleNamespace(**dict(vars(os), walk=project_walk)))
     app = deployment.Applier(str(source), str(target), dry=True, project=project, install=True)
+    observed_writes = {}
+    # Discover the complete source map before deriving exact, root-anchored
+    # attribute patterns. Local baseline inputs and arbitrary product trees are not outputs.
+    app._gitattributes = lambda: None
 
-    def observe(path, *unused):
+    def observe(path, text=None):
         relative = Path(path).relative_to(target).as_posix()
         validate_paths(target, [relative])
         paths.add(relative)
+        if text is not None:
+            observed_writes[relative] = deployment.norm_nl(text).encode("utf-8")
         if relative == ".gitattributes" and Path(path).exists():
             # Git attributes are last-match-wins: keeping the old lines does not
             # keep their meaning when a source appends a repository-wide rule.
@@ -378,6 +421,29 @@ def deployment_plan(source, target, project):
     app._write = observe
     app._remove = observe_remove
     rows = app.run()
+    attribute_paths = {RECEIPT, ".gitattributes", "docs/ai-forward-pack/INSTALL.md"}
+    attribute_paths.update(row["path"] for row in rows
+                           if row["area"] != "meta" and row["action"] != "SKIP")
+    validate_paths(target, attribute_paths)
+    attributes = [json.dumps("/" + re.sub(r"([\\*?\[])", r"\\\1", relative), ensure_ascii=False) +
+                  " text=auto eol=lf" for relative in sorted(attribute_paths)]
+    current_attributes = deployment.read(str(target / ".gitattributes")) or ""
+    have = {" ".join(line.split()) for line in deployment.norm_nl(current_attributes).splitlines()}
+    if all(" ".join(line.split()) in have for line in deployment.GITATTRIBUTES_LINES):
+        # An operator's already-satisfying policy needs no change. Never replace
+        # an existing broad policy merely to convert it into bootstrap's scoped form.
+        attributes = list(deployment.GITATTRIBUTES_LINES)
+    configure_attributes(deployment, attributes)
+    deployment.Applier._gitattributes(app)
+    reported_paths = {row["path"] for row in rows}
+    for relative, proposed in observed_writes.items():
+        path = target / relative
+        if relative not in reported_paths and path.exists() and path.read_bytes() != proposed:
+            # Backup writes have no action row or historical ownership check.
+            # A source-selected archive name cannot authorize replacing local data.
+            raise BootstrapError(f"CONFLICT {relative}: unreported archive/write would replace "
+                                 "existing contents without established ownership; reconcile or "
+                                 "relocate the existing file before installing (nothing installed)")
     for row in rows:
         if row["area"] == "controls" and row["action"] == "REWRITE":
             # Marker discovery and a retired backup cannot prove preservation of
@@ -395,7 +461,7 @@ def deployment_plan(source, target, project):
         paths.update(path.relative_to(target).as_posix() for path in target.glob(pattern))
     validate_paths(target, paths)
     return {"mode": "plan", "source_revision": app.source_rev, "target_revision": app.target_rev,
-            "rows": rows, "paths": sorted(paths)}
+            "rows": rows, "paths": sorted(paths), "attributes": attributes}
 
 
 def validate_managed_blocks(source, target):
@@ -491,7 +557,11 @@ def main(argv=None):
             stage = Path(folder) / "stage" / target.name
             stage_target(target, stage, is_git, paths)
             needs_changes = any(row["action"] not in {"UNCHANGED", "KEEP", "SKIP"} for row in planned["rows"])
-            applied = pack(source, stage, "apply", project, no_baselines=not needs_changes)
+            attribute_policy = Path(folder) / "bootstrap-attributes.json"
+            attribute_policy.write_text(json.dumps(planned["attributes"], ensure_ascii=False),
+                                        encoding="utf-8", newline="\n")
+            applied = pack(source, stage, "apply", project, no_baselines=not needs_changes,
+                           attributes=attribute_policy)
             verified = pack(source, stage, "plan", project)
             pending = [row for row in verified["rows"]
                        if row["action"] not in {"UNCHANGED", "KEEP", "SKIP"}]
@@ -508,7 +578,13 @@ def main(argv=None):
             state = "already current" if not changed else ("installed" if planned["target_revision"] is None else "updated")
             print(f"AI-Forward {state}: revision {receipt['pack_revision']}, source commit {commit}.")
             print(", ".join(f"{value} {key}" for key, value in sorted(counts.items())))
-            print("Next: /deliver <your goal> (Claude/Copilot/Grok/Antigravity) or $deliver <your goal> (Codex).")
+            print("Next: Claude Code: /deliver <your goal>; Codex: $deliver <your goal>.")
+            print("Copilot CLI: find deliver with /skills, then /deliver <your goal>, or ask "
+                  "'Use the /deliver skill to <your goal>'. In an existing chat, use "
+                  "/skills reload, then /skills info deliver.")
+            print("VS Code Copilot: /deliver when listed, or select/request deliver. "
+                  "Grok Build/Antigravity: select/request the deliver skill.")
+            print("If your app has not discovered the installed skill, refresh/restart it before starting.")
             return 0
     except (BootstrapError, OSError, ValueError) as exc:
         print(f"AI-Forward bootstrap failed: {exc}", file=sys.stderr)

@@ -2,7 +2,7 @@
 id: proof-one-command-adoption
 title: "Proof Pack — one-command adoption"
 type: proof-pack
-status: accepted
+status: draft
 owner: "@ahutanu"
 phase: "pack-adoption"
 tags: [adoption, delivery, installation, portability]
@@ -21,6 +21,18 @@ summary: >-
 - **Spec / design:** `docs/specs/one-command-adoption.md` · `docs/design/one-command-adoption.md`
 - **Tier:** T2 (load-bearing workflow boundaries, local state and cross-platform installation)
 - **Author / date:** @ahutanu · 2026-10-02
+
+## Revision 99 quality follow-up
+
+This candidate is under verification. A further outcome and customer-journey review
+reproduced five boundary gaps in the earlier revision: an existing instruction archive
+could be replaced, inherited Git attributes could change, review repairs could strand
+a saved task, nested submodule edits could escape drift checks, and an older native
+Python could be selected. The earlier positive tests did not cover those conditions.
+
+The claims below preserve the earlier scoped evidence; they are not final acceptance
+of this candidate. New regression, independent-review, installation and native-platform
+results must be recorded before accepting revision 99.
 
 ## Claims and evidence
 

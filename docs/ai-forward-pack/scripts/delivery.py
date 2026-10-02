@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import stat
 import subprocess
 import sys
 import tempfile
@@ -92,7 +93,7 @@ def identity(repo):
             "common_dir": absolute(git(root, "rev-parse", "--git-common-dir"))}
 
 
-def snapshot(repo, local_area=None):
+def snapshot(repo, local_area=None, details=False, _depth=0):
     # Ignored/runtime inputs require explicit --input registration.
     project = identity(repo)
     repo = Path(project["root"])
@@ -108,6 +109,14 @@ def snapshot(repo, local_area=None):
             names.extend(str(Path(directory, name).relative_to(repo)) for name in files)
     else:
         names = git(repo, "ls-files", "-z", "--cached", "--others", "--exclude-standard").split("\0")
+    gitlinks = {}
+    indexed = {}
+    if project.get("kind") != "plain":
+        for entry in filter(None, git(repo, "ls-files", "--stage", "-z").split("\0")):
+            metadata, name = entry.split("\t", 1)
+            indexed.setdefault(name, []).append(metadata)
+            if metadata.startswith("160000 "):
+                gitlinks.setdefault(name, []).append(metadata)
     files = {}
     for name in sorted(set(filter(None, names))):
         path = Path(repo) / name
@@ -115,11 +124,32 @@ def snapshot(repo, local_area=None):
             continue
         if path.is_symlink():
             files[name] = {"link": os.readlink(path)}
+        elif name in gitlinks:
+            # An uninitialized checkout must not accidentally recurse into its
+            # parent repository. Never follow directory symlinks to submodules.
+            value: dict[str, Any] = {"gitlink": gitlinks[name], "checkout": "unavailable"}
+            if path.resolve() != path.absolute():
+                raise ValueError("input refused: submodule path traverses a filesystem symlink")
+            if (path / ".git").exists():
+                if _depth >= 16:
+                    raise ValueError("input refused: submodule nesting exceeds the 16-level snapshot bound")
+                if Path(git(path, "rev-parse", "--show-toplevel")).resolve() != path.resolve():
+                    raise ValueError("input refused: submodule checkout does not identify its own Git worktree")
+                value["checkout"] = snapshot(path, local_area, _depth=_depth + 1)
+            files[name] = value
         else:
             files[name] = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
-    return {"head": git(repo, "rev-parse", "HEAD", optional=True) if project.get("kind") != "plain" else "",
+    result: dict[str, Any] = {"head": git(repo, "rev-parse", "HEAD", optional=True) if project.get("kind") != "plain" else "",
             "branch": git(repo, "symbolic-ref", "HEAD", optional=True) if project.get("kind") != "plain" else "",
             "files": digest(files)}
+    if gitlinks:
+        result["submodules"] = {name: files[name] for name in gitlinks if name in files}
+    if _depth:
+        result["index"] = digest(git(repo, "ls-files", "--stage", "-z"))
+    if details:
+        result["entries"] = files
+        result["index_entries"] = indexed
+    return result
 
 
 def file_record(path):
@@ -130,6 +160,31 @@ def file_record(path):
     if not content.strip():
         raise ValueError("evidence missing: supply a nonempty regular file")
     return {"path": str(path), "sha256": hashlib.sha256(content).hexdigest()}
+
+
+def validate_scoped_product_path(path, root):
+    """Refuse aliases and special files; a missing leaf remains a valid create/delete scope."""
+    path = Path(path)
+    root = Path(root).resolve()
+    if not path.absolute().is_relative_to(root) or path.resolve() != path.absolute():
+        raise ValueError("repair refused: scope must remain inside the project without filesystem aliases")
+    relative = path.absolute().relative_to(root)
+    current = root
+    for part in relative.parts:
+        current = current / part
+        try:
+            info = current.lstat()
+        except FileNotFoundError:
+            return
+        reparse = (getattr(info, "st_file_attributes", 0)
+                   & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+        if reparse or stat.S_ISLNK(info.st_mode):
+            raise ValueError("repair refused: scoped product paths cannot traverse links or reparse points")
+        if current != path:
+            if not stat.S_ISDIR(info.st_mode):
+                raise ValueError("repair refused: scoped product path ancestor is not a directory")
+        elif not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise ValueError("repair refused: existing scoped product paths must be single-link regular files")
 
 
 def check_records(records, label):
@@ -247,6 +302,22 @@ def load(repo, task, check_tree=True, state_root=None):
         for record in state["decisions"]:
             if not isinstance(record, dict) or not isinstance(record.get("evidence"), list) or not record["evidence"]:
                 raise ValueError("decision record")
+        if not isinstance(state.get("repairs", []), list):
+            raise ValueError("repair history")
+        for repair in state.get("repairs", []):
+            if (not isinstance(repair, dict) or repair.get("status") not in ("active", "review", "cleared", "superseded")
+                    or not isinstance(repair.get("evidence"), list) or not repair["evidence"]
+                    or not isinstance(repair.get("before"), dict) or not isinstance(repair["before"].get("entries"), dict)
+                    or not isinstance(repair["before"].get("index_entries"), dict)
+                    or any(not isinstance(repair["before"].get(k), str) for k in ("head", "branch", "files"))
+                    or not isinstance(repair.get("paths"), list) or not repair["paths"]
+                    or any(not isinstance(p, str) for p in repair["paths"])
+                    or not isinstance(repair.get("actors"), list) or not repair["actors"]
+                    or any(not isinstance(a, str) or not a.strip() for a in repair["actors"])
+                    or repair.get("stage") not in state["stages"]
+                    or not isinstance(repair.get("prior_gate"), dict)
+                    or not isinstance(repair.get("reopened"), list)):
+                raise ValueError("repair record")
         gate = state["gate"]
         if gate is not None and (not isinstance(gate, dict) or gate.get("authority") not in ("human", "reviewer")
                 or gate.get("kind") not in ("decision", "permission", "hard-veto", "release")
@@ -261,7 +332,7 @@ def load(repo, task, check_tree=True, state_root=None):
     if contract(state["audit_root"], state["compiled_id"]) != state["contract"]:
         raise ValueError("contract drift: re-ground and request a new accepted contract")
     check_records(state["inputs"], "input")
-    for completed in state["completed"] + state["partial"] + state["decisions"]:
+    for completed in state["completed"] + state["partial"] + state["decisions"] + state.get("repairs", []):
         check_records(completed["evidence"], "evidence")
     if state["gate"]:
         check_records(state["gate"]["evidence"], "evidence")
@@ -271,15 +342,20 @@ def load(repo, task, check_tree=True, state_root=None):
 
 
 def new_gate(state, kind, authority, question):
-    binding = digest({"identity": state["identity"], "task": state["task"],
+    bound = {"identity": state["identity"], "task": state["task"],
                       "contract": state["contract"], "snapshot": state["snapshot"],
-                      "completed": state["completed"], "partial": state["partial"]})
+                      "completed": state["completed"], "partial": state["partial"]}
+    if state.get("repairs"):
+        bound["repairs"] = state["repairs"]
+    binding = digest(bound)
     return {"id": secrets.token_hex(16), "kind": kind, "authority": authority,
             "question": question, "binding": binding, "stage": view(state)["next"], "evidence": []}
 
 
 def resume(state, receipt_path):
     gate = state["gate"]
+    if state.get("repairs") and state["repairs"][-1]["status"] == "active":
+        raise ValueError("decision refused: checkpoint the scoped repair and request re-review first")
     receipt = read_json(receipt_path)
     if (not gate or not isinstance(receipt, dict)
             or receipt.get("task") != state["task"] or receipt.get("gate") != gate["id"]
@@ -295,7 +371,98 @@ def resume(state, receipt_path):
     state["decisions"].append({"gate": gate, "receipt": receipt, "evidence": records})
     if gate["stage"] == "repair-review":
         state["completed"].append({"stage": "repair-review", "actor": receipt["actor"], "evidence": records})
+    if state.get("repairs") and state["repairs"][-1]["status"] == "review":
+        state["repairs"][-1]["status"] = "cleared"
     state["gate"] = None
+
+
+def begin_repair(state, args):
+    gate = state["gate"]
+    review = read_json(args.review)
+    authorization = read_json(args.authorization)
+    if (not gate or gate["kind"] != "hard-veto" or gate["authority"] != "reviewer"
+            or state.get("repairs") and state["repairs"][-1]["status"] == "active"
+            or not isinstance(review, dict) or not isinstance(authorization, dict)):
+        raise ValueError("repair refused: need a current independent hard veto and bound repair scope")
+    for record in (review, authorization):
+        if (any(record.get(k) != v for k, v in (("task", state["task"]), ("gate", gate["id"]), ("binding", gate["binding"])))
+                or not isinstance(record.get("actor"), str) or not record["actor"].strip()
+                or not isinstance(record.get("evidence"), str) or not record["evidence"].strip()):
+            raise ValueError("repair refused: review and authorization must bind the current gate with original evidence")
+    authors = {r["actor"] for r in state["completed"] + state["partial"]}
+    if (review.get("authority") != "reviewer" or review.get("source") != "reviewer-report"
+            or review.get("decision") != "blocked" or review["actor"] in authors
+            or authorization.get("source") != "human-message" or authorization.get("decision") != "approved"
+            or authorization.get("stage") != args.stage
+            or authorization.get("paths") != args.path
+            or any(not actor.strip() for actor in args.actor) or review["actor"] in args.actor):
+        raise ValueError("repair refused: need independent BLOCK and explicit human repair scope; no permissions are granted")
+    root = Path(state["identity"]["root"])
+    for name in args.path:
+        relative = Path(name)
+        path = root / relative
+        if (not name or relative.is_absolute() or ".." in relative.parts or relative.as_posix() != name
+                or name == "." or ".git" in relative.parts
+                or path.is_relative_to(Path(state["local_area"]))):
+            raise ValueError("repair refused: scope must list exact nonsymlink product files, not directories or state")
+        validate_scoped_product_path(path, root)
+        if (state["identity"].get("kind") == "plain"
+                and any(part in {"node_modules", "__pycache__", ".venv", "venv"} for part in relative.parts[:-1])):
+            raise ValueError("repair refused: excluded runtime files need separate input reconciliation")
+        if state["identity"].get("kind") != "plain" and git(root, "check-ignore", "--", name, optional=True):
+            raise ValueError("repair refused: ignored files need separate input reconciliation, not a drift waiver")
+    # Only fingerprint content after every authorized path is known to be a
+    # bounded regular file or an explicitly missing create/delete leaf.
+    before = snapshot(args.repo, state["local_area"], details=True)
+    for name in args.path:
+        if any(name == submodule or name.startswith(submodule + "/") for submodule in before.get("submodules", {})):
+            raise ValueError("repair refused: submodule corrections require separate dependency/input reconciliation")
+    reopened = []
+    if args.stage != view(state)["next"]:
+        if not state["completed"] or state["completed"][-1]["stage"] != args.stage:
+            raise ValueError("repair refused: reopen only the current or latest completed stage")
+        reopened = [state["completed"][-1]]
+    if args.stage in ("verify", "repair-review"):
+        raise ValueError("repair refused: select the affected authored stage, not closure or human review")
+    evidence = [file_record(p) for p in (args.review, review["evidence"], args.authorization, authorization["evidence"])]
+    evidence += gate["evidence"] + [r for row in reopened for r in row["evidence"]]
+    if {k: v for k, v in before.items() if k not in ("entries", "index_entries")} != state["snapshot"]:
+        raise ValueError("input drift: authorize scoped remediation before editing the workspace")
+    if reopened:
+        state["completed"].pop()
+        state["partial"].extend({"stage": row["stage"], "actor": row["actor"], "evidence": row["evidence"]}
+                                for row in reopened)
+    if state.get("repairs") and state["repairs"][-1]["status"] == "review":
+        state["repairs"][-1]["status"] = "superseded"
+    repair = {"status": "active", "stage": args.stage, "paths": args.path, "actors": list(dict.fromkeys(args.actor)),
+              "prior_gate": gate, "before": before, "reopened": reopened, "evidence": evidence}
+    state.setdefault("repairs", []).append(repair)
+    state["partial"].extend({"stage": args.stage, "actor": actor, "evidence": evidence} for actor in repair["actors"])
+    state["gate"] = new_gate(state, "hard-veto", "reviewer", "Scoped repair in progress; independent re-review required")
+
+
+def recheck_repair(state, args):
+    if not state["gate"] or not state.get("repairs") or state["repairs"][-1]["status"] != "active":
+        raise ValueError("repair refused: no authorized repair is active")
+    repair = state["repairs"][-1]
+    for name in repair["paths"]:
+        path = Path(state["identity"]["root"]) / name
+        validate_scoped_product_path(path, state["identity"]["root"])
+    current = snapshot(args.repo, state["local_area"], details=True)
+    def outside(value):
+        return [{k: v for k, v in value.get(field, {}).items() if k not in repair["paths"]}
+                for field in ("entries", "index_entries")]
+    if (current["head"] != repair["before"]["head"] or current["branch"] != repair["before"]["branch"]
+            or outside(current) != outside(repair["before"])):
+        raise ValueError("repair refused: unrelated workspace drift outside the authorized exact file scope")
+    records = [file_record(p) for p in args.evidence]
+    repair["evidence"].extend(records)
+    repair["status"] = "review"
+    if repair["reopened"]:
+        state["completed"].append({"stage": repair["stage"], "actor": repair["actors"][0], "evidence": records})
+    state["snapshot"] = {k: v for k, v in current.items() if k not in ("entries", "index_entries")}
+    state["gate"] = new_gate(state, "hard-veto", "reviewer", "Independently review the scoped repaired artifact; clear with evidence or BLOCK")
+    state["gate"]["evidence"] = records
 
 
 def close_outcome(state, path):
@@ -344,7 +511,7 @@ def execute(args):
                  "snapshot": snapshot(args.repo, area)}
         save(path, state)
         return view(state)
-    path, state = load(args.repo, args.task, check_tree=args.verb not in ("complete", "pause"), state_root=args.state_root)
+    path, state = load(args.repo, args.task, check_tree=args.verb not in ("complete", "pause", "recheck"), state_root=args.state_root)
     if args.verb == "complete":
         if state["gate"] or view(state)["next"] != args.stage or not args.actor.strip():
             raise ValueError("stage refused: complete only the current ungated stage")
@@ -381,6 +548,12 @@ def execute(args):
     elif args.verb == "resume":
         resume(state, args.receipt)
         save(path, state)
+    elif args.verb == "repair":
+        begin_repair(state, args)
+        save(path, state)
+    elif args.verb == "recheck":
+        recheck_repair(state, args)
+        save(path, state)
     return view(state)
 
 
@@ -403,7 +576,7 @@ def locked_execute(args):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="verb", required=True)
-    for verb in ("route", "start", "status", "complete", "pause", "resume"):
+    for verb in ("route", "start", "status", "complete", "pause", "resume", "repair", "recheck"):
         command = commands.add_parser(verb)
         if verb in ("route", "start"):
             command.add_argument("--facts", type=Path, required=True)
@@ -428,6 +601,14 @@ def main(argv=None):
             command.add_argument("--evidence", type=Path, action="append", default=[])
         if verb == "resume":
             command.add_argument("--receipt", type=Path, required=True)
+        if verb == "repair":
+            command.add_argument("--stage", required=True)
+            command.add_argument("--review", type=Path, required=True)
+            command.add_argument("--authorization", type=Path, required=True)
+            command.add_argument("--actor", action="append", required=True)
+            command.add_argument("--path", action="append", required=True)
+        if verb == "recheck":
+            command.add_argument("--evidence", type=Path, action="append", required=True)
     args = parser.parse_args(argv)
     try:
         print(json.dumps(locked_execute(args), ensure_ascii=False))

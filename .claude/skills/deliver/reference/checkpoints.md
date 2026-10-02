@@ -1,6 +1,6 @@
 # Local delivery checkpoints
 
-Owner: @ahutanu. Use a **verified Python ≥3.10** interpreter, or `uv run --no-project --python ">=3.10" docs/ai-forward-pack/scripts/delivery.py --help`; source contributors use `pack/scripts/delivery.py`. Verify a native interpreter's `--version` before use; do not assume `python3` exists or is new enough. The uv form isolates invocation from the target project's dependencies/environment. This stdlib helper only selects stages and checks routing/checkpoint integrity. It never runs skills, arbitrary shell, models, releases or host permissions, and never certifies semantic correctness or authenticates a human.
+Owner: @ahutanu. Use a **verified Python ≥3.10** interpreter, or `uv run --no-config --no-project --python ">=3.10" docs/ai-forward-pack/scripts/delivery.py --help`; source contributors use `pack/scripts/delivery.py`. Verify a native interpreter's `--version` before use; do not assume `python3` exists or is new enough. The uv form isolates invocation from the target project's dependencies/environment. This stdlib helper only selects stages and checks routing/checkpoint integrity. It never runs skills, arbitrary shell, models, releases or host permissions, and never certifies semantic correctness or authenticates a human.
 
 ## Start and continue
 
@@ -43,7 +43,40 @@ After observing the actual authorized decision, capture its original evidence (h
 
 Reviewer source is `reviewer-report`; its actor cannot be any completed stage's author or any recorded partial-work authors, even after a permission pause/resume or later stage completion. Use actual stable identities; renaming or omitting an author is not clearance. Copying an old receipt, labeling model output as human, using an ACK/exit status, choosing a default, or claiming approval without the original decision is forbidden. A blocked/denied verdict remains paused. The helper checks source labels, bindings, hashes and nominal actor separation, **not authenticity or the decision's scope**. The agent/host must verify original source, approved phases/actions and applicable authority. A helper receipt never grants host tool permission, clears another required veto, or authorizes release. Reuse the pack's real reviewer/ruling and host permission standards.
 
-`status` and `resume` fail closed on identity, raw/contract, registered input/workspace, or evidence drift. Preserve the record and explain the invalidated boundary; human reconciliation/revalidation produces a new accepted task record, not an edited integrity hash or silently reset completion list. Valid completed stages stay evidence-backed and are not repeated merely to regain context.
+`status` and `resume` fail closed on identity, raw/contract, registered input/workspace, or evidence drift. Preserve the record and explain the invalidated boundary. The narrowly authorized reviewer remediation below is the only same-task tree rebind; other drift requires human reconciliation/revalidation, not an edited integrity hash or silently reset completion list. Valid unrelated completed stages stay evidence-backed and are not repeated merely to regain context.
+
+### Repair a hard veto without abandoning the task
+
+**Before any correction**, validate `status`, inspect the independent BLOCK report and the original human authority. Do not clear the rejected artifact merely to permit editing. Capture two separate records against the current gate:
+
+```json
+{"task":"<id>","gate":"<current-gate-id>","binding":"<current-binding>","authority":"reviewer","actor":"<independent-reviewer>","source":"reviewer-report","decision":"blocked","evidence":"<original-BLOCK-report>"}
+```
+
+```json
+{"task":"<id>","gate":"<current-gate-id>","binding":"<current-binding>","actor":"<operator>","source":"human-message","decision":"approved","stage":"implement","paths":["src/app.py"],"evidence":"<original-human-repair-authorization>"}
+```
+
+The human evidence may be explicit prior authorization **only after** verifying it covers the diagnosed correction, exact file scope and unchanged original criteria. Otherwise ask the human. Labels are not authentication or semantic scope validation; this receipt grants no host/tool permission, release authority or broader product mandate.
+
+```text
+delivery.py repair --task <id> --stage <affected-stage> --review <BLOCK-receipt.json> --authorization <repair-scope.json> --actor <actual-repair-author> [--actor <coauthor> ...] --path src/app.py [--path <exact-file> ...]
+# Perform only the authorized correction and real verification.
+delivery.py recheck --task <id> --evidence <fresh-repair-proof> [--evidence <file> ...]
+delivery.py resume --task <id> --receipt <fresh-independent-approval.json>
+```
+
+`repair` requires the unchanged checkpoint tree; it cannot retroactively adopt unexplained edits. It preserves the task/contract, BLOCK evidence, old gate/binding, prior snapshot, affected-stage proof and every recorded author in `repairs`/`partial`. Only the current authored stage or the latest completed stage can be repaired; `verify` and human `repair-review` are not authored correction stages. A completed affected stage is reopened, retaining all unrelated completed work. A midstage veto never claims completion.
+
+`recheck` compares every non-scoped file and Git index entry with the repair's baseline and rejects HEAD/branch changes, unrelated edits, filesystem aliases, reparse points, hardlinks and special-file substitutions. Existing scoped leaves must remain single-link regular files; an explicitly scoped missing leaf may be created or deleted, but any created object must pass the same check before re-review. It records fresh evidence, restores a reopened completed-stage record and rotates the still-active reviewer gate to the corrected snapshot/history. An active repair cannot be approved before `recheck`; old receipts and original/partial/repair authors cannot clear it. A fresh independent BLOCK can start another bound `repair` cycle; prior history remains as `superseded`. A midstage repair returns to the same unfinished stage after clearance; a completed-stage repair returns to verification. The original criteria still govern closure.
+
+Use exact root-relative, slash-separated regular product-file paths, including new/deleted files where fingerprinted. No directory-wide scope, state/Git metadata, ignored/excluded runtime inputs or submodule-internal paths are a drift waiver. Registered input/evidence hashes remain immutable: if a correction would invalidate those boundaries, reconcile explicitly rather than use this transition. While scoped edits are not yet checkpointed, ordinary `status`/`resume` still refuse tree drift; `recheck` is the explicit bounded adoption path. A new session inspects the durable repair scope and original evidence before using it.
+
+### Git submodule input boundary
+
+Each Git gitlink records its index object/stage plus checkout HEAD, branch, indexed content and tracked/nonignored worktree files recursively, with a **16-level nesting bound** (deeper layouts refuse). `snapshot.submodules` exposes these dispositions. An initialized unchanged checkout remains reusable; tracked, staged, untracked nonignored, checked-out revision and nested-submodule changes invalidate `status`/`resume`. Ignored/runtime inputs still require explicit `--input` registration.
+
+An absent/uninitialized checkout is recorded as `checkout: "unavailable"`, not inspected content or proven dependency correctness. The helper never fetches or initializes it. Treat unavailable load-bearing dependencies as a real blocker; if initialization is authorized, do it before grounding the task. Availability changes invalidate existing context. Filesystem symlinks are recorded rather than traversed; symlink ancestors of a gitlink refuse. A checkpoint made by the old helper with unrecorded gitlink content cannot establish this stronger boundary and will refuse reuse; preserve its evidence and reconcile, never recompute its integrity hash to pretend it was checked.
 
 Checkpoints now use version 2 with explicit partial authors. Version 1 cannot prove who authored in-progress work and is refused unchanged, not automatically migrated or cleared. Preserve its contract/progress/evidence and reconcile with the human/reviewer before establishing a new accepted record; never invent missing identities or silently rerun valid completed work.
 

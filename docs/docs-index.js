@@ -1047,7 +1047,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "4a0138ba3f55902b1e8b2bb3e7760af830449806740fcbad9a10cf68eca28099"
+      "sourceSha256": "05c513f9003078a9460c860ed10c7494edd86159f08ffa509a09170fbbc08e28"
     },
     {
       "id": "api-design-lint",
@@ -1184,7 +1184,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-03",
       "reviewSuggested": [],
-      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 573 public functions across 46 modules, 46% carrying a docstring.",
+      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 576 public functions across 46 modules, 45% carrying a docstring.",
       "tags": [
         "api",
         "scripts",
@@ -1198,7 +1198,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "72554853e425ff6b2f536fffe98b73f49ef27dca42ed555acf3636de056165e8"
+      "sourceSha256": "0c4563832fa79f8b32b1bf89745685ab5916c05e8ab049920586bba1eff952c5"
     },
     {
       "id": "api-marker-lint",
@@ -5601,7 +5601,7 @@ window.DOCS_INDEX = {
       "phase": "documentation",
       "reviewBy": "2027-03-22",
       "reviewSuggested": [],
-      "summary": "Start with a repository you understand and a change you can review. The first useful result is not a large plan or a swarm of agents. It is seeing whether the pack helps you frame a small request, inspect the output, and keep a reliable next step.",
+      "summary": "Start with a project you understand and a change you can review. You do not need to learn the skill sequence or manage a team of agents. Install the pack, describe one outcome, then inspect the result against your request.",
       "tags": [
         "handbook",
         "reader-guide"
@@ -5613,7 +5613,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "e51e296a4265fe06c11d1f844f349742582ea51c4b2197a7c2ee8cc829da5490"
+      "sourceSha256": "e20a35cd1ab8306acd63e1ff121fa1c00ceac45f2711d103871093dfb95eafdd"
     },
     {
       "id": "handbook-glossary",
@@ -6609,7 +6609,7 @@ window.DOCS_INDEX = {
       "phase": "documentation",
       "reviewBy": "2027-03-22",
       "reviewSuggested": [],
-      "summary": "A useful request tells the agent what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward's workflows help turn that intent into decisions, actions and a handback you can review.",
+      "summary": "A useful request says what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward helps turn that intent into work and evidence you can review, without quietly changing the finish line.",
       "tags": [
         "handbook",
         "reader-guide"
@@ -6621,7 +6621,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "ef4653f9b043c4c1ea879fece421c751413dfdbd4db1efdc3f93b05713e0429f"
+      "sourceSha256": "61b277cda9d72d38f7f8b660c8edbae4f1751b2a0fb329bfd40a4ae503fda499"
     },
     {
       "id": "hygiene-backlog",
@@ -10745,7 +10745,7 @@ window.DOCS_INDEX = {
       "path": "docs/proof/one-command-adoption.md",
       "title": "Proof Pack — one-command adoption",
       "type": "proof-pack",
-      "status": "accepted",
+      "status": "draft",
       "owner": "@ahutanu",
       "phase": "pack-adoption",
       "reviewBy": "2027-01-01",
@@ -10768,7 +10768,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "ac0451dead8eb0b1ba96eee3d10b807e6751fd714784656653d7e4408cc80120"
+      "sourceSha256": "c50381f6d8230679aacbc5a0b7d0953ed204ada7daa7ca3559fddbb27bd29434"
     },
     {
       "id": "spec-acp-coordination",
@@ -12236,5 +12236,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "8f737de9f43e9706c6823380f3164265c47c9eb9f5694d8d1f0158d38bafb631"
+  "graphSha256": "c9bb130a8e1d95d08d5246375d14eee6f92ef614915f1f4058f4a2ee5cd4f68e"
 };

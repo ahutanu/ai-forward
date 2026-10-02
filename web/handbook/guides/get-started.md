@@ -1,175 +1,230 @@
 # Try AI-Forward on one small task
 
-Start with a repository you understand and a change you can review. The first useful
-result is not a large plan or a swarm of agents. It is seeing whether the pack helps
-you frame a small request, inspect the output, and keep a reliable next step.
+Start with a project you understand and a change you can review. You do not need
+to learn the skill sequence or manage a team of agents. Install the pack, describe
+one outcome, then inspect the result against your request.
 
-The one-line setup uses [uv](https://docs.astral.sh/uv/getting-started/installation/)
-and Git. uv supplies a suitable Python interpreter without installing your project's
-dependencies. You also need a supported coding application and permission to change
-the project. Its account, model access and tool permissions remain separate;
-installing AI-Forward does not supply or bypass those.
+You need [Git](https://git-scm.com/downloads),
+[uv](https://docs.astral.sh/uv/getting-started/installation/), network access and a
+supported coding app with its own account/model access. You also need permission
+to change the project. AI-Forward does not supply model access or bypass tool
+permissions. uv supplies a suitable Python interpreter without installing your
+project's dependencies.
 
-## The short path: install, then describe your outcome
+## Install in the project you want to work on
 
-From your project directory, the same line works in Windows PowerShell/cmd and
-macOS/Linux shells:
-
-```text
-uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py
-```
-
-The launcher fetches committed pack source, previews the existing deployment map,
-preserves project decisions, verifies the install and reports its revision and source
-commit. It does not initialize Git, commit, push or grant trust. Conflicts stop the
-install rather than forcing a uniform policy. Use `--dry-run` for a no-write preview
-and `--ref <commit>` to pin the pack source. The program also works in a plain project.
-
-For existing projects, safe additions are automatic; conflicting policy is not.
-The command refuses changes to custom named hooks, unverified local-instruction
-removals, existing Git attributes or active product-check rewrites before touching
-the project. Reconcile the named conflict rather than granting blanket force.
-Use a credential-free source URL with the Git credential helper, never an embedded token.
-
-**Before this contribution is merged upstream**, use the runnable fork preview:
+**This contribution is available as a fork preview, not an upstream release.**
+Open a terminal in your project and copy this one line. It works in Windows
+PowerShell/Command Prompt and macOS/Linux terminals, with Git and uv on PATH:
 
 ```text
 uv run --no-config --no-project --script https://raw.githubusercontent.com/ahutanu/ai-forward/feat/one-command-adoption/bootstrap.py --repo https://github.com/ahutanu/ai-forward.git --ref feat/one-command-adoption
 ```
 
-Refresh your coding application's skill discovery if needed, then ask for one outcome:
+Setup installs the pack files and checks their contents. It reports
+`AI-Forward installed`, `AI-Forward updated` or `AI-Forward already current`,
+with a revision and exact source commit. Installation is not a completed project
+task. Setup does not initialize Git, install project dependencies, commit, push,
+deploy or grant permissions. A plain project works too; GitHub hosting is not needed.
+When run from a subdirectory of a Git project, setup uses the enclosing Git root.
+In a plain project, the current directory is the chosen root. After setup, inspect the project diff
+(or the named created/updated files when there is no Git) before starting work.
+
+- To preview first, append `--dry-run`. It downloads/checks the source and shows the
+  plan without writing to your project.
+- To check or update an install, rerun the same line.
+- To pin a version, replace the branch in the wrapper URL and `--ref` with the same
+  full commit id. The preview branch can change.
+
+If setup names a conflict in existing instructions, hooks, Git settings or checks,
+keep the existing file and review the specific difference. Do not delete project
+policy or enable broad permissions to get past the stop. Use a credential-free
+repository URL with Git's credential helper, not a token in a URL.
+
+### If setup fails
+
+Start with the error that setup printed. Do not keep rerunning it or widen
+permissions without understanding that error.
+
+| What you see | Safe next action | Retry when |
+|---|---|---|
+| **Command not found: `git` or `uv`** | Install the missing prerequisite from the links above, then open a new terminal. | Its `--version` command works. |
+| **Source unavailable / 404 / network error** | Confirm you can reach the exact preview URL. If your network blocks GitHub, ask its owner for the approved network or local-source path. | The launcher and source repository are reachable. |
+| **Authentication failed while fetching source** | Use Git's credential helper and a credential-free repository URL. Do not put a token in the command. | `git ls-remote` can read the selected source with the approved account. |
+| **A project instruction, hook, Git policy or check conflicts** | Keep the existing item. Ask the policy owner to compare its intended behavior with the named pack change. | The owner has reconciled that specific conflict; do not use a force flag. |
+| **Project checks unavailable** | Install or obtain the project's approved test runtime, or record the exact unavailable check and its effect on confidence. | The real check can run, or the owner accepts the explicitly limited handback. |
+
+A blocked check is not a passed check. If the safe retry condition is still false,
+stop and report the exact error and path rather than guessing.
+
+## Start a fresh chat and ask for one result
+
+Open the project in your coding app. Start a fresh chat so it can discover the
+installed skill. This is a chat request, not a terminal command:
 
 ```text
-/deliver Add CSV export for the active project and filter. Export all 63 matching tasks, not only the 20 visible rows. Do not add scheduling or new roles.
+/deliver Add CSV export for the active project and filter. Export every matching task, not only the visible page. Do not add scheduling or new roles.
 ```
 
-In Codex, use `$deliver`. [Deliver](#skill-deliver) chooses the applicable workflows;
-you do not need to choose their sequence. It continues between approved stages and
-pauses for consequential human decisions, permissions or hard review objections.
-One command does not mean those gates have been auto-approved.
+Replace the example with a task in your project.
 
-## Choose where you are starting
+| App | How to invoke the installed skill |
+|---|---|
+| Claude Code | `/deliver <your task>` |
+| Codex | `$deliver <your task>` |
+| Copilot CLI | Find `deliver` with `/skills`, then `/deliver <your task>`; you can also ask `Use the /deliver skill to <your task>`. If installed during a chat, enter `/skills reload`, then `/skills info deliver`. |
+| VS Code Copilot | `/deliver` when listed, or select/request the installed `deliver` skill; Agent Host sessions use skills rather than older prompt files |
+| Grok Build / Antigravity | Select or request the installed `deliver` skill by name |
 
-**You are working inside the AI-Forward repository.** The pack is already installed
-there. This is useful for learning or contributing to the pack, but it is not the
-same as adopting it into your application.
+Copilot's [skill command reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#skills-reference)
+and [reload guidance](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills)
+explain its native skill invocation and discovery controls. A listed skill is a
+discovery check, not proof that a model will follow every instruction.
 
-**You want the pack in another local repository.** Open the AI-Forward clone in your
-harness and use [add the pack to a repository](#skill-addpacktorepo), giving the
-target path. The workflow inspects the target and applies the deployment map rather
-than asking you to copy a random collection of files.
+[Deliver](#skill-deliver) reads the project, preserves your goal and selects the
+needed workflows. It continues through approved stages; you do not have to type
+the next skill name each time. It does not run every skill, adopt the entire
+repository or start a swarm by default.
+
+## Make the first result easy to check
+
+HarborTasks is our illustrative task-tracking service. Its page shows 20 tasks,
+but 63 match the current project's filter. The requested export should include
+all 63 and exclude other projects' tasks. That distinction is the finish line,
+not an optional enhancement.
+
+A useful first exchange might include:
+
+- the outcome and exclusions restated without adding new scope;
+- a necessary question about columns, access or empty results;
+- work through the applicable design, implementation and checks;
+- a handback showing the changed files, observed result and any limits.
+
+If the export contains only the visible 20, the task is not done. A passing test
+that serializes a hand-built list does not establish that the real filtered query
+and download work. Ask for checks of the path a person will actually use, including
+the project boundary and agreed empty-result behavior.
+
+For your own first task, pick a similar finish line you can recognize. You do not
+need a complete design in the initial request; unresolved choices should be brought
+to you before the agent silently settles them.
+
+## Answer a pause without losing the task
+
+A pause is not abandonment. The agent should tell you what is blocked, show the
+relevant evidence, ask a specific question and give you a task id. Reply in the
+same chat. Your answer applies only to that decision; it does not approve unrelated
+work, grant the app tool permission or authorize deployment.
+
+Different pauses need different responses:
+
+- **A requirement is unclear:** answer the specific choice or correct the request.
+- **A defect has been diagnosed:** review its cause and proposed repair phases.
+  Diagnosis alone does not authorize a fix. An actual prior instruction can cover
+  the repair only if those phases remain within what you authorized.
+- **The coding app asks for tool permission:** review that action in the app's
+  permission flow. The pack cannot grant it on your behalf.
+- **A review blocks the work:** address the finding and have an independent reviewer
+  check it again. The author cannot clear its own veto.
+- **Release or deployment is proposed:** it needs its own authorization; completing
+  code does not supply that permission.
+
+Here is the shape of a useful pause:
 
 ```text
-/addpacktorepo C:\projects\harbor-tasks
+Task id: `csv-export-7f2a`
+Completed: the filtered-query path is identified; the 63-match case is red.
+Blocked: exporting the email column changes the agreed data boundary.
+Decision needed from: project owner.
+Question: exclude email, include it, or change the allowed export fields?
+Reply with: Approve “exclude email”; Change <your choice>; Decline this change; or Stop this task.
+Remaining after your answer: implement, run the real query-to-download check, and obtain independent review.
 ```
 
-That is a Windows example path: replace it with your own. In Codex, select
-`$addpacktorepo` and provide the same target path. In a macOS/Linux environment the
-target will have that platform's path form.
+Your reply should be just as narrow. **Approve** accepts the named option;
+**Change** supplies a different choice; **Decline** rejects that proposed action;
+**Stop this task** ends this work. None of those answers clears a coding-app
+permission prompt or an independent review finding.
 
-**The target already has AI-Forward.** Work from that target and use
-[update the installed pack](#skill-updatepack), with the local pack source available.
-Inspect the proposed reconciliation, especially any project-specific deviations.
-Do not overwrite local policies merely to make the install look uniform.
-
-## Understand what installation gives you
-
-The short path is setup once, then `deliver` for a bounded outcome. The source-clone
-and individual-skill paths above remain available when you want to guide a specific
-stage. `/adopt` is useful when you want an architectural map of an existing project;
-it is not a prerequisite for every task or a side effect of installation.
-
-For deliberately staged work, use `/specify` for new behavior and `/investigate` for
-broken behavior. In Codex, use `$specify` or `$investigate`. These expert controls are
-optional ways to direct the work, not commands a newcomer must memorize first.
-
-The pack supplies project instructions, skills, specialist personas, knowledge
-standards, templates and scripts. Different harnesses discover different installation
-surfaces. For example, Codex discovers skills through `.agents/skills`, while Grok
-has a `.grok` surface. [Harness setup](#harnesses) explains these differences.
-
-These files guide and support work. Their presence does not establish that the
-running harness loaded them or honored a hook. In a fresh session, ask the agent
-to identify the installed skill it would use and summarize the relevant instructions.
-If it cannot, correct discovery before depending on the workflow.
-
-Run the installed doctor from the target repository root:
-
-```powershell
-python docs\ai-forward-pack\scripts\pack-doctor.py
-```
-
-On macOS/Linux, use:
-
-```sh
-python3 docs/ai-forward-pack/scripts/pack-doctor.py
-```
-
-Read the findings. A file-level readiness check is not a live permission or
-enforcement test. Do not respond to a warning by enabling broad permissions.
-Use the specific setup guidance for the affected harness.
-
-## If the repository already has a history
-
-Use [adopt an existing project](#skill-adopt) to inventory the code and documentation,
-recover an initial architectural picture and identify gaps. Adoption should bring
-useful existing knowledge into the working model, not replace it with generic prose.
-
-If your main question is whether the existing system is sound, use
-[a forensic review](#skill-forensicreview) instead of treating onboarding as an
-architecture audit. Those are different jobs.
-
-For a new project, begin by understanding the problem. You may need research or a
-specification before there is code to inventory. The pack does not require a fictional
-architecture document merely to make every folder nonempty.
-
-## Your first exercise
-
-HarborTasks is our illustrative task-tracking service. Imagine it already has a
-project-scoped task list and a filter. The page displays 20 rows, but 63 tasks match.
-Ask for a specification, not an implementation:
+Keep the task id. In a fresh chat **in the same project**, use:
 
 ```text
-/specify Add CSV export for the active project and filter in HarborTasks.
-Export all matching tasks, not just the visible page. Keep this first slice small.
-Tell me which choices about columns, access and empty results I need to make.
+/deliver resume <task-id>
 ```
 
-Use `$specify` for Codex. The other documented slash-command harnesses use the
-slash form; confirm discovery in your running application.
+Use `$deliver resume <task-id>` in Codex. In Copilot CLI, ask it to use the `/deliver`
+skill to resume that id. Replace `<task-id>` with the id you received. The agent
+checks the saved request, project and evidence before reusing valid completed work.
+If files or requirements changed, it explains what must be checked again rather
+than inventing consent or silently resetting progress. Checkpoints are local;
+a different clone or computer does not automatically have them.
 
-An illustrative useful handback would state:
+**If the checkpoint is missing or damaged**, do not recreate its hash or claim that
+the old approvals still apply. Keep the last handback and any referenced evidence.
+Reopen the original project and check whether the record exists there. If it does
+not, start a new accepted task with the original goal, exclusions and remaining
+criteria; list the old work as evidence to revalidate, not as completed work to
+trust automatically. Ask again for any decision whose original source and scope
+cannot be shown. This preserves useful evidence without inventing progress or consent.
 
-- the person using export and the outcome they need;
-- the distinction between 20 visible rows and all 63 matches;
-- acceptance criteria you can check;
-- unresolved choices such as columns and download behavior;
-- explicit exclusions, such as scheduling exports or introducing a new reporting service.
+## If the skill is missing
 
-Review those choices. An agent that immediately builds a reporting platform has not
-understood the intended first slice.
+Check that the app opened the project where you installed the pack. Refresh skill
+discovery or start a fresh chat. Ask the agent to identify the installed `deliver`
+skill and the relevant project instructions. A workflow named in prose is not
+necessarily registered in the app's menu. [Harness setup](#harnesses) explains the
+host-specific locations and discovery rules.
 
-## Decide whether to continue
+For a file-level readiness check, run this from the project root:
 
-You are ready for the next step when you can explain the intended result and how you
-would recognize an incorrect one. Then choose a design or implementation workflow
-appropriate to the risk. [From request to reviewed change](#workflow) gives that
-decision path.
+```text
+uv run --no-config --no-project --python ">=3.10" docs/ai-forward-pack/scripts/pack-doctor.py
+```
 
-Keep the first session focused. Inspect changed files before committing, and do not
-equate an agent's final message with acceptance. If it is writing code, ask for the
-checks that exercise the actual path a user will use.
+Read the findings; do not answer a warning by granting broad permissions. This
+check can find missing files or setup problems, but it does not prove a live model
+loaded the instructions or honored a hook. The delivery helper likewise checks
+saved-state integrity, not human authenticity or the meaning of acceptance evidence.
 
-## Common first-run problems
+## What a finished handback looks like
 
-- **The skill is absent.** Confirm the installation location and harness-specific
-  discovery rules, then refresh the session. A workflow mentioned in prose is not
-  necessarily registered in the host's menu.
-- **A Python command fails on Windows.** Use `python` or `py -3`, not a Microsoft
-  Store `python3` alias. Let the doctor name the working interpreter.
-- **Existing instructions disagree.** Resolve the project-specific conflict rather
-  than installing a second competing policy.
-- **The task becomes too ceremonial.** State a smaller outcome and exclusions.
-  Reducing unnecessary artifacts must not remove a safety check the change needs.
+A concise final answer can still be rigorous:
 
-**Next:** [choose the right working path](#workflow), or [look up a skill by need](#skills).
+```text
+Completed
+- Export uses the active project and filter and returned all 63 matching tasks.
+- Another project's tasks were excluded. The empty export kept the agreed header.
+- Changed: export handler, query adapter and focused acceptance test.
+
+Remaining
+- Deployment was not requested and did not run.
+- Safari download behavior was not checked because the approved browser runtime was unavailable.
+
+Best next action
+- Review the sample CSV and the Safari limitation; authorize deployment separately if wanted.
+```
+
+The evidence should point to the observed command, output or interaction for each
+original condition. A reasoned skip belongs under **Remaining** and narrows the
+claim. It does not become a pass because the rest of the task succeeded.
+
+## When you want more control
+
+The one-line setup and `deliver` are the short path. These are alternatives, not
+extra steps you must complete first:
+
+- **Inside an AI-Forward clone:** the pack is already installed for work on the
+  pack itself. This does not install it into your application.
+- **Install from a source clone:** use [add the pack to a repository](#skill-addpacktorepo)
+  with the target path. The one-line setup above does not require that clone.
+- **Guide an update from local source:** use [update the installed pack](#skill-updatepack)
+  and review project-specific differences.
+- **Map existing code and knowledge:** use [adopt an existing project](#skill-adopt).
+  Mapping a repository is optional, not a side effect of setup.
+- **Review the system without repairing it:** use [forensic review](#skill-forensicreview).
+- **Request a specification or diagnosis only:** use [specify](#skill-specify) or
+  [investigate](#skill-investigate). Analysis is a valid outcome; it is not permission
+  to edit production code.
+
+**Next:** [from request to reviewed change](#workflow) explains stage choices and
+meaningful acceptance, or [look up a skill by need](#skills).
