@@ -475,7 +475,8 @@ def main(argv=None):
                  "core.hooksPath=" + str(source / ".git/bootstrap-disabled-hooks"),
                  "checkout", "--detach", commit], cwd=source)
             project = run([sys.executable, "-I", "-B", "-c",
-                           "import sys; sys.path.insert(0, sys.argv[1]); "
+                           "import sys; sys.stdout.reconfigure(encoding='utf-8',errors='replace'); "
+                           "sys.path.insert(0, sys.argv[1]); "
                            "from repo_identity import canonical_project; print(canonical_project(sys.argv[2]))",
                            str(source / "pack/scripts"), str(target)], cwd=target).strip()
             planned = pack(source, target, "plan", project)
