@@ -2,7 +2,7 @@
 id: proof-one-command-adoption
 title: "Proof Pack — one-command adoption"
 type: proof-pack
-status: in-review
+status: accepted
 owner: "@ahutanu"
 phase: "pack-adoption"
 tags: [adoption, delivery, installation, portability]
@@ -98,7 +98,7 @@ summary: >-
 - Project modules cannot shadow stdlib imports during a no-write bootstrap preview.
 - Worker-writable verifiers cannot approve an unimplemented or prematurely exiting product.
 
-## Remaining evidence before final acceptance
+## Final acceptance readback
 
 - The complete local bundle finished with **1,500 passed, 42 skipped and 833
   subtests passed**; all **18/18** consistency, portability, source-sync,
@@ -106,11 +106,13 @@ summary: >-
 - The complete local Playwright result on the final artifact set is **264 passed,
   12 deliberately skipped** across Chromium, Firefox and WebKit.
 
-- Read back the required GitHub Actions matrix on the exact pushed fork commit, including
-  Windows cmd, native Windows junction behavior, macOS and repeat remote HTTPS setup.
-- Record the final complete bundle result and remote commit identity below.
-
-## Final acceptance readback
-
-Pending the exact pushed commit and its CI run; this Proof Pack must not be cited as final
-platform qualification while this section remains pending.
+- **Implementation head:** `049d234b5e64cd8fd04d354c071c6ec99aaffab3`, authored as
+  `Alex Hutanu <alex@hutanu.net>` and read back from
+  `origin/feat/one-command-adoption`.
+- **Native matrix:** [GitHub Actions run 37055642430](https://github.com/ahutanu/ai-forward/actions/runs/37055642430)
+  completed successfully for Ubuntu, macOS and Windows on that exact SHA.
+- Every platform passed routing/resume/preservation/deployment tests and an actual
+  HTTPS exact-SHA one-line install plus repeat install in a plain project. Windows
+  additionally passed the exact `cmd.exe` one-liner and native junction fixture.
+- A separate public exact-SHA smoke retained dirty product bytes, initialized no Git
+  repository, installed revision 98, and repeated byte-identically.
