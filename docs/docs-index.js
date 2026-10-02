@@ -697,7 +697,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "ba52f37e6adae417de4620f1c20785f550de0a69e05314f91a24a38466a28c49"
+      "sourceSha256": "e0f14ec1fc856642edce271a6cf0cd79f943d4900c951e6b766dab7a032bf955"
     },
     {
       "id": "api-bounded_process",
@@ -1159,7 +1159,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-03",
       "reviewSuggested": [],
-      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 552 public functions across 45 modules, 47% carrying a docstring.",
+      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 553 public functions across 45 modules, 47% carrying a docstring.",
       "tags": [
         "api",
         "scripts",
@@ -1173,7 +1173,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "40eefd875a805ff75f8211c187ac445eaa0d89d7dcce12013777e759a16eccb4"
+      "sourceSha256": "1292293feb20513b73cc782c53903cc192947a8c59782df4daa3909ac5ac458f"
     },
     {
       "id": "api-marker-lint",
@@ -1423,7 +1423,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "1d6e59221f6b766c862e4b3bbbf510ef2898abc2f7652656f3bcdc4780285920"
+      "sourceSha256": "ebfa70a22e4bc82bbb6a2cc7e19d6ec7f09b09cb92ab45a79be915ead8bd03b8"
     },
     {
       "id": "api-run-verify-gates",
@@ -4820,7 +4820,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "75de5d9ca3e3b22b00d2f76fea1a8735fec3cdd655e6dccbf19ba8e6a92571c0"
+      "sourceSha256": "3e378455bc6ce97f3141e78d4dcfa3de99ff66e2fcb7eeda6f93f0cab39ba230"
     },
     {
       "id": "docs-index",
@@ -12076,5 +12076,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "a5f98561e231fc2de4724b7a7b5e38a0a9fd07015a08f63117e4d8bf0bd65fb9"
+  "graphSha256": "0b7242cb9baf9f4d0941fb36155c26839794d9e160a19d9b31091208af3a0eae"
 };

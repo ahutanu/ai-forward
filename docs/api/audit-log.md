@@ -108,7 +108,7 @@ Conventions
 | `--prompt-file` | _(no help text — coverage gap)_ |
 | `--prompt` | _(no help text — coverage gap)_ |
 | `--rationale` | _(no help text — coverage gap)_ |
-| `--root` | docs root (default: docs); audit dir is <root>/audit |
+| `--root` | docs root (default: docs/ if docs/audit/ already exists in this repo, else the local .agents/log/ area -- never created unasked, pack-onoff-analysis #3 / class PK-03); audit dir is <root>/audit |
 | `--session` | _(no help text — coverage gap)_ |
 | `--shortname` | _(no help text — coverage gap)_ |
 | `--signal-acceptance-met` | signal: the done_when acceptance criterion was met |
@@ -223,6 +223,11 @@ only when neither exists - the newest harness marker the session-start hook wrot
 reported as `session-start-hook` so a reader knows the instant was the session's
 start rather than grounding. Returns (None, None) when there is none, which degrades
 to no duration (IO8).
+
+### `resolve_default_root(explicit)`
+
+An explicit --root is never 'unasked', so it is returned untouched. The default is
+resolved against what is ALREADY on disk, never created by this check itself.
 
 ### `audit_dir(root)`
 
@@ -396,6 +401,6 @@ Ingest a session-export JSON array of turns into the audit log (build on session
 
 ## Coverage
 
-- Public functions: **40** · documented: **23** (**58%**)
+- Public functions: **41** · documented: **24** (**59%**)
 - Undocumented (recorded, not invented): `now_iso`, `record_start`, `audit_dir`, `log_path`, `read_log`, `append_log`, `git`, `git_context`, `commits_between`, `find_template`, `cmd_append`, `cmd_change`, `cmd_list`, `cmd_search`, `cmd_get`, `cmd_render`, `cmd_git_context`
 

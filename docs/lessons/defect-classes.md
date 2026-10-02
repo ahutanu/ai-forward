@@ -126,7 +126,7 @@ representation-contract failure, not a reason to bypass merges for authored file
 4. A control is not a control until it has been **observed failing** on the un-fixed code.
 5. If the class would help any project — not just this one — raise it upstream via `/extendaibundle` (CI8).
 
-**Status counts:** project classes: controlled `37` · partially-controlled `23` · uncontrolled `8`; inherited table: controlled `11` · partially-controlled `4` · uncontrolled `22`
+**Status counts:** project classes: controlled `39` · partially-controlled `24` · uncontrolled `8`; inherited table: controlled `11` · partially-controlled `4` · uncontrolled `22`
 *Checked, not trusted: `tests/docs_explorer/test_defect_register_counts.py` tallies each entry's leading status and fails when this line disagrees, printing the corrected line (FR-076, class REC-A). Change a status, change this line. A status is one of the three schema values; a qualifier after it does not change the count.*
 **Recurrence since last review:** `0` — *a second occurrence of a known class means the control was wrong, not that someone was careless (CI4).*
 
@@ -151,6 +151,33 @@ representation-contract failure, not a reason to bypass merges for authored file
 ## Project classes
 
 *Classes discovered in this repository. Newest first.*
+
+### PK-07 — A script, or the agent running it, invents a git identity to force a blocked commit through
+- **Signature:** a commit fails for lack of a configured `user.name`/`user.email`, and the response is to run `git config user.*` in the **caller's own repo** so the commit succeeds, rather than leaving the change uncommitted and reporting the gap.
+- **Why it survives:** the commit then succeeds, the artifact lands, and nothing downstream checks who authored it — an invented identity is attribution noise, never a build failure.
+- **Instances:**
+  - `2026-10-02` **harness-bench grid-1 and grid-3 (pack-onoff-analysis.html #3, evidence F-6)** — 4 of 54 pack-on cells in grid-1, 4 of 54 in grid-3, ran `git config user.*` in the target repo so the agent could commit pack artifacts; 0 pack-off cells ever did.
+- **Class → sweep → derive:** swept every `pack/scripts/*.py` for `"config", "user.email"`/`"user.name"` or a literal `git config user.*` string. One occurrence: `conductor-join.py::self_test()`, which only ever configures a `tempfile.TemporaryDirectory` repo it created and owns itself, never a caller's repo — allowed, and pinned by name and line. No other script sets a git identity anywhere.
+- **Control:** `tests/docs_explorer/test_no_git_identity.py` — a sweep over every pack script's source that fails on any `git config user.*` outside the one named, line-pinned self-test fixture, with a dedicated test proving the sweep catches a synthetic violation (so it is not vacuously green). Prose statement in `audit-and-change-log.md` AL0.2 and `communication-and-task-discipline.md`. Observed the sweep pass cleanly on the current tree (there was no live violation to fix — this is a preventive control, confirmed live against an injected offender).
+- **Status:** `controlled`
+
+### PK-03 — A generated artifact seeds itself into a repo that never opted in
+- **Signature:** a tool's **default** output path writes into the product tree (`docs/audit/`, `docs/docs-index.js`) on first use, regardless of whether the repo asked for that tree to exist — so running the tool at all, even on an unrelated task, bootstraps pack scaffolding nobody requested.
+- **Why it survives:** the write succeeds, the artifact is well-formed, and the Audit/Discoverability Mandates *require* the write — so every individual call is doing exactly what its own instruction says. Nothing asks whether the destination directory existed before this call.
+- **Instances:**
+  - `2026-10-02` **harness-bench grid-1 and grid-3 (pack-onoff-analysis.html #3, evidence F-6)** — 11 of 54 pack-on cells in grid-1, 23 of 54 in grid-3 (137 files, 18,799 lines), added `docs/audit/` and often `docs/docs-index.js` into repos that never asked for it. One D1 cell's own test (`WhatTheRealCorpusCanProduceTests`) read `docs/audit/audit-log.jsonl` as its corpus and broke when the file appeared.
+- **Class → sweep → derive:** the shape is "a generated-artifact script's default root autocreates its destination instead of checking for prior opt-in." `audit-log.py` and `docs-graph.py derive` both had it (the two artifacts F-6 named); the control generalizes to any future generated-artifact script via AL0.2's stated rule.
+- **Control:** `audit-log.py`'s default `--root` now resolves to `docs` only when `docs/audit/` already exists, else the pack's own local area (`.agents/log/`, D10); an explicit `--root` is unchanged. `docs-graph.py derive`'s default write is skipped (exit 0, explained on stderr) unless `docs/index.html` or the destination already exists, or `--root`/`--out` was given explicitly. Pinned by `tests/docs_explorer/test_audit_log.py::AuditMandateOptInRootTests` and `tests/docs_explorer/test_docs_graph.py::DeriveOptInWriteTests`, each observed failing against the pre-fix default before the guard was added.
+- **Status:** `controlled`
+
+### PK-02 — A turn spends its ceremony budget and ends announcing the next step instead of taking it
+- **Signature:** the turn's early tool calls are entirely coordination/ceremony setup (installing a layer, building a plan the prompt had already answered), and the closing message names the next action ("I'll…", "before dispatch…") rather than performing it or saying why not — zero product written.
+- **Why it survives:** every individual step followed its own instruction correctly (`coord doctor` really should run; a plan really is good practice), so no single call looks wrong; only the turn as a whole, read end to end, shows nothing was delivered.
+- **Instances:**
+  - `2026-10-02` **harness-bench grid-1 and grid-3 (pack-onoff-analysis.html #3, evidence F-5)** — 5 of 54 pack-on cells in grid-1, 4 of 54 in grid-3; F1 Copilot cells spent the whole turn on coordination setup, D1 Copilot cells wrote only a test file, both ending on an announcement. 32% of pack-on tool calls in one grid were ceremony against 1% pack-off (F-7).
+- **Class → sweep → derive:** two contributing mechanisms, both fixed: (a) no check on whether the *last* message is a delivered action vs. an announced one; (b) `execute-with-coordination`/`prepare-for-coordination` treated `coord install`/`classify init`/a committed plan as a precondition to *any* delegation, even when the prompt already named the tracks, owners and paths.
+- **Control:** `communication-and-task-discipline.md` **CT19a** (a declared ceremony budget before the first product write: T1 ≤ 5 tool calls, T2 ≤ 12) and **CT25a** (the hard close check: the last message took its announced action or said why not), both always-loaded. `execute-with-coordination/SKILL.md` gained the stated-division exception so a prompt that already names tracks/owners/paths dispatches directly instead of installing the coordination layer first. No mechanical transcript detector exists yet for "the last message announced an action" — that is a judgement on prose, not a parseable shape — so this rung is **always-loaded instruction**, not an automated gate.
+- **Status:** `partially-controlled` — the rule is written and always-loaded; nothing yet detects the violation mechanically in a transcript.
 
 ### RUN-B — A runner bound or rejection ends a working attempt, or ends it with no evidence
 - **Signature:** a transport limit sized for a qualification turn (a byte ceiling, "any native error step fails") ends a long worker attempt whose work is already committed, or a rejection (`protocol_error`) ends one and the result says nothing about what was rejected. The code is a limit or a rejection, never the agent's own failure.
