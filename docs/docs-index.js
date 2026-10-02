@@ -10768,7 +10768,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "2c7666bff3685c95f8713ee4bab440b2dddaab5cc17e1042d85219b1813c3094"
+      "sourceSha256": "ac0451dead8eb0b1ba96eee3d10b807e6751fd714784656653d7e4408cc80120"
     },
     {
       "id": "spec-acp-coordination",
@@ -12236,5 +12236,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "39143a1ad8a5062cba8787008935115db49d27ede4904e91be5e340fb8f0568a"
+  "graphSha256": "8f737de9f43e9706c6823380f3164265c47c9eb9f5694d8d1f0158d38bafb631"
 };

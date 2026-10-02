@@ -1600,24 +1600,21 @@ test("context styling, fitting, and label ceilings preserve the highest-priority
   await expect(page.locator('[data-node-id="root"]')).toHaveClass(/context/);
   await expect(page.locator('[data-node-id="child"]')).toHaveClass(/depth-1/);
   await expect(page.locator('[data-node-id="outside"]')).toHaveClass(/unrelated/);
-  // Put the engine in keyboard modality before programmatically targeting the
-  // de-emphasized SVG control; WebKit's :focus-visible heuristic is otherwise
-  // nondeterministic for element.focus() after a pointer click.
-  await page.keyboard.press("Tab");
-  await page.locator('[data-node-id="outside"]').evaluate((element) => {
+  const deEmphasizedFocus = await page.locator('[data-node-id="outside"]').evaluate((element) => {
+    // Focus and inspect in one browser task: spatial rerenders can replace SVG
+    // nodes between separate Playwright focus/style reads.
     element.tabIndex = 0;
     element.focus();
-  });
-  await expect(page.locator('[data-node-id="outside"]')).toBeFocused();
-  const deEmphasizedFocus = await page.locator('[data-node-id="outside"]').evaluate((element) => {
     const computed = getComputedStyle(element);
     return {
+      focused: document.activeElement === element,
       outlineStyle: computed.outlineStyle,
       outlineWidth: computed.outlineWidth,
       outlineOffset: computed.outlineOffset,
       boxShadow: computed.boxShadow,
     };
   });
+  expect(deEmphasizedFocus.focused).toBe(true);
   const visibleFocus =
     deEmphasizedFocus.outlineStyle !== "none" ||
     deEmphasizedFocus.boxShadow !== "none";

@@ -106,9 +106,8 @@ summary: >-
 - The complete local Playwright result on the final artifact set is **264 passed,
   12 deliberately skipped** across Chromium, Firefox and WebKit.
 
-- **Implementation head:** `049d234b5e64cd8fd04d354c071c6ec99aaffab3`, authored as
-  `Alex Hutanu <alex@hutanu.net>` and read back from
-  `origin/feat/one-command-adoption`.
+- **Qualified implementation commit:** `049d234b5e64cd8fd04d354c071c6ec99aaffab3`,
+  authored as `Alex Hutanu <alex@hutanu.net>`.
 - **Native matrix:** [GitHub Actions run 37055642430](https://github.com/ahutanu/ai-forward/actions/runs/37055642430)
   completed successfully for Ubuntu, macOS and Windows on that exact SHA.
 - Every platform passed routing/resume/preservation/deployment tests and an actual
