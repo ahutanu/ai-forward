@@ -20,9 +20,13 @@ if __name__ == "__main__" and not (sys.flags.isolated and sys.flags.dont_write_b
             raise RuntimeError("a supported interpreter and saved wrapper file are required")
         _entry_os = __import__(_entry_os_name)
         # __file__, not caller-controlled argv[0], identifies the already-running
-        # wrapper. -- protects option-looking filenames; execv retains stdin,
-        # cwd, arguments and the final exit status without a shell or extra wait.
-        _entry_os.execv(sys.executable, [sys.executable, "-I", "-B", "--", __file__, *sys.argv[1:]])
+        # wrapper. -- protects option-looking filenames; stdin, cwd and arguments
+        # are inherited without a shell. POSIX overlays; Windows' low-level execv
+        # does not reliably propagate the child status, so wait and return it.
+        _entry_args = [sys.executable, "-I", "-B", "--", __file__, *sys.argv[1:]]
+        if _entry_os_name == "nt":
+            sys.exit(_entry_os.spawnv(_entry_os.P_WAIT, sys.executable, _entry_args))
+        _entry_os.execv(sys.executable, _entry_args)
     except (OSError, RuntimeError, AttributeError) as exc:
         print(f"AI-Forward bootstrap failed: cannot isolate entry interpreter: {exc}; "
               "run the saved wrapper with Python 3.10+ -I -B", file=sys.stderr)

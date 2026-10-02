@@ -37,7 +37,9 @@ class UVHookLauncherTests(unittest.TestCase):
                 "sys.exit(7)\n", encoding="utf-8", newline="\n",
             )
             env = dict(os.environ, UV_PYTHON=sys.executable, UV_NO_PROGRESS="1",
-                       UV_OFFLINE="1", UV_CACHE_DIR=str(root / "uv-cache"))
+                       UV_OFFLINE="1", UV_PYTHON_DOWNLOADS="never",
+                       UV_PYTHON_INSTALL_DIR=str(root / "uv-python"),
+                       UV_CACHE_DIR=str(root / "uv-cache"))
             if os.name == "nt":
                 git_root = Path(git).parent.parent
                 directories = [str(Path(git).parent), str(git_root / "usr/bin"),

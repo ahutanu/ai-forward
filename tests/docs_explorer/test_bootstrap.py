@@ -211,10 +211,12 @@ class BootstrapTests(unittest.TestCase):
                 before = self.entry_snapshot()
                 result = subprocess.run([sys.executable, *flags, str(wrapper), *arguments],
                                         cwd=self.target, env=env, input=payload, capture_output=True, timeout=30)
-                self.assertEqual(7, result.returncode, result.stderr)
-                self.assertEqual({"args": arguments, "stdin": payload.hex(), "cwd": str(self.target),
-                                  "interpreter": sys.executable, "isolated": 1, "no_bytecode": 1},
-                                 json.loads(result.stdout))
+                self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
+                observed = json.loads(result.stdout)
+                self.assertEqual(Path(observed.pop("cwd")).resolve(), self.target.resolve())
+                self.assertEqual(observed,
+                                 {"args": arguments, "stdin": payload.hex(),
+                                  "interpreter": sys.executable, "isolated": 1, "no_bytecode": 1})
                 self.assertEqual(before, self.entry_snapshot())
                 self.assertEqual(b"", result.stderr)
 
