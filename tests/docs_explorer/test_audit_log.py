@@ -381,5 +381,59 @@ class PromptLogAddSurvivesNonAscii(unittest.TestCase):
         self.assertEqual(entry["prompt"], text)
 
 
+class AuditMandateOptInRootTests(unittest.TestCase):
+    """pack-onoff-analysis.html #3 (class PK-03, F-6): 11 of 54 cells in grid-1, 23 of 54 in
+    grid-3 (137 files, 18,799 lines), added docs/audit/ -- and often docs/docs-index.js --
+    into repos that never asked for it, because the Audit Mandate's own default autocreates
+    docs/audit/ on first use regardless of whether the repo opted in. One D1 cell's own test
+    broke on the new docs/audit/audit-log.jsonl it had never asked for.
+
+    The fix: an explicit --root is a direct ask and is honoured exactly as before. The
+    DEFAULT (no --root) degrades to the pack's own local area (.agents/log/, D10 -- already
+    tracked by default, never created unasked) unless docs/audit/ already exists on disk --
+    the repo's own signal that it opted in."""
+
+    SCRIPT = ROOT / "pack" / "scripts" / "audit-log.py"
+
+    def _run(self, cwd, *args):
+        return subprocess.run([sys.executable, str(self.SCRIPT), *args],
+                              cwd=str(cwd), capture_output=True, text=True, timeout=30)
+
+    def test_default_root_never_creates_docs_audit_in_a_fresh_repo(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory)
+            result = self._run(repo, "append", "--shortname", "t", "--session", "s",
+                               "--prompt", "p", "--summary", "s", "--kind", "manual")
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertFalse((repo / "docs" / "audit").exists(),
+                             "the Audit Mandate must not auto-create docs/audit/ in a repo "
+                             "that never opted in (PK-03)")
+            self.assertTrue((repo / ".agents" / "log" / "audit" / "audit-log.jsonl").exists(),
+                            "it degrades to the pack's own local log area instead")
+
+    def test_default_root_uses_docs_audit_when_the_repo_already_opted_in(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory)
+            (repo / "docs" / "audit").mkdir(parents=True)
+            result = self._run(repo, "append", "--shortname", "t", "--session", "s",
+                               "--prompt", "p", "--summary", "s", "--kind", "manual")
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertTrue((repo / "docs" / "audit" / "audit-log.jsonl").exists(),
+                            "an already-opted-in repo keeps writing to docs/audit/")
+            self.assertFalse((repo / ".agents").exists(),
+                             "no local fallback is created when the real one is already used")
+
+    def test_explicit_root_is_honoured_even_in_a_fresh_repo(self):
+        """An explicit --root is a direct ask, never 'unasked', so it works exactly as
+        before even where the directory does not yet exist."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = pathlib.Path(directory)
+            result = self._run(repo, "--root", str(repo / "docs"), "append",
+                               "--shortname", "t", "--session", "s", "--prompt", "p",
+                               "--summary", "s", "--kind", "manual")
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertTrue((repo / "docs" / "audit" / "audit-log.jsonl").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

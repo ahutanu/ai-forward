@@ -1560,5 +1560,57 @@ summary: >-
             self.assertEqual(1, result.returncode, "an orphan is a defect (V10)")
 
 
+class DeriveOptInWriteTests(unittest.TestCase):
+    """pack-onoff-analysis.html #3 (class PK-03, F-6): 23 of 54 pack-on cells in one grid
+    added docs/docs-index.js into repos that never asked for it -- a skill's own closing
+    'sync the derived index' convention running `derive` with no --root (the documented
+    invocation) in a repo that had no Docs Explorer yet. `derive` must not seed docs/ and
+    docs-index.js in a product tree the repo never opted into; an explicit --out is a
+    direct ask and bypasses the check, unchanged."""
+
+    def _derive(self, cwd, *extra):
+        return subprocess.run([sys.executable, str(SCRIPT), "derive", *extra],
+                              cwd=str(cwd), capture_output=True, text=True, timeout=60)
+
+    def test_derive_skips_the_write_in_a_fresh_repo_with_no_explorer(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            result = self._derive(repo)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse((repo / "docs" / "docs-index.js").exists(),
+                             "docs-index.js must not be seeded unasked (PK-03)")
+
+    def test_derive_proceeds_when_the_explorer_already_exists(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            docs = repo / "docs"
+            docs.mkdir()
+            (docs / "index.html").write_text("<html>explorer</html>", encoding="utf-8")
+            result = self._derive(repo)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertTrue((docs / "docs-index.js").exists(),
+                            "an already-opted-in repo (docs/index.html present) still gets "
+                            "its index derived")
+
+    def test_derive_proceeds_when_docs_index_js_already_exists(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            docs = repo / "docs"
+            docs.mkdir()
+            (docs / "docs-index.js").write_text("window.DOCS_INDEX = {};", encoding="utf-8")
+            result = self._derive(repo)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            content = (docs / "docs-index.js").read_text(encoding="utf-8")
+            self.assertIn("docs-index/v2", content, "a pre-existing index is refreshed")
+
+    def test_explicit_out_is_a_direct_ask_and_bypasses_the_check(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            dst = repo / "elsewhere" / "index.js"
+            result = self._derive(repo, "--out", str(dst))
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertTrue(dst.exists(), "an explicit --out is honoured even in a fresh repo")
+
+
 if __name__ == "__main__":
     unittest.main()
