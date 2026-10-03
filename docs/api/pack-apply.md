@@ -45,7 +45,9 @@ What it does, per artifact family (pack-owned names only - repo-local files are 
                  INSTALL,context-budget.json}; .github/hooks/ai-forward.json; .claude/settings.json
                  (hooks merged, showThinkingSummaries set); .grok/hooks/ai-forward.json;
                  .grok/rules/grok-surface.md (path map only — not knowledge docs); .gitignore lines;
-                 docs/index.html only if absent; docs/docs-index.js NEVER (V10)
+                 docs/index.html and docs/docs-index.js NEVER created or overwritten by
+                 install — a content-creating skill instantiates the Explorer shell, as its
+                 last action, once it has real content to show (V10; AL0.2, PK-03)
   front doors -> AGENTS.md: the managed block replaced wholesale between markers (appended if absent).
                  CLAUDE.md: converted to `@AGENTS.md` + the addendum block (CTX-B); the old file is
                  backed up under docs/ai-forward-pack/retired/, and every paragraph that is NOT in
