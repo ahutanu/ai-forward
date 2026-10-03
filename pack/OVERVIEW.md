@@ -16,11 +16,16 @@ Open a terminal in the project you want to work on. You need Git,
 supported coding app with its own account/model access. Git repositories and plain
 projects are supported; you do not need to clone AI-Forward first.
 
-**Available now: the fork preview, not an upstream release.** Copy this one line:
+Copy this one line to install upstream `main`:
 
 ```text
-uv run --no-config --no-project --script https://raw.githubusercontent.com/ahutanu/ai-forward/feat/one-command-adoption/bootstrap.py --repo https://github.com/ahutanu/ai-forward.git --ref feat/one-command-adoption
+uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py
 ```
+
+The repository and `main` are already the defaults; neither `--repo` nor `--ref`
+is needed here. Reviewers testing unmerged work use a committed local source or
+explicit repository/ref overrides instead. The normal command installs only
+what is available upstream.
 
 It works in Windows PowerShell/Command Prompt and macOS/Linux terminals, with Git
 and uv on PATH. Setup reports `AI-Forward installed`, `AI-Forward updated` or

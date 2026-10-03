@@ -14,8 +14,7 @@ not a hosted service or a model. Your coding app supplies model access and tools
 Install once, then describe the result you want. You do not need to clone AI-Forward
 or learn its workflow sequence first. Start with a small change you can review.
 
-**This branch is a fork preview, not an upstream release.** The command below uses
-the preview. You need [Git](https://git-scm.com/downloads),
+The standard setup installs the upstream `main` version. You need [Git](https://git-scm.com/downloads),
 [uv](https://docs.astral.sh/uv/getting-started/installation/), network access and a
 supported coding app with its own account/model access.
 
@@ -26,8 +25,11 @@ in Windows PowerShell/Command Prompt and macOS/Linux terminals, with Git and uv 
 PATH. A project without Git is welcome too; setup will not initialize it for you.
 
 ```text
-uv run --no-config --no-project --script https://raw.githubusercontent.com/ahutanu/ai-forward/feat/one-command-adoption/bootstrap.py --repo https://github.com/ahutanu/ai-forward.git --ref feat/one-command-adoption
+uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py
 ```
+
+No `--repo` or `--ref` is needed: setup already defaults to this upstream repository
+and `main`. For unmerged changes, see [testing a contribution](#test-unmerged-changes).
 
 Success reports `AI-Forward installed`, `AI-Forward updated` or
 `AI-Forward already current`, with the revision and exact source commit. That means
@@ -111,15 +113,9 @@ is missing, check discovery before relying on it. The local progress helper chec
 saved state; it does not authenticate a human decision or judge whether a result
 meets the meaning of your request.
 
-**After this contribution is merged and available upstream**, the shorter upstream
-command will be:
-
-```text
-uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py
-```
-
-Until then, use the preview command above. Manual reconciliation and source-clone
-installation are expert alternatives, not additional onboarding steps.
+Manual reconciliation and source-clone installation are expert alternatives,
+not additional onboarding steps. Source and version overrides are optional;
+they do not belong in the normal setup command.
 
 ## Where to read next
 
@@ -127,7 +123,7 @@ installation are expert alternatives, not additional onboarding steps.
 - [Pack overview](pack/OVERVIEW.md): installed files and individual workflows.
 - [Handbook source](web/handbook/): the reading journey, practical guides and every skill.
 - [Public handbook](https://timianmalloo.github.io/ai-forward/docs/portal/index.html):
-  the published upstream edition; fork-preview changes may not be there yet.
+  the published upstream edition; unmerged changes may not be there yet.
 - [Codex setup](docs/ai-forward-pack/codex.md): discovery and troubleshooting.
 - [Docs Explorer](docs/index.html): the project's linked architecture, decisions and records.
 
@@ -181,6 +177,16 @@ pwsh tools/package-pack.ps1
 This writes `dist/ai-forward-pack.zip`. The deployment map and expert reconciliation
 procedure are in [INSTALL.md](pack/adapters/INSTALL.md). Packaging does not install,
 release or publish the bundle.
+
+### Test unmerged changes
+
+Normal setup reads upstream `main`; it does not install an unmerged pull request.
+The upstream launcher becomes available when the contribution adding it is merged.
+Before then, reviewers can run the launcher from a committed local clone with
+`--source <clone-path>`, or select a review source with `--repo <repository-url>`
+and `--ref <branch-or-commit>`. Match the launcher to that same reviewed source.
+These options are for reviewing contributions or choosing a version, not prerequisites
+for using the released pack. No global Git settings or trust changes are needed.
 
 ## License
 

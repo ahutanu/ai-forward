@@ -2,7 +2,7 @@
 id: proof-one-command-adoption
 title: "Proof Pack — one-command adoption"
 type: proof-pack
-status: accepted
+status: in-review
 owner: "@ahutanu"
 phase: "pack-adoption"
 tags: [adoption, delivery, installation, portability]
@@ -22,7 +22,37 @@ summary: >-
 - **Tier:** T2 (load-bearing workflow boundaries, local state and cross-platform installation)
 - **Author / date:** @ahutanu · 2026-10-02
 
-## Revision 99 quality follow-up
+## Revision 100 upstream onboarding correction
+
+Primary onboarding now documents the upstream repository and `main`, which are
+already the bootstrap defaults. The normal command has no `--repo` or `--ref`.
+Source/ref overrides remain optional for unmerged review and reproducible version
+selection; historical fork qualification below is not the upstream customer path.
+
+The documentation regression was observed red for the four primary guides before
+the correction. A real no-override bootstrap control exercises dry-run, install
+and byte-identical repeat against a disposable committed post-merge source mirror.
+It verifies the upstream repository and `main` in the receipt without changing
+global Git settings. This is fixture execution, not a claim that the unmerged
+launcher has already appeared on upstream `main`. Runtime installer and delivery
+code are unchanged. A refresh-history control rejects abbreviated records on both
+canonical and installed surfaces; the complete prior delta block was compared
+byte-for-byte with the committed baseline, not reconstructed from display excerpts.
+Documentation guards distinguish that explicit historical data from current
+instructions; controls retain forbidden current advice outside the archive, in
+other collapsed sections and in incomplete history containers.
+Local revision-100 verification passed: **1,543 Python tests, 44 expected skips,
+875 subtests and all 18 bundle gates**; the focused documentation/defaults and
+current-guidance controls passed **64 tests and 18 subtests**. Browser checks
+passed **264 tests with 12 deliberate skips** across Chromium, Firefox and WebKit.
+Source, installed and packaged byte comparisons passed. Independent closure
+replayed **33 guard invocations over 11 cases**, including the prior malformed
+container and mixed-record failures, without changing the original guard rules.
+These are finite local controls, not universal model or human-consent proof.
+The existing native qualification below covers the unchanged runtime; the new
+published documentation head must receive its own CI readback before handoff.
+
+## Revision 99 quality follow-up (historical qualification)
 
 An outcome and customer-journey review
 reproduced five boundary gaps in the earlier revision: an existing instruction archive
@@ -113,7 +143,7 @@ publication checks. This revision is accepted on the evidence below.
 - Project modules cannot shadow stdlib imports during a no-write bootstrap preview.
 - Worker-writable verifiers cannot approve an unimplemented or prematurely exiting product.
 
-## Final acceptance readback
+## Revision 99 acceptance readback (historical qualification)
 
 - The complete local bundle finished with **1,535 passed, 44 skipped and 872
   subtests passed**; all **18/18** consistency, portability, source-sync,

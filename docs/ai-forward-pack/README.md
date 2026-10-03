@@ -15,12 +15,16 @@ documents, so you do not need another knowledge-pack installation first.
 
 You need Git, [uv](https://docs.astral.sh/uv/getting-started/installation/), network
 access and a supported coding app with its own account/model access.
-**This contribution is a fork preview, not an upstream release.** Open a terminal
-in the project you want to work on and copy this one line:
+Open a terminal in the project you want to work on and copy this one line:
 
 ```text
-uv run --no-config --no-project --script https://raw.githubusercontent.com/ahutanu/ai-forward/feat/one-command-adoption/bootstrap.py --repo https://github.com/ahutanu/ai-forward.git --ref feat/one-command-adoption
+uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py
 ```
+
+Setup defaults to the upstream repository and `main`; no `--repo` or `--ref` is
+needed for normal installation. An unmerged contribution is not yet in `main`:
+reviewers use a committed local source or explicitly select its repository/ref.
+That is review guidance, not another onboarding step.
 
 The line works in Windows PowerShell/Command Prompt and macOS/Linux terminals,
 with Git and uv on PATH. Setup reports `AI-Forward installed`, `AI-Forward updated`
@@ -142,6 +146,6 @@ is included; local project rules still need to be preserved and reconciled.
 In the AI-Forward source repository, the full reader handbook is built from
 `web/handbook/` into `docs/portal/index.html`. The
 [public handbook](https://timianmalloo.github.io/ai-forward/docs/portal/index.html)
-is the upstream edition and may not include this fork preview yet. Codex's installed
+is the upstream edition and may not include unmerged contributions yet. Codex's installed
 setup guide is `docs/ai-forward-pack/codex.md`; its bundle source is
 `adapters/codex/codex.md`.

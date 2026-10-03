@@ -61,6 +61,48 @@ class BootstrapTests(unittest.TestCase):
         self.git("clone", "--no-hardlinks", str(ROOT), str(source), cwd=self.base)
         return source
 
+    def test_no_source_overrides_use_upstream_main_defaults(self):
+        # A disposable post-merge mirror exercises the real default command
+        # without pretending the unmerged launcher is available upstream now.
+        source = self.clone_source()
+        self.git('checkout', '-B', 'main', cwd=source)
+        tracked = self.git('ls-files', cwd=ROOT).splitlines()
+        for relative in tracked:
+            origin = ROOT / relative
+            destination = source / relative
+            if origin.is_file():
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(origin, destination)
+        self.git('add', '-A', cwd=source)
+        self.git('commit', '--allow-empty', '-qm', 'Disposable current-source fixture', cwd=source)
+        commit = self.git('rev-parse', 'main', cwd=source)
+        upstream = 'https://github.com/timianmalloo/ai-forward.git'
+        self.git('config', '--file', self.env['GIT_CONFIG_GLOBAL'],
+                 f'url.{source.as_uri()}.insteadOf', upstream, cwd=self.base)
+        command = [sys.executable, str(SCRIPT)]
+        before = self.snapshot()
+        dry = subprocess.run(command + ['--dry-run'], cwd=self.target, env=self.env,
+                             capture_output=True, text=True, encoding='utf-8', timeout=120)
+        self.assertEqual(0, dry.returncode, dry.stdout + dry.stderr)
+        self.assertEqual(before, self.snapshot())
+        installed = before
+        for repeat in (False, True):
+            result = subprocess.run(command, cwd=self.target, env=self.env,
+                                    capture_output=True, text=True, encoding='utf-8', timeout=120)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            receipt = json.loads((self.target / 'docs/ai-forward-pack/bootstrap-receipt.json').read_text(encoding='utf-8'))
+            self.assertEqual(upstream, receipt['source_repository'])
+            self.assertEqual('main', receipt['requested_ref'])
+            self.assertEqual(commit, receipt['source_commit'])
+            self.assertEqual((source / 'pack/commands/deliver/SKILL.md').read_bytes(),
+                             (self.target / '.agents/skills/deliver/SKILL.md').read_bytes())
+            self.assertFalse((self.target / '.git').exists())
+            if repeat:
+                self.assertIn('already current', result.stdout)
+                self.assertEqual(installed, self.snapshot())
+            else:
+                installed = self.snapshot()
+
     def test_credential_repository_url_is_rejected_without_leak_or_target_writes(self):
         url = "https://test-user:SYNTHETIC_TEST_TOKEN@example.invalid/pack.git"
         self.git("config", "--file", self.env["GIT_CONFIG_GLOBAL"],

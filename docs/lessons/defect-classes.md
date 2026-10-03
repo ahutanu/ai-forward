@@ -17,6 +17,18 @@ summary: >-
 
 # Defect-class register
 
+**DOC-S / 2026-10-03 — treating a display excerpt as complete source.**
+Class → reconstructing a large artifact from line-abbreviated tool output can retain
+its record count while dropping the suffixes of long records. A verified write proves
+the supplied bytes landed, not that the original content was preserved.
+Sweep → canonical and installed refresh history. Derive → preserve authoritative raw
+source, not its display projection; compare the complete moved block byte-for-byte.
+Prevent → `test_refresh_history_has_no_abbreviated_recorded_entries` rejects incomplete
+refresh records on both surfaces. The revision-100 correction additionally compared
+the complete archive with the committed baseline before publication. The transient
+local loss was repaired from Git; no shortened history was committed or pushed.
+Status → controlled for this refresh-history shape, not a universal source-recovery claim.
+
 **TEST-TIME-A / 2026-09-21 — timing floor measured from process startup** (now a class section below, with the 2026-09-22 recurrence).
 Class → a deadline test required a fixed first turn to finish before a small budget,
 so hosted-runner startup jitter changed the observed turn count and failed the test.

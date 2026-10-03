@@ -13,13 +13,18 @@ project's dependencies.
 
 ## Install in the project you want to work on
 
-**This contribution is available as a fork preview, not an upstream release.**
 Open a terminal in your project and copy this one line. It works in Windows
 PowerShell/Command Prompt and macOS/Linux terminals, with Git and uv on PATH:
 
 ```text
-uv run --no-config --no-project --script https://raw.githubusercontent.com/ahutanu/ai-forward/feat/one-command-adoption/bootstrap.py --repo https://github.com/ahutanu/ai-forward.git --ref feat/one-command-adoption
+uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py
 ```
+
+Setup defaults to the upstream repository and `main`; you do not need `--repo`
+or `--ref` for this normal path. If you are reviewing unmerged changes, use the
+reviewer's committed source or an explicit repository/ref selection instead.
+The standard upstream launcher becomes available when the contribution adding
+it is merged; do not treat an unmerged preview as a released version.
 
 Setup installs the pack files and checks their contents. It reports
 `AI-Forward installed`, `AI-Forward updated` or `AI-Forward already current`,
@@ -33,8 +38,8 @@ In a plain project, the current directory is the chosen root. After setup, inspe
 - To preview first, append `--dry-run`. It downloads/checks the source and shows the
   plan without writing to your project.
 - To check or update an install, rerun the same line.
-- To pin a version, replace the branch in the wrapper URL and `--ref` with the same
-  full commit id. The preview branch can change.
+- To pin a version, replace `main` in the wrapper URL and set `--ref` to the same
+  full commit id. This is optional reproducibility control; `main` can change.
 
 If setup names a conflict in existing instructions, hooks, Git settings or checks,
 keep the existing file and review the specific difference. Do not delete project
@@ -49,7 +54,7 @@ permissions without understanding that error.
 | What you see | Safe next action | Retry when |
 |---|---|---|
 | **Command not found: `git` or `uv`** | Install the missing prerequisite from the links above, then open a new terminal. | Its `--version` command works. |
-| **Source unavailable / 404 / network error** | Confirm you can reach the exact preview URL. If your network blocks GitHub, ask its owner for the approved network or local-source path. | The launcher and source repository are reachable. |
+| **Source unavailable / 404 / network error** | Confirm the selected version contains the launcher and that its exact URL is reachable. An unmerged contribution requires a review source, not upstream `main`. If your network blocks GitHub, ask its owner for the approved network or local-source path. | The launcher and source repository are reachable. |
 | **Authentication failed while fetching source** | Use Git's credential helper and a credential-free repository URL. Do not put a token in the command. | `git ls-remote` can read the selected source with the approved account. |
 | **A project instruction, hook, Git policy or check conflicts** | Keep the existing item. Ask the policy owner to compare its intended behavior with the named pack change. | The owner has reconciled that specific conflict; do not use a force flag. |
 | **Project checks unavailable** | Install or obtain the project's approved test runtime, or record the exact unavailable check and its effect on confidence. | The real check can run, or the owner accepts the explicitly limited handback. |

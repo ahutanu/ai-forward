@@ -75,7 +75,7 @@
     },
     {
       "h": "Install it into a repo",
-      "p": "Run the portable bootstrap in your project with Git and uv available. It applies the existing deployment map, preserves project decisions and reports verified source/revision. No manual clone or navigation is required; adoption remains optional.",
+      "p": "Run the portable bootstrap in your project with Git and uv available. The upstream repository and main are defaults: no --repo or --ref is needed. It preserves project decisions and reports the verified source/revision. The launcher is available upstream after its contribution is merged; reviewers of unmerged work use a committed local source or explicit source/ref overrides. Adoption remains optional.",
       "cmd": "uv run --no-config --no-project --script https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py"
     },
     {

@@ -4875,7 +4875,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "3e378455bc6ce97f3141e78d4dcfa3de99ff66e2fcb7eeda6f93f0cab39ba230"
+      "sourceSha256": "a613d06870c95aaa3b784f669a06ed8529b41cf51c30e050e35d8e65e000caa6"
     },
     {
       "id": "docs-index",
@@ -5613,7 +5613,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "e20a35cd1ab8306acd63e1ff121fa1c00ceac45f2711d103871093dfb95eafdd"
+      "sourceSha256": "63e95a7f18a5315aa7da22124b8d948d71a756d6e2ae8518c24b8ddfef85d763"
     },
     {
       "id": "handbook-glossary",
@@ -10745,7 +10745,7 @@ window.DOCS_INDEX = {
       "path": "docs/proof/one-command-adoption.md",
       "title": "Proof Pack — one-command adoption",
       "type": "proof-pack",
-      "status": "accepted",
+      "status": "in-review",
       "owner": "@ahutanu",
       "phase": "pack-adoption",
       "reviewBy": "2027-01-01",
@@ -10768,7 +10768,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "c0f832f390dbe1aa11d08bee2c0cad1c40bc0de6f8f435a8cb8c900ef7b5f69e"
+      "sourceSha256": "f3144465925809b2909f5c17214e73aaa5490532a42ed4dbbda4c227eb11a88f"
     },
     {
       "id": "spec-acp-coordination",
@@ -12236,5 +12236,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "078f03ae66048ddbaf8b92edf78fb5d63b5c44bbbe808fff88571790ee84f8a4"
+  "graphSha256": "9f35dc3032231325e0c3925ba1670f5e8b7020228b2c3ac95ea3b0ca5e4eb76e"
 };

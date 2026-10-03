@@ -10,17 +10,35 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-PREVIEW = 'https://raw.githubusercontent.com/ahutanu/ai-forward/feat/one-command-adoption/bootstrap.py'
+UPSTREAM = 'https://raw.githubusercontent.com/timianmalloo/ai-forward/main/bootstrap.py'
 
 class CustomerAdoptionDocsTests(unittest.TestCase):
-    def test_preview_quickstarts_lead_with_the_available_fork_entrypoint(self):
-        for name in ('README.md','web/handbook/guides/get-started.md','pack/OVERVIEW.md'):
+    def test_upstream_quickstarts_use_main_without_source_overrides(self):
+        for name in ('README.md','web/handbook/guides/get-started.md','pack/README.md','pack/OVERVIEW.md'):
             with self.subTest(source=name):
                 text=(ROOT/name).read_text(encoding='utf-8')
                 commands=re.findall(r'^uv run --no-config --no-project --script ([^\n]+)$',text,re.M)
                 self.assertTrue(commands,'The reader needs a copyable setup command')
-                self.assertTrue(commands[0].startswith(PREVIEW+' --repo https://github.com/ahutanu/ai-forward.git --ref feat/one-command-adoption'),
-                                'The first command must work in this preview, not depend on a future upstream release')
+                self.assertEqual(commands[0], UPSTREAM,
+                                 'Normal onboarding must use upstream/main defaults, not a contributor fork or mandatory overrides')
+                self.assertNotIn('raw.githubusercontent.com/ahutanu/', text,
+                                 'Contributor-specific installer URLs belong in historical proof, not customer onboarding')
+
+    def test_refresh_history_has_no_abbreviated_recorded_entries(self):
+        for name in ('pack/adapters/INSTALL.md', 'docs/ai-forward-pack/INSTALL.md'):
+            with self.subTest(source=name):
+                text = (ROOT / name).read_text(encoding='utf-8')
+                histories = re.findall(r'```yaml\nchanges:\n(.*?)\n```', text, re.S)
+                self.assertTrue(histories, 'Prior refresh deltas must remain available')
+                for history in histories:
+                    self.assertIsNone(re.search(r'(?m)^  - \{ type:.*\[truncated\]\s*$', history),
+                                      'A tool display excerpt is not complete historical source')
+                    entries = [line for line in history.splitlines()
+                               if line.strip() and not line.lstrip().startswith('#')]
+                    self.assertTrue(entries, 'Do not erase the prior recorded deltas')
+                    self.assertTrue(all(line.startswith('  - {') and line.rstrip().endswith('}')
+                                        for line in entries),
+                                    'Account for every complete refresh record, regardless of key order')
 
     def test_pack_readme_does_not_send_newcomers_to_a_nonexistent_manual_only_model(self):
         text=(ROOT/'pack/README.md').read_text(encoding='utf-8')

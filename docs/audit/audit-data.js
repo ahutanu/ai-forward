@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "ai-forward",
-  "generated": "2026-09-28T00:46:53Z",
+  "generated": "2026-10-03T08:31:42Z",
   "audit": [
     {
       "actor": null,
@@ -13449,6 +13449,36 @@ window.AUDIT_DATA = {
         "short": "eca5d2903",
         "branch": "feature/decision-interrogation-protocol",
         "pushed": null
+      }
+    },
+    {
+      "id": "al-01M40E6642CRZCKPQKH6A6AGQA",
+      "shortname": "upstream-onboarding",
+      "datetime": "2026-10-03T08:30:45Z",
+      "session": "upstream-onboarding",
+      "prompt": "Normal upstream setup should use its existing main default without source/ref overrides.",
+      "summary": "Prepared local revision100 onboarding correction: upstream/main is the primary command; generic review/pinning overrides are optional. Documentation regression observed red before four guides were corrected. Default-source mirror and documentation controls passed5tests/16subtests. Full validation and independent reader review remain pending; no push or PR.",
+      "kind": "command",
+      "skill": null,
+      "tool": "pytest",
+      "actor": null,
+      "artifacts": [],
+      "tags": [],
+      "outcome": "partial",
+      "goal": "Make the upstream contribution onboarding use Tim repository/main defaults, preserving installer semantics and honest pre-merge proof limits.",
+      "done_when": "Primary and generated guides use the canonical no-override command, real defaults checks and affected build/test/review gates pass, with no publication.",
+      "tier": "T1",
+      "fan_out": 1,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true,
+        "acceptance_met": false
+      },
+      "git": {
+        "sha": "942c8507a4a2a12e294fee55a160bc402feed70d",
+        "short": "942c8507a",
+        "branch": "feat/one-command-adoption",
+        "pushed": true
       }
     }
   ],

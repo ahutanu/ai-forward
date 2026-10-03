@@ -1,10 +1,31 @@
 ---
 doc: INSTALL
 purpose: 'Deployment map and refresh changelog used by the portable bootstrap. For expert manual refreshes, `changes` lists the source paths and marked instruction sections to update. Preserve project-owned files and policy; the first-use path is one-line setup followed by a deliver request.'
-bundle_version: '2026.10.03.1'
-revision: 99
+bundle_version: '2026.10.03.2'
+revision: 100
 counts: { lenses: 23, skills: 30, knowledge_docs: 40, templates: 29, scripts: 47 }
 refresh_protocol: 'Compare your repo last-applied revision to the `revision` above. If it is lower, apply each entry in `changes` in order — re-copy the listed `paths` to their mapped destinations (deployment map in the body), re-apply the Copilot frontmatter wraps, and where an entry `deploy` says RE-PASTE, replace the managed blocks wholesale between their markers. Never overwrite an accumulated docs/docs-index.js.'
+changes:
+  - { type: changed, area: adoption-documentation, paths: ['README.md', 'OVERVIEW.md', 'adapters/INSTALL.md'], deploy: 'refresh installed reader guides and INSTALL; regenerate the source handbook and portal. No installer, workflow, permission, trust, identity or model changes.', summary: 'Make upstream/main the normal one-line setup path without --repo or --ref. Keep source/ref overrides optional for unmerged review and version pinning, not customer prerequisites. Remove contributor-specific installer URLs from primary onboarding; distinguish proposed upstream availability from proof gathered on an unmerged source.' }
+---
+
+## Changelog — what changed since the last version
+
+**The frontmatter `changes` list above is the refresh guide.** When you pull a new bundle into an existing repo, you do **not** need to diff the whole tree: read `changes`, and apply exactly those re-copies and managed-block re-pastes. Each entry names the `paths` that moved and the precise `deploy` action (including the few that say **RE-PASTE** the managed blocks, which is the step most easily missed). Check your repo's last-applied `revision` against the `revision` in the frontmatter to know whether — and how far — you are behind.
+
+**Convention (moving forward).** Every change to the bundle updates this file's frontmatter as part of the same change:
+1. bump `revision` by 1 (monotonic — it never resets, so it is the reliable "is my repo behind?" anchor) and update `bundle_version` / `released` / `counts`;
+2. replace `changes` with *this* version's delta only (so the frontmatter is always "since the previous revision");
+3. move the **previous** `changes` into the **Prior revisions** log below as a dated, collapsed entry.
+
+So at any moment: the frontmatter `changes` = the latest delta (the refresh guide), and this section = the full rolling history.
+
+### Prior revisions
+
+<details>
+<summary>Detailed deltas through revision 99 — preserved history</summary>
+
+```yaml
 changes:
   - { type: changed, area: adoption-quality, paths: ['scripts/delivery.py', 'commands/deliver/', 'adapters/hooks/run-hook.sh', 'README.md', 'OVERVIEW.md', 'bootstrap.py (source-repository entrypoint)'], deploy: 'refresh delivery.py and the complete deliver skill and references on all existing surfaces; refresh run-hook.sh; refresh installed reader guidance. Review the source bootstrap separately. No permissions, identity, model, trust, release or ownership opt-in changes.', summary: 'Repair confirmed boundary gaps: preserve existing regular retired instruction archives and inherited Git attribute policy; retain a blocked independent review while recording authorized same-task repairs for fresh re-review; include nested submodule state in resume drift checks; select native Python 3.10+; validate explicit UV_PYTHON selectors and fall back to another uv-managed 3.10+ interpreter when stale or incompatible. Restrict repair scopes to in-project single-link regular files, rejecting aliases, hardlinks, reparse points and special files before snapshotting. Explain installation, first use, pauses, same-project resume and recovery in plain language, with the currently runnable preview before prospective upstream commands. Saved records check consistency, not consent authenticity or semantic acceptance.' }
 
@@ -140,20 +161,9 @@ changes:
   - { type: changed, area: docs, paths: ['adapters/INSTALL.md', 'adapters/managed-blocks/CLAUDE.block.md', 'adapters/managed-blocks/AGENTS.block.md'], deploy: 'copy INSTALL to docs/ai-forward-pack/; RE-PASTE both managed blocks wholesale between their markers', summary: 'New INSTALL section 0 - Running the scripts: python3 in this documentation means YOUR Python 3 interpreter; on Windows use python or py -3; the python3 you may see on Windows is a Microsoft Store alias that is not Python (prints Python was not found, exit 9009) and its presence does not mean Python is missing. A one-line form of the same rule was added to both managed blocks so an agent on either surface knows before it runs a command.' }
   - { type: changed, area: knowledge, paths: ['knowledge/continuous-improvement.md'], deploy: 'copy to .claude/knowledge/ and re-wrap into .github/instructions/', summary: 'Seed register gains PACK-C - documented command assumed portable. Nothing executes documentation, so the first evidence is an adopter reporting a missing dependency that is installed. Control: state the convention once, add a detection control, and verify any substitution on every supported platform before applying it.' }
   - { type: changed, area: docs, paths: ['docs/backlog/forensic-review.md'], deploy: 'repo-local; not deployed', summary: 'FR-031 marked resolved with the corrected rationale recorded, including why the original proposal was wrong. Remaining P1 items unchanged: FR-032 (Copilot receives 11 of 23 personas), FR-033 (source-install drift ungated in CI), FR-034 (the 107-test Python suite and the graph gate never run in CI).' }
----
+```
 
-## Changelog — what changed since the last version
-
-**The frontmatter `changes` list above is the refresh guide.** When you pull a new bundle into an existing repo, you do **not** need to diff the whole tree: read `changes`, and apply exactly those re-copies and managed-block re-pastes. Each entry names the `paths` that moved and the precise `deploy` action (including the few that say **RE-PASTE** the managed blocks, which is the step most easily missed). Check your repo's last-applied `revision` against the `revision` in the frontmatter to know whether — and how far — you are behind.
-
-**Convention (moving forward).** Every change to the bundle updates this file's frontmatter as part of the same change:
-1. bump `revision` by 1 (monotonic — it never resets, so it is the reliable "is my repo behind?" anchor) and update `bundle_version` / `released` / `counts`;
-2. replace `changes` with *this* version's delta only (so the frontmatter is always "since the previous revision");
-3. move the **previous** `changes` into the **Prior revisions** log below as a dated, collapsed entry.
-
-So at any moment: the frontmatter `changes` = the latest delta (the refresh guide), and this section = the full rolling history.
-
-### Prior revisions
+</details>
 
 **Revision 72 — 2026-09-15.** Added the Antigravity surface: complete skills under `.agents/skills/`, skills manifest, hooks, path map, ignore exceptions, and its pack-doctor check. That skill directory is also the native Codex discovery location; revision 73 makes the Codex contract explicit.
 **Revision 29 - 2026-08-07.** Closed the doctrine-without-mechanism gap left by revision 25: the pack shipped `ui-visual-assets.md` but no way to call a backend, and CD3 had declined Impeccable's skill where its visual-world generation lives. Added **`/visualize`** (board / asset / persona / motion, runnable standalone), **`visual-assets-setup.py`** (backend wiring; an MCP backend absent from `os.environ` reports UNKNOWN rather than unconfigured, because its credentials live in the agent host), and **VA19-VA22** - VA19 being the verified correction that a consumer Google AI subscription grants **no** API access and that image and video generation are not on the API free tier. Skills 18->19, scripts 12->13.
@@ -268,7 +278,7 @@ It emits a `python interpreter` check that names the exact substitution to use, 
 | Thin command entry points | *(none - Claude Code auto-discovers `.claude/skills/*/SKILL.md` by description)* | `.github/prompts/<name>.prompt.md` | slash `/<name>` from `.grok/skills/` (and `.claude/skills/` when Claude-compat is on) | slash `/<name>` or auto-discovery from `.agents/skills/` |
 | Peer agents (orchestrator, product-strategist, domain-researcher) | `.claude/agents/<name>.md` | `.github/agents/<name>.agent.md` | `.grok/agents/<name>.md` — spawn with `spawn_subagent`, `subagent_type` = persona `name` | inline turn / `invoke_subagent` (`self`) / `define_subagent` from `.claude/agents/<name>.md` |
 | Adversary agents (the existing 11) | `.claude/agents/<name>.md` | `.github/agents/<name>.agent.md` | `.grok/agents/<name>.md` (`*_agent` suffix stripped, `tools:` stripped) | inline turn / `invoke_subagent` (`self`) / `define_subagent` from `.claude/agents/<name>.md` |
-| Templates (`templates/*`, 29 at revision 99) | `docs/ai-forward-pack/templates/` (referenced by skills) | same shared files | same shared files | same shared files |
+| Templates (`templates/*`, 29 top-level templates) | `docs/ai-forward-pack/templates/` (referenced by skills) | same shared files | same shared files | same shared files |
 | Script bundle (`scripts/*` — stdlib-only Python tools plus dependency-free `docs-explorer-core.js`) | `docs/ai-forward-pack/scripts/` (`docs-graph.py` owns graph mechanics + bounded grounding packets; `docs-explorer-core.js` owns deterministic browser state/layout; `audit-log.py`/`prompt-log.py` own history/reuse; `design-lint.py` checks design-language references; Python tools need Python 3.8+) | same (shared) | same (shared) | same (shared) |
 | Hooks (`adapters/hooks/*`) §1.4 | `docs/ai-forward-pack/hooks/reread-guard.py` + `session-start.py` + merge `claude-code.settings.hooks.json` into `.claude/settings.json` | the same scripts + `copilot.ai-forward-hooks.json` → `.github/hooks/ai-forward.json` | the same scripts + `grok.ai-forward-hooks.json` → `.grok/hooks/ai-forward.json` (requires folder trust) | the same scripts + `agy.ai-forward-hooks.json` → `.agents/hooks.json` |
 | CI reference workflow (`ci/docs-health.yml`) | `.github/workflows/docs-health.yml` (optional but recommended — gates PRs on graph health) | same (shared) | same (shared) | same (shared) |
