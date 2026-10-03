@@ -50,10 +50,11 @@ for _stream, _kw in ((sys.stdin, {"encoding": "utf-8", "errors": "replace"}),
 COMMAND_KEYS = ("command", "cmd", "script", "shellCommand", "commandLine")
 
 # `git config [...] user.name/email <value>` (a value follows -- reading alone never
-# matches) or the inline per-invocation override `-c user.name=...`/`-c user.email=...`.
+# matches, nor does a read followed by a shell operator or redirect: `&&`, `||`, `|`, `;`,
+# `>`, `<`, `2>`) or the inline per-invocation override `-c user.name=...`/`-c user.email=...`.
 GIT_IDENTITY_SET_RX = re.compile(
     r"git\s+config\s+(?:--global\s+|--local\s+|--system\s+)?(?:--add\s+)?"
-    r"user\.(?:name|email)\s*(?:=|\s+\S)"
+    r"user\.(?:name|email)\s*(?:=|\s+(?![|&;<>]|\d+>)\S)"
     r"|-c\s+user\.(?:name|email)\s*=",
     re.IGNORECASE,
 )

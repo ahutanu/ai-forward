@@ -52,6 +52,15 @@ class EvaluateTests(unittest.TestCase):
                                             "tool_input": {"command": "git config user.name"}})
         self.assertIsNone(reason)
 
+    def test_a_read_followed_by_a_shell_operator_or_redirect_is_never_blocked(self):
+        for command in ("git config user.email && git status", "git config user.name || echo none",
+                        "git config user.name 2>/dev/null", "git config user.email | cat",
+                        "git config user.name > out.txt", "git config user.email; git log -1"):
+            with self.subTest(command=command):
+                reason = self.g.evaluate("claude", {"hook_event_name": "PreToolUse", "tool_name": "Bash",
+                                                    "tool_input": {"command": command}})
+                self.assertIsNone(reason)
+
     def test_get_flag_is_never_blocked(self):
         reason = self.g.evaluate("claude", {"hook_event_name": "PreToolUse", "tool_name": "Bash",
                                             "tool_input": {"command": "git config --get user.email"}})
