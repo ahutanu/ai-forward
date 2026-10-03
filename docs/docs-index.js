@@ -1273,7 +1273,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "e89dd714f2b1180fa05c9571143fbd165cc6a80db55aa2994e81831d3ce01ad2"
+      "sourceSha256": "2f9f0fb9ffa73b385734f14e438aa31a039dd44e4e19a3f4fe3fef8d7797afc9"
     },
     {
       "id": "api-pack-doctor",
@@ -4820,7 +4820,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "3e378455bc6ce97f3141e78d4dcfa3de99ff66e2fcb7eeda6f93f0cab39ba230"
+      "sourceSha256": "928ebf339416f210c3c7c824a40371495ebd3de609b693245e3d19908a47e497"
     },
     {
       "id": "docs-index",
@@ -12076,5 +12076,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "0b7242cb9baf9f4d0941fb36155c26839794d9e160a19d9b31091208af3a0eae"
+  "graphSha256": "3e0d5f46c6580e39c88d02a1d7020a7127e0bb7c4f0ced5c6c80434cd342f9ee"
 };
