@@ -72,7 +72,15 @@ def digest(value):
 
 
 def git(repo, *args, optional=False):
-    result = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, timeout=30)
+    # git -C does not isolate inherited repository-local overrides (as from
+    # hooks or another worktree). Keep credentials/global configuration intact.
+    env = os.environ.copy()
+    for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_NAMESPACE",
+                "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_OBJECT_DIRECTORY", "GIT_IMPLICIT_WORK_TREE",
+                "GIT_GRAFT_FILE", "GIT_NO_REPLACE_OBJECTS", "GIT_REPLACE_REF_BASE", "GIT_PREFIX",
+                "GIT_SHALLOW_FILE", "GIT_CONFIG", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT"):
+        env.pop(key, None)
+    result = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, timeout=30, env=env)
     if result.returncode and not optional:
         raise ValueError("repository required: delivery needs a Git worktree")
     text = result.stdout.decode("utf-8") if not result.returncode else ""
@@ -138,7 +146,9 @@ def snapshot(repo, local_area=None, details=False, _depth=0):
                 value["checkout"] = snapshot(path, local_area, _depth=_depth + 1)
             files[name] = value
         else:
-            files[name] = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+            files[name] = ({"sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                            "executable": path.stat().st_mode & 0o111 if os.name != "nt" else 0}
+                           if path.is_file() else None)
     result: dict[str, Any] = {"head": git(repo, "rev-parse", "HEAD", optional=True) if project.get("kind") != "plain" else "",
             "branch": git(repo, "symbolic-ref", "HEAD", optional=True) if project.get("kind") != "plain" else "",
             "files": digest(files)}
@@ -512,6 +522,12 @@ def execute(args):
         save(path, state)
         return view(state)
     path, state = load(args.repo, args.task, check_tree=args.verb not in ("complete", "pause", "recheck"), state_root=args.state_root)
+    # Verification observes the reviewed artifact; neither closure nor a human
+    # pause may silently turn it into another authoring stage. Fresh proof lives
+    # in the excluded local/external evidence area, not among product files.
+    if (args.verb in ("complete", "pause") and view(state)["next"] == "verify"
+            and snapshot(args.repo, state.get("local_area")) != state["snapshot"]):
+        raise ValueError("input drift: verification cannot adopt changed workspace; reconcile and repair the authored stage before independent re-review")
     if args.verb == "complete":
         if state["gate"] or view(state)["next"] != args.stage or not args.actor.strip():
             raise ValueError("stage refused: complete only the current ungated stage")

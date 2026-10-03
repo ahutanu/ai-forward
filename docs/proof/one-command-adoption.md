@@ -22,6 +22,45 @@ summary: >-
 - **Tier:** T2 (load-bearing workflow boundaries, local state and cross-platform installation)
 - **Author / date:** @ahutanu · 2026-10-02
 
+## Revision 102 checkpoint boundary correction
+
+A read-only review reproduced three additional boundary gaps in revision101:
+verification could adopt changed product files after independent review, executable
+permission changes kept the same content fingerprint, and inherited Git variables
+could select another project despite an explicit target. A verification permission
+pause could also replace the snapshot, so a completion-only check was insufficient.
+
+Each repair followed an observed red regression before the source change:
+
+- Verification completion and every verification-stage pause now require the
+  unchanged workspace. Fresh proof and closure files belong in the existing local
+  or external evidence area; a nonignored in-project proof file is not a drift
+  waiver. Product corrections use the affected authored stage and independent
+  re-review. Normal authoring-stage capture and unchanged closure remain valid.
+- Regular workspace entries record content hashes and POSIX executable bits.
+  Resume and scoped repairs reject mode-only behavior changes, including unrelated
+  executable files. Authorized mode corrections remain possible. Windows uses a
+  neutral field, not a claim of equivalent POSIX permissions; timestamps and other
+  permission metadata are not a new fingerprint boundary.
+- All delivery Git queries isolate inherited repository-local selectors for the
+  worktree, index, common directory, object store and local configuration. The
+  explicit project remains the checkpoint identity; credentials and global Git
+  configuration are not disabled.
+
+The focused real compiler/helper suite passed **80 tests and 147 subtests** after
+these repairs, including Git/plain T1/T2 closure and pause counterexamples, actual
+POSIX execution failure, scoped mode correction/refusal and inherited root/index
+controls. Receipts in these tests are synthetic structural fixtures, not authentic
+human consent or live model qualification. Earlier content-only checkpoint hashes
+cannot prove the stronger workspace boundary: preserve refused records and their
+original evidence, and reconcile rather than recomputing an integrity hash.
+
+The three-platform adoption workflow includes the new regression file; POSIX-only
+mode tests explicitly skip Windows. Independent review, the complete local bundle,
+source/install/API/package parity and published-head native receipts are separate
+qualification gates, not implied by these focused results. The product presentation,
+upstream-default onboarding and full prior refresh history are unchanged.
+
 ## Revision 101 presentation preservation
 
 The earlier onboarding rewrite replaced original product and reference prose rather

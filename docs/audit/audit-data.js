@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "ai-forward",
-  "generated": "2026-10-03T10:12:47Z",
+  "generated": "2026-10-03T12:10:36Z",
   "audit": [
     {
       "actor": null,
@@ -13512,6 +13512,36 @@ window.AUDIT_DATA = {
         "branch": "feat/one-command-adoption",
         "pushed": true
       }
+    },
+    {
+      "id": "al-01M40TRQREX4X4PA7030K76HPB",
+      "shortname": "delivery-checkpoint-boundaries",
+      "datetime": "2026-10-03T12:10:36Z",
+      "session": "adoption-boundary-repair",
+      "prompt": "Fix the three confirmed delivery checkpoint findings in the fork and explain updating the existing PR.",
+      "summary": "Red regressions reproduced verification completion/pause adoption, mode-only drift and inherited Git root/index selection. Focused post-fix suite passed80tests147subtests. Canonical runtime/docs and revision102 prepared; aggregate, independent and published native qualification remain separate.",
+      "kind": "manual",
+      "skill": null,
+      "tool": null,
+      "actor": "@ahutanu",
+      "artifacts": [
+        "pack/scripts/delivery.py",
+        "tests/docs_explorer/test_delivery_checkpoint_guards.py",
+        "docs/proof/one-command-adoption.md"
+      ],
+      "tags": [],
+      "outcome": "partial",
+      "goal": "Repair all three checkpoint boundaries without changing product presentation or unrelated workflows; update the same fork branch.",
+      "done_when": "Regression and existing controls pass, generated surfaces agree, independent review and full applicable checks pass, and the existing PR reads back the published commit.",
+      "tier": "T2",
+      "fan_out": 2,
+      "signals": {
+        "verification_path": true,
+        "verification_executed": true,
+        "acceptance_met": false
+      },
+      "started_at": "2026-10-03T11:58:39Z",
+      "duration_seconds": 717.0
     }
   ],
   "changes": [

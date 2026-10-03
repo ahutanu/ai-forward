@@ -4875,7 +4875,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "2463ec5f117a7f12a7289dd377d9a8c0f2dfa5619475bb3a707a161662f518fb"
+      "sourceSha256": "87be5c41ee721bd825ee6a5eb01f0860b3391d0f6f2fd47c817566fcde7d3ed3"
     },
     {
       "id": "docs-index",
@@ -10768,7 +10768,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "036c37cbb44c7401f8b38104667a7cd7eb5d0a9ef04700a036bc8b7ffa01c2d8"
+      "sourceSha256": "ea683a2cca1c3f99020c20ceac863bbc842eb99706f18e8d8a0ce5caf6d2e627"
     },
     {
       "id": "spec-acp-coordination",
@@ -12236,5 +12236,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "05a604d9b5c0328ed56b12506cb34c5ccf9333a3c0c7a352915ddca5ae1d73c4"
+  "graphSha256": "b4882fdd8d4c6d929a7286201d130416a61839ca70fea0e4b976bb051ca86d82"
 };

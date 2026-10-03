@@ -1,12 +1,12 @@
 ---
 doc: INSTALL
 purpose: 'Deployment map and refresh changelog used by the portable bootstrap. For expert manual refreshes, `changes` lists the source paths and marked instruction sections to update. Preserve project-owned files and policy; the first-use path is one-line setup followed by a deliver request.'
-bundle_version: '2026.10.03.3'
-revision: 101
+bundle_version: '2026.10.03.4'
+revision: 102
 counts: { lenses: 23, skills: 30, knowledge_docs: 40, templates: 29, scripts: 47 }
 refresh_protocol: 'Compare your repo last-applied revision to the `revision` above. If it is lower, apply each entry in `changes` in order — re-copy the listed `paths` to their mapped destinations (deployment map in the body), re-apply the Copilot frontmatter wraps, and where an entry `deploy` says RE-PASTE, replace the managed blocks wholesale between their markers. Never overwrite an accumulated docs/docs-index.js.'
 changes:
-  - { type: changed, area: adoption-presentation-preservation, paths: ['README.md', 'OVERVIEW.md', 'adapters/INSTALL.md', 'adapters/managed-blocks/AGENTS.block.md'], deploy: 'refresh installed reader guidance and INSTALL; RE-PASTE the AGENTS managed block; regenerate the source handbook and portal. Restore workflow presentation only; no installer, workflow execution, permission, model, trust or release changes.', summary: 'Retain the original AI-Forward product presentation, reasoning explanations, persona and workflow references, repository layout, maintenance instructions and portal guidance. Add portable setup and conditional deliver guidance alongside the original content rather than replacing it. Update only directly affected skill counts, obsolete installer claims and explicitly optional source-clone alternatives. Protect full original explanation blocks as well as section headings.' }
+  - { type: changed, area: delivery-checkpoint-boundaries, paths: ['scripts/delivery.py', 'commands/deliver/SKILL.md', 'commands/deliver/reference/checkpoints.md'], deploy: 'refresh the delivery helper and complete deliver skill directories for every installed host, including both references; regenerate reader and API surfaces. Preserve existing checkpoint evidence; content-only workspace fingerprints need explicit revalidation, not an edited integrity hash.', summary: 'Make verification non-authoring across completion and every pause; keep fresh proof local or external and route product corrections through scoped repair and independent re-review. Fingerprint POSIX executable bits for workspace and repair drift. Isolate Git queries from inherited repository-local redirection variables. Keep normal authoring, genuine human gates and global credential/configuration behavior unchanged.' }
 ---
 
 ## Changelog — what changed since the last version
@@ -21,6 +21,16 @@ changes:
 So at any moment: the frontmatter `changes` = the latest delta (the refresh guide), and this section = the full rolling history.
 
 ### Prior revisions
+
+<details>
+<summary>Revision 101 — 3 October 2026 — original presentation preservation</summary>
+
+```yaml
+changes:
+  - { type: changed, area: adoption-presentation-preservation, paths: ['README.md', 'OVERVIEW.md', 'adapters/INSTALL.md', 'adapters/managed-blocks/AGENTS.block.md'], deploy: 'refresh installed reader guidance and INSTALL; RE-PASTE the AGENTS managed block; regenerate the source handbook and portal. Restore workflow presentation only; no installer, workflow execution, permission, model, trust or release changes.', summary: 'Retain the original AI-Forward product presentation, reasoning explanations, persona and workflow references, repository layout, maintenance instructions and portal guidance. Add portable setup and conditional deliver guidance alongside the original content rather than replacing it. Update only directly affected skill counts, obsolete installer claims and explicitly optional source-clone alternatives. Protect full original explanation blocks as well as section headings.' }
+```
+
+</details>
 
 <details>
 <summary>Revision 100 — 3 October 2026 — upstream onboarding defaults</summary>

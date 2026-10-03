@@ -17,6 +17,20 @@ summary: >-
 
 # Defect-class register
 
+**DELIVERY-B / 2026-10-03 — reusing approval across changed artifact boundaries.**
+Class → a mutable progress snapshot can silently replace the version independently
+reviewed, while content-only fingerprints or inherited repository selectors miss
+behavior-changing drift. Sweep → verification completion and every pause, regular
+and recursive workspace entries, scoped-repair comparisons and the Git wrapper.
+Derive → verification is non-authoring; approval applies to the observed artifact,
+not later edits or another project. Prevent → real compiler/helper regression
+controls reject post-review product changes through closure and pauses, detect
+POSIX executable-bit changes outside repair scope, and bind explicit projects
+under inherited Git root/index/config variables. Local/external fresh proof,
+unchanged closure, scoped mode corrections and normal authoring remain valid.
+Status → deterministic cooperative controls; source labels do not authenticate
+consent, and finite tests do not establish universal model compliance.
+
 **DOC-P / 2026-10-03 — replacing the product story during feature onboarding.**
 Class → a clearer quick start can still silently replace the existing product
 presentation and reference instead of adding the requested capability beside it.
