@@ -1,12 +1,12 @@
 ---
 doc: INSTALL
 purpose: 'Deployment map and refresh changelog used by the portable bootstrap. For expert manual refreshes, `changes` lists the source paths and marked instruction sections to update. Preserve project-owned files and policy; the first-use path is one-line setup followed by a deliver request.'
-bundle_version: '2026.10.03.2'
-revision: 100
+bundle_version: '2026.10.03.3'
+revision: 101
 counts: { lenses: 23, skills: 30, knowledge_docs: 40, templates: 29, scripts: 47 }
 refresh_protocol: 'Compare your repo last-applied revision to the `revision` above. If it is lower, apply each entry in `changes` in order — re-copy the listed `paths` to their mapped destinations (deployment map in the body), re-apply the Copilot frontmatter wraps, and where an entry `deploy` says RE-PASTE, replace the managed blocks wholesale between their markers. Never overwrite an accumulated docs/docs-index.js.'
 changes:
-  - { type: changed, area: adoption-documentation, paths: ['README.md', 'OVERVIEW.md', 'adapters/INSTALL.md'], deploy: 'refresh installed reader guides and INSTALL; regenerate the source handbook and portal. No installer, workflow, permission, trust, identity or model changes.', summary: 'Make upstream/main the normal one-line setup path without --repo or --ref. Keep source/ref overrides optional for unmerged review and version pinning, not customer prerequisites. Remove contributor-specific installer URLs from primary onboarding; distinguish proposed upstream availability from proof gathered on an unmerged source.' }
+  - { type: changed, area: adoption-presentation-preservation, paths: ['README.md', 'OVERVIEW.md', 'adapters/INSTALL.md', 'adapters/managed-blocks/AGENTS.block.md'], deploy: 'refresh installed reader guidance and INSTALL; RE-PASTE the AGENTS managed block; regenerate the source handbook and portal. Restore workflow presentation only; no installer, workflow execution, permission, model, trust or release changes.', summary: 'Retain the original AI-Forward product presentation, reasoning explanations, persona and workflow references, repository layout, maintenance instructions and portal guidance. Add portable setup and conditional deliver guidance alongside the original content rather than replacing it. Update only directly affected skill counts, obsolete installer claims and explicitly optional source-clone alternatives. Protect full original explanation blocks as well as section headings.' }
 ---
 
 ## Changelog — what changed since the last version
@@ -21,6 +21,16 @@ changes:
 So at any moment: the frontmatter `changes` = the latest delta (the refresh guide), and this section = the full rolling history.
 
 ### Prior revisions
+
+<details>
+<summary>Revision 100 — 3 October 2026 — upstream onboarding defaults</summary>
+
+```yaml
+changes:
+  - { type: changed, area: adoption-documentation, paths: ['README.md', 'OVERVIEW.md', 'adapters/INSTALL.md'], deploy: 'refresh installed reader guides and INSTALL; regenerate the source handbook and portal. No installer, workflow, permission, trust, identity or model changes.', summary: 'Make upstream/main the normal one-line setup path without --repo or --ref. Keep source/ref overrides optional for unmerged review and version pinning, not customer prerequisites. Remove contributor-specific installer URLs from primary onboarding; distinguish proposed upstream availability from proof gathered on an unmerged source.' }
+```
+
+</details>
 
 <details>
 <summary>Detailed deltas through revision 99 — preserved history</summary>
@@ -223,13 +233,15 @@ changes:
 
 ---
 
-# Installing the AI-Forward Pack and expert reconciliation
+# Installing the AI-Forward Pack and reconciliation alternatives
 
-This pack supplies project adapters for **Claude Code**, **GitHub Copilot**, **Grok Build**, **Antigravity** and **Codex**. It is built on the **Agent Knowledge Pack** and vendors those foundation documents into `knowledge/`, so there is no separate base-pack prerequisite. Each host has different discovery, permissions, hooks, tools and multi-agent capabilities. Installing an adapter does not prove that a live host loaded it or enforced every instruction; qualify the actual host and workflow you rely on.
+This pack drops into an existing Git repository or a plain project and works with **Claude Code**, **GitHub Copilot**, **Grok Build**, **Antigravity**, **Codex**, or any combination. It is built on the **Agent Knowledge Pack** (Body of Knowledge, Rules of the Road, Persona Catalog, Engineering Governance, Layered-Optimized Architecture, Testing Strategy, C# Style Guide) and **vendors those foundation docs into `knowledge/`**, so the bundle is self-contained — it works even in a repo that doesn't already have the base pack. (The vendored docs are copies; if you maintain the Agent Knowledge Pack separately, refresh them when it changes.)
 
-The shared model is: **knowledge** carries guidance, **skills** carry workflow contracts, **agents** describe specialist lenses, and a thin **command/prompt** layer provides an entry point. File locations, invocation, available tools and enforcement differ by host; use the per-host mappings and proof limits below rather than assuming equivalent runtime behavior.
+The model is the same for every host: **knowledge** files are always-available reference, **skills** carry the workflow logic, **agents** are the personas (peers + adversaries), and a thin **command/prompt** layer is just an entry point that invokes a skill. The file locations and execution mechanisms differ per host; the shared model is not proof of identical live behavior.
 
-> **Normal setup uses the repository's portable `bootstrap.py`, which stages, applies and verifies this deployment map.** This file remains the detailed mapping and refresh history. Experts working from a trusted source clone may run its `scripts/pack-apply.py plan|apply --target <repo>` or reconcile the map manually. Never run an installed old copy to update itself: the source revision owns the current map. Preserve project-owned deviations and review conflicts; do not assume a filename proves pack ownership.
+> **Portable setup.** Normal setup uses the source repository's `bootstrap.py`, which stages, applies and verifies this deployment map. It reports the source commit and revision, preserves project-owned policy and stops for specific conflicts. This guide also retains the source-clone applier and manual reconciliation paths below; they are alternatives, not extra setup steps. A mapped destination is not proof that an existing file belongs to the pack. Installing files does not grant permissions or prove live model compliance.
+
+> **This is the reconciliation guide, and since revision 61 it is also a program: `scripts/pack-apply.py plan|apply --target <repo>` - run **the source clone's copy**, never the target's installed one (class BOOT-A: the deployment map is this program, so a revision that changes it cannot apply itself; `--source` defaults to the clone shipping the script) - applies the deployment map in §1 idempotently, subject to conflict checks (stale copies removed, managed blocks re-pasted, `CLAUDE.md` converted to the import form with a backup, repo-local deviations three-way merged, parity controls rewritten into shims). `/updatepack` and `/addpacktorepo` run it; the table below remains the contract it implements.** For manual reconciliation, you copy its content into a target repository by hand (or with your own tooling), using the deployment map below; the map is the contract — each source path has exactly one destination per tool. Reconciling a pack update = following the **`changes` changelog in this file's frontmatter** (the key guide — re-copy exactly the listed `paths`, re-apply the Copilot frontmatter wraps, and RE-PASTE the managed blocks where flagged); if your repo predates changelog tracking, diff once and then track `revision` from there.
 
 > **Managed blocks.** `adapters/managed-blocks/CLAUDE.block.md` and `adapters/managed-blocks/AGENTS.block.md` are ready-to-paste: append each (markers included) to the repo's `CLAUDE.md` / `AGENTS.md`, creating the file if absent — they are the wiring that points each tool at everything else (reasoning spine, personas, skills, testing, instrumentation, Docs Explorer, foundation). On update, replace everything between the markers rather than merging line by line. (§1.1 below.)
 
@@ -318,12 +330,14 @@ The persona **bodies are tool-neutral** (they describe peer/adversary behavior, 
 
 The reverse also holds: the `*_agent.md` adversaries in `adapters/copilot/agents/` carry no `tools:` line, so they drop into `.claude/agents/` unchanged (Claude Code likewise defaults to broad tool access when `tools:` is absent). **One source of truth per persona; a one-line frontmatter edit at the Copilot boundary.**
 
-### 1.3 How shared guidance maps across hosts
-The pack shares source guidance across hosts, while keeping host-specific behavior explicit:
+### 1.3 Why the personas and directives are fit for every host
+The pack is deliberately built so the *same* personas and knowledge directives work under every execution model, with the requested execution mechanisms described in the thin entry layer:
 
-- **Knowledge and persona bodies aim to be portable.** They describe what to reason about and what each lens checks. Their source text can be shared, but a host may expose different context, models or tools.
-- **Execution is host-specific.** Claude Code, Copilot, Grok Build and Antigravity offer different agent and hook mechanisms. The adapters request corresponding review behavior; a requested reviewer label or model id is not proof that the host supplied independent execution or the intended backend.
-- **Templates provide common shapes, not identical outcomes.** Hosts can write compatible `docs/` artifacts and run the same deterministic graph tools, but the actual artifacts, review quality and enforcement depend on the task and observed host run. Compare generated output with the original request and qualify any load-bearing native control.
+- **Knowledge docs and persona bodies are tool-neutral.** They describe *what* to reason about and *what* each lens checks — never *how* an agent is spawned. The Orchestrator's "invoke the adversary as a separate subagent" names **four** mechanisms: a separate **subagent** in Claude Code, a distinct labeled **inline turn** in Copilot, `spawn_subagent` (`subagent_type` = the persona `name`) in Grok Build, and inline round-table (or `invoke_subagent` / `define_subagent` from `.claude/agents/`) in Antigravity (`agy`).
+- **The execution difference lives in the prompt layer.** The Claude Code adapters request the relevant subagents when a skill runs. The Copilot prompt-file path instructs a **single agent** to **enact the round-table inline** — voice each peer, then each adversary's labeled critique with a severity and explicit PASS/BLOCK — within one response. Grok Build loads `.grok/skills/` (and `.claude/skills/` when Claude compatibility is on) and spawns personas from `.grok/agents/`. Antigravity (`agy`) auto-discovers skills in `.agents/skills/` via `.agents/skills.json` and enacts the round-table inline or with `invoke_subagent` (`self`). The same requested dialog, vetoes and artifact shape; different staging. Copilot CLI and Agent Host sessions can use native skills rather than the older prompt-file path. (Details in §5 below.)
+- **The artifact templates and gates are shared.** Hosts use the same `docs/` paths, `templates/` and deterministic `docs-graph.py` bundle. Compatible shapes do not prove identical outcomes, review quality or enforcement; check the actual artifacts and observed host execution against the original request.
+
+A requested reviewer label or model id is not evidence that a host supplied independent execution or the intended backend. Verify load-bearing native controls in the actual host/workflow; the portability of source guidance is not universal runtime qualification.
 
 ### 1.4 Hooks — the re-read guard
 `adapters/hooks/reread-guard.py` runs at the pre-tool-use seam on Claude Code, Copilot CLI, and Grok Build (class CTX-D): it counts identical reads per turn and adds a **warning** to the model's context on the third identical read and on any paged tool output viewed whole; it resets at the prompt boundary; it never blocks and is fail-open on every error path (on Copilot a `preToolUse` hook that exits non-zero *denies* the call, so it never does). Deploy: the script and its README to `docs/ai-forward-pack/hooks/`; `copilot.ai-forward-hooks.json` to `.github/hooks/ai-forward.json` (Copilot CLI loads repo hooks from there; personal hooks live in `~/.copilot/hooks/`); `grok.ai-forward-hooks.json` to `.grok/hooks/ai-forward.json` (Grok project hooks require folder trust: `/hooks-trust` or `--trust`); the `hooks` object in `claude-code.settings.hooks.json` merged into `.claude/settings.json` (committed project settings run in sub-agents too). The commands say `python`; on Linux/macOS use `python3` (§0). `pack-doctor.py` reports whether any host has it.

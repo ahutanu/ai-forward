@@ -1,7 +1,7 @@
 // Derived from docs/audit/*.jsonl by scripts/audit-log.py — DO NOT hand-edit (the JSONL logs are the source of truth; see audit-and-change-log.md).
 window.AUDIT_DATA = {
   "project": "ai-forward",
-  "generated": "2026-10-03T08:31:42Z",
+  "generated": "2026-10-03T10:12:47Z",
   "audit": [
     {
       "actor": null,
@@ -13477,6 +13477,38 @@ window.AUDIT_DATA = {
       "git": {
         "sha": "942c8507a4a2a12e294fee55a160bc402feed70d",
         "short": "942c8507a",
+        "branch": "feat/one-command-adoption",
+        "pushed": true
+      }
+    },
+    {
+      "id": "al-01M40M10YMS8JX3N0X1EXB85Y6",
+      "shortname": "preserve-product-presentation",
+      "datetime": "2026-10-03T10:12:47Z",
+      "session": "one-command-adoption-presentation",
+      "prompt": "I am also not sure if I got well some changes, like the enclosed ones in the README where I hope we did not delete Tim's original phrasing and docs around AI forward but rather enhanced them adding our one commands for install and run without changing Tim's AI-Forward product presentation or other changes aside from adding or adjusting with our one commands? It may be that that I may be wrong and some things are simply shifted instead of deleted and GitHub shows wrongly here but please check on that and insist on highest standards, owning the outcome",
+      "summary": "Confirmed that onboarding had replaced original presentation and reference prose. Restored complete authoritative upstream text in five source guides, with one-line setup and conditional deliver guidance added alongside it. Explicit feature-only adjustments and red/green full-block preservation controls bind the correction; aggregate verification and independent review are still pending.",
+      "kind": "manual",
+      "skill": null,
+      "tool": null,
+      "actor": "Alex Hutanu",
+      "artifacts": [
+        "README.md",
+        "pack/README.md",
+        "pack/OVERVIEW.md",
+        "web/handbook/guides/get-started.md",
+        "web/handbook/guides/workflow.md",
+        "docs/proof/one-command-adoption.md"
+      ],
+      "tags": [],
+      "outcome": "partial",
+      "goal": "Preserve the original AI-Forward product presentation and unrelated guidance while retaining focused one-command adoption enhancements.",
+      "done_when": "Complete raw-source preservation, independent review, applicable documentation/build checks and exact fork publication readback pass; upstream PR stays with Alex.",
+      "tier": "T1",
+      "fan_out": 1,
+      "git": {
+        "sha": "39b7d382deabc87e21dfad87ef3f28861e81bde5",
+        "short": "39b7d382d",
         "branch": "feat/one-command-adoption",
         "pushed": true
       }

@@ -2858,7 +2858,7 @@ window.PORTAL_DATA = {
         "id": "handbook-get-started",
         "type": "doc",
         "title": "Try AI-Forward on one small task",
-        "summary": "Start with a project you understand and a change you can review. You do not need to learn the skill sequence or manage a team of agents. Install the pack,..."
+        "summary": "Start with a repository you understand and a change you can review. The first useful result is not a large plan or a swarm of agents. It is seeing whether the..."
       },
       {
         "id": "handbook-glossary",
@@ -3110,7 +3110,7 @@ window.PORTAL_DATA = {
         "id": "handbook-workflow",
         "type": "doc",
         "title": "From request to reviewed change",
-        "summary": "A useful request says what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward helps turn that intent..."
+        "summary": "A useful request tells the agent what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward's workflows..."
       },
       {
         "id": "hygiene-backlog",

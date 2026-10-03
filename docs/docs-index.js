@@ -4875,7 +4875,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "a613d06870c95aaa3b784f669a06ed8529b41cf51c30e050e35d8e65e000caa6"
+      "sourceSha256": "2463ec5f117a7f12a7289dd377d9a8c0f2dfa5619475bb3a707a161662f518fb"
     },
     {
       "id": "docs-index",
@@ -5601,7 +5601,7 @@ window.DOCS_INDEX = {
       "phase": "documentation",
       "reviewBy": "2027-03-22",
       "reviewSuggested": [],
-      "summary": "Start with a project you understand and a change you can review. You do not need to learn the skill sequence or manage a team of agents. Install the pack, describe one outcome, then inspect the result against your request.",
+      "summary": "Start with a repository you understand and a change you can review. The first useful result is not a large plan or a swarm of agents. It is seeing whether the pack helps you frame a small request, inspect the output, and keep a reliable next step.",
       "tags": [
         "handbook",
         "reader-guide"
@@ -5613,7 +5613,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "63e95a7f18a5315aa7da22124b8d948d71a756d6e2ae8518c24b8ddfef85d763"
+      "sourceSha256": "c2149405b2ba19bb92c40dcaa28afdb844812323b9348644ea8e7212aa260450"
     },
     {
       "id": "handbook-glossary",
@@ -6609,7 +6609,7 @@ window.DOCS_INDEX = {
       "phase": "documentation",
       "reviewBy": "2027-03-22",
       "reviewSuggested": [],
-      "summary": "A useful request says what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward helps turn that intent into work and evidence you can review, without quietly changing the finish line.",
+      "summary": "A useful request tells the agent what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward's workflows help turn that intent into decisions, actions and a handback you can review.",
       "tags": [
         "handbook",
         "reader-guide"
@@ -6621,7 +6621,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "61b277cda9d72d38f7f8b660c8edbae4f1751b2a0fb329bfd40a4ae503fda499"
+      "sourceSha256": "3124d99ea79f86c8316fbd021ae8ef3989f9373f86b2f898967ab4b40a44a6f7"
     },
     {
       "id": "hygiene-backlog",
@@ -10768,7 +10768,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "f3144465925809b2909f5c17214e73aaa5490532a42ed4dbbda4c227eb11a88f"
+      "sourceSha256": "036c37cbb44c7401f8b38104667a7cd7eb5d0a9ef04700a036bc8b7ffa01c2d8"
     },
     {
       "id": "spec-acp-coordination",
@@ -12236,5 +12236,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "9f35dc3032231325e0c3925ba1670f5e8b7020228b2c3ac95ea3b0ca5e4eb76e"
+  "graphSha256": "05a604d9b5c0328ed56b12506cb34c5ccf9333a3c0c7a352915ddca5ae1d73c4"
 };

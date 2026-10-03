@@ -17,6 +17,17 @@ summary: >-
 
 # Defect-class register
 
+**DOC-P / 2026-10-03 — replacing the product story during feature onboarding.**
+Class → a clearer quick start can still silently replace the existing product
+presentation and reference instead of adding the requested capability beside it.
+Sweep → root README, pack README/overview and first-task/workflow handbook guides.
+Derive → begin with complete authoritative upstream bytes, add the short path and
+allow only explicit adjustments needed by the feature; counts and headings alone
+cannot establish prose preservation. Prevent → customer-documentation controls
+retain the original sections and compare complete product/reference blocks by hash;
+the previous rewrite and a retained-heading/replaced-paragraph mutation fail.
+Status → controlled for these source guides; semantic scope still needs review.
+
 **DOC-S / 2026-10-03 — treating a display excerpt as complete source.**
 Class → reconstructing a large artifact from line-abbreviated tool output can retain
 its record count while dropping the suffixes of long records. A verified write proves

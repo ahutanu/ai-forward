@@ -22,6 +22,7 @@ test("a newcomer finds purpose, a first task and the next workflow without histo
   await page.locator("#article").getByRole("link", { name: "install the pack and complete a first task" }).click();
   await expect(page.getByRole("heading", { name: "Try AI-Forward on one small task", exact: true })).toBeVisible();
   await expect(page.locator("#article")).toContainText("63");
+  await expect(page.locator("#article")).toContainText("$specify");
   await expect(page.locator("#article")).toContainText("$deliver");
   await expect(page.locator("#article")).toContainText("Best next action");
   await expect(page.locator("#article")).toContainText("uv run --no-config --no-project --script");
@@ -43,8 +44,10 @@ test("problem search finds a workflow and handles empty results without hiding n
 test("planning and compilation are explained in the actual coordination journey", async ({ page }) => {
   await page.goto(url + "#from-prompt-to-coordinated-execution");
   await expect(page.getByRole("heading", { name: "From request to reviewed change", exact: true })).toBeVisible();
-  await expect(page.locator("#article")).toContainText("each track needs a finished, dispatchable compilation audit id");
-  await expect(page.locator("#article")).toContainText("does not launch agents or grant tool permission");
+  await expect(page.locator("#article")).toContainText("per-track prompts must be compiled after the plan");
+  await expect(page.locator("#article")).toContainText("does not launch a process");
+  await expect(page.locator("#article")).toContainText("dispatchable compilation audit IDs");
+  await expect(page.locator("#article")).toContainText("Compile each native-launch track's complete contract");
   await page.goto(url + "#coord-prompt-to-execution");
   await expect(page.locator("#article")).toContainText("--brief");
   await expect(page.locator("#article")).toContainText("--launch");

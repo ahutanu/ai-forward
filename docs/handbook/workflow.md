@@ -6,7 +6,7 @@ status: "accepted"
 owner: "@timianmalloo"
 phase: "documentation"
 review-by: "2027-03-22"
-summary: "A useful request says what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward helps turn that intent into work and evidence you can review, without quietly changing the finish line."
+summary: "A useful request tells the agent what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward's workflows help turn that intent into decisions, actions and a handback you can review."
 tags: [handbook, reader-guide]
 links:
   - { to: handbook-overview, rel: relates-to }
@@ -16,9 +16,14 @@ links:
 
 # From request to reviewed change
 
-A useful request says what should be different when the work is finished. It does
-not have to prescribe the implementation. AI-Forward helps turn that intent into
-work and evidence you can review, without quietly changing the finish line.
+A useful request tells the agent what should be different when the work is finished.
+It does not have to prescribe the implementation. AI-Forward's workflows help turn
+that intent into decisions, actions and a handback you can review.
+
+There is no universal conveyor belt through every skill. Choose the next step from
+what is still unknown. Research cannot substitute for a product decision, a design
+cannot prove a running feature, and an implementation cannot silently settle a
+question you intended to review.
 
 ## Start with the outcome, not a command sequence
 
@@ -46,9 +51,9 @@ you meant to review. A short route removes unnecessary work, not necessary evide
 
 ## State the finish line
 
-Give the outcome, a checkable completion condition and exclusions. Include
-constraints the agent cannot discover from files, such as permitted model families,
-privacy requirements or whether deployment is authorized.
+Begin with the outcome, a checkable completion condition and exclusions. Include
+constraints the agent cannot discover from the repository, such as permitted model
+families or whether a data export may include personal information.
 
 ```text
 Goal: add CSV export for HarborTasks' current project and filter.
@@ -57,41 +62,24 @@ and another project's tasks are excluded.
 Not in scope: scheduled exports, a reporting service, or new user roles.
 ```
 
-HarborTasks is an illustrative service, not a required sample project. This frame
-makes an important ambiguity visible and helps you reject unrelated work. You do
-not need a finished design before asking. The agent should bring consequential
-choices back to you rather than infer them from its preferred implementation.
+This is an illustrative request, not a complete specification. It makes the important
+ambiguity visible early and gives you a basis for rejecting unrelated work.
 
-Implementation can change; the requested result cannot silently change with it.
-If a requirement is impossible or conflicts with project policy, ask for an explicit
-decision. Do not accept a narrower finish line just because the narrower test passes.
+## Choose the next workflow
 
-## Understand why a stage was selected
-
-This table explains the choices `deliver` makes. Individual skills are also available
-when a specification, diagnosis or review is itself the result you want.
-
-| What remains uncertain | Applicable workflow | What you inspect |
+| What you need to establish | A useful starting point | What you inspect |
 |---|---|---|
-| The domain or an external contract is unfamiliar | [Collect knowledge](#skill-collectknowledge) | Sources, uncertainties and relevant vocabulary |
-| Desired behavior is unclear | [Specify](#skill-specify) | Scope, user experience and testable acceptance criteria |
+| The domain is unfamiliar | [Collect knowledge](#skill-collectknowledge) | Sources, uncertainties and vocabulary relevant to the problem |
+| The desired behavior is unclear | [Specify the feature](#skill-specify) | Scope, user experience and testable acceptance criteria |
 | System boundaries or load-bearing choices are changing | [Define architecture](#skill-define-architecture) | Responsibilities, contracts, alternatives and consequences |
-| A component needs a concrete design | [Design a slice](#skill-design-slice) | Inputs, outputs, failure cases and the verification plan |
-| An interface needs its behavior and presentation settled | [UI design](#skill-ui-design) | Flows, states and accessibility before building |
-| The change is understood and authorized | [Implement](#skill-implement) | Code and checks that distinguish correct from incorrect behavior |
-| Existing behavior is wrong | [Investigate](#skill-investigate) | Demonstrated cause and proposed repair before implementation |
-| A large upgrade or refactor is needed | [Migrate](#skill-migrate) | Old behavior characterized first, intended differences and rollback |
-| Explicitly requested independent tracks are justified | [Prepare coordination](#skill-prepare-for-coordination), then [execute it](#skill-execute-with-coordination) | Ownership, contracts, limits and proof of the integrated result |
+| One component needs a concrete blueprint | [Design a slice](#skill-design-slice) | Inputs, outputs, failure handling and a credible verification plan |
+| The design is understood and you need code | [Implement](#skill-implement) | The change and checks that distinguish correct from incorrect behavior |
+| Existing behavior is wrong | [Investigate](#skill-investigate) | A demonstrated cause and a repair proposal before implementation |
+| A large upgrade or refactor is needed | [Migrate](#skill-migrate) | Current behavior characterized before the change |
+| Several tracks may be useful | [Prepare coordination](#skill-prepare-for-coordination) | Real independence, ownership, budgets and return evidence |
 
-Small, understood work can take a short path. Identity, stored data or concurrency
-needs more deliberate checks even if the diff is small. Migration keeps its
-characterization requirement; an interface keeps its design-before-building
-requirement; investigation keeps its repair-review decision unless an actual prior
-instruction explicitly authorized the diagnosed repair.
-
-When independent tracks are approved, coordinated execution replaces a second
-single-session implementation plan. It is not an invitation to implement the same
-change twice. Worker handbacks still need integration and checks of the whole result.
+Small, well-understood work can take a short path. A change to identity, stored data
+or concurrency needs more deliberate decisions and checks even if the diff is small.
 
 ## Know what a pause asks of you
 
@@ -122,71 +110,95 @@ The progress helper checks saved-state integrity and recorded gate bindings. It
 does not authenticate human consent or determine whether a test proves the meaning
 of your request. Those judgments still need the original decision and actual evidence.
 
-## Keep the structured request faithful
+## What compilation adds
 
-The pack calls turning prose into a structured starting prompt **compilation**.
-This is not compilation of application code. It records the goal, completion
-conditions, exclusions, sources, assumptions and unresolved decisions alongside
-the original request.
+`deliver` reuses an accepted compiled request when one is available; otherwise it
+uses the existing compile workflow as part of the same task. The standalone
+`/compile` example below remains useful when that structured request is itself the
+result you want. Native coordinated tracks still need their own finished,
+dispatchable contracts after planning; the single-task entry point does not change
+that requirement or authorize coordination.
 
-`deliver` uses an accepted compiled request when one is available; otherwise it
-uses the existing [compile](#skill-compile) workflow. You do not need to invoke it
-separately before every delivery task. When you deliberately want to inspect or
-prepare a request on its own, use:
+In this pack, **compilation** means converting a prose request into a structured,
+harness-appropriate starting prompt. It is not compilation of application source code.
+The [compile skill](#skill-compile) makes the goal, traceable clauses, assumptions and
+unanswered decisions explicit, and records the result with the original request.
 
 ```text
 /compile Add CSV export for the active project and filter. Export every
 matching task, not only the current page. Do not expand the reporting scope.
 ```
 
-In Codex, use `$compile`. Review whether the structured request preserves the
-meaning of the original, including words such as “all,” “only” and “not.” More
-polished wording, a valid source quote or a passed compiler check is not permission
-to add, drop or replace requirements.
+In Codex, use `$compile`. An illustrative compiled frame might identify the goal,
+the completion check, exclusions, source references and a question about which columns
+belong in the export. Review whether the frame preserves your intent. More polished
+wording is not permission to add requirements.
 
-Compilation does not launch agents or grant tool permission. For native coordinated
-launches, each track needs a finished, dispatchable compilation audit id after its
-ownership, budget and return contract are settled. An unanswered decision must not
-be disguised as a resolved instruction.
+Skills consume a compiled prompt when it is available. Do not assume that merely
+typing prose causes the host application to run a compiler automatically. Follow the
+actual workflow and inspect its output.
 
-## A worked delivery path
+The native launch path has a concrete additional requirement: it consumes **finished,
+dispatchable compilation audit IDs**, not arbitrary prompt strings. That matters for
+coordination, because per-track prompts must be compiled after the plan fixes each
+track's owned paths, budget and return contract.
 
-For HarborTasks export, suppose you choose the columns, restrict the export to
-fields the person can already view and decide that an empty export still contains
-the header. The agent should record those decisions, inspect the real filtered query
-and settle the download behavior before building.
+## Planning and compilation are different decisions
 
-It then implements the bounded change with tests. The important failure is not
-“can we serialize twenty objects?” It is “does the query-to-download path lose the
-remaining matches?” Check the 63-match/20-row case, the project boundary and the
-agreed empty-result behavior. If the interface changed, check its actual interaction
-and relevant states too.
+An overall framing prompt can be compiled before planning. A per-track launch prompt
+depends on the resulting plan. Keep those two uses distinct:
 
-The documentation should explain what was built and any limits, not copy the plan
-as if every promise shipped. [The coordination guide](#coordination) explains the
-extra obligations if the work instead uses approved independent tracks.
+1. Clarify the overall outcome, with an explicit compilation when useful.
+2. Decide whether several tracks are actually warranted.
+3. Prepare the division of work, dependencies and ownership.
+4. Compile each native-launch track's complete contract.
+5. Execute through the selected mechanism and review the handbacks.
 
-## Review the handback
+Unanswered decision requests must not be disguised as resolved instructions.
+Compilation does not launch a process, grant tool permission or elect a coordinator.
 
-A good handback separates **Completed**, **Remaining** and **Best next action**.
-It shows what changed, where to inspect it, how each original criterion was checked,
-what did not run and which decisions remain. If a criterion is unmet, the task is
-still open; useful partial work is not a reason to call it complete.
+## A worked path through HarborTasks
 
-The evidence depends on the claim. Code needs checks of real composition and user
-paths, not just isolated units. A specification needs acceptance criteria that
-preserve desired behavior. A migration needs characterized behavior, intentional
-differences and rollback. An artifact's existence, a checkpoint hash or a worker's
-completion message proves none of these on its own.
+First, use `/specify` to settle all-matches behavior, columns, project access and empty
+results. Suppose you decide that an empty export still contains the header and that
+the export includes only fields the person can already view.
+
+Next, use `/design-slice` for the export path. Ask it to inspect the actual paged query,
+the file-format boundary and the UI entry point. The result should make clear how
+all matches are retrieved without inventing an unrelated reporting subsystem.
+
+Then use `/implement` for the bounded slice. The important negative case is not
+“can we serialize twenty objects?” It is “does the real query-to-download path lose
+the remaining matches?” Test the 63-match/20-row situation and the project boundary.
+
+Finally, review the result and use `/document` to keep the useful explanation current.
+The documentation should describe what was built, including limits, rather than
+copy the earlier plan as if every promise had shipped.
+
+If the backend and UI have independent ownership after a shared contract is settled,
+you may instead prepare coordinated tracks. [The coordination guide](#coordination)
+shows where that helps and what additional obligations it creates.
+
+## Make a handback useful
+
+A good handback tells you what changed, where to inspect it, what checks ran, what
+did not run and what still needs a decision. An artifact's existence is not enough.
+Inspect whether its contents meet the acceptance criteria.
+
+For code, look beyond isolated units to the real composition and user path. For a
+specification, check whether its acceptance criteria describe the desired behavior.
+For a migration, inspect rollback and behavioral differences. The evidence you need
+depends on the claim.
 
 ## Change the request without losing the thread
 
-Use [also](#skill-also) for an addition to consider after a safe checkpoint. Say
-**stop** when you want the current track to end. If you want to replace the goal,
-say so explicitly; a passing aside should not become a new mandate.
+Use [also](#skill-also) for an addition that should be considered after the current
+work reaches a safe checkpoint. Use an explicit stop when you want the current track
+to end. Those are different instructions.
 
-A new requirement may invalidate a plan or earlier proof. The agent should tell
-you what changed and what needs checking again, while preserving valid work.
+If the change invalidates the original goal, say so. Do not make the agent infer a
+new scope from a passing comment, and do not accept a newly invented goal merely
+because useful work was done on it.
 
-**Next:** [make checks meaningful](#rigor), [design a change](#design), or
+**Next:** [make the checks meaningful](#rigor), [design the change](#design), or
 [coordinate independent tracks](#coordination).

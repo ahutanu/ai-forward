@@ -3119,10 +3119,10 @@ window.PACK_INDEX = {
 "cat": "graph",
 "id": "handbook-get-started",
 "title": "Try AI-Forward on one small task",
-"summary": "Start with a project you understand and a change you can review. You do not need to learn the skill sequence or manage a team of agents. Install the pack, describe one outcome, then inspect the result against your request.",
+"summary": "Start with a repository you understand and a change you can review. The first useful result is not a large plan or a swarm of agents. It is seeing whether the pack helps you frame a small request, inspect the output, and keep a reliable…",
 "path": "docs/handbook/get-started.md",
 "kind": "doc",
-"text": "try ai-forward on one small task start with a project you understand and a change you can review. you do not need to learn the skill sequence or manage a team of agents. install the pack, describe one outcome, then inspect the result against your request. handbook reader-guide relates-to handbook-overview"
+"text": "try ai-forward on one small task start with a repository you understand and a change you can review. the first useful result is not a large plan or a swarm of agents. it is seeing whether the pack helps you frame a small request, inspect the output, and keep a reliable next step. handbook reader-guide relates-to handbook-overview"
 },
 {
 "cat": "graph",
@@ -3497,10 +3497,10 @@ window.PACK_INDEX = {
 "cat": "graph",
 "id": "handbook-workflow",
 "title": "From request to reviewed change",
-"summary": "A useful request says what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward helps turn that intent into work and evidence you can review, without quietly changing the finish line.",
+"summary": "A useful request tells the agent what should be different when the work is finished. It does not have to prescribe the implementation. AI-Forward's workflows help turn that intent into decisions, actions and a handback you can review.",
 "path": "docs/handbook/workflow.md",
 "kind": "doc",
-"text": "from request to reviewed change a useful request says what should be different when the work is finished. it does not have to prescribe the implementation. ai-forward helps turn that intent into work and evidence you can review, without quietly changing the finish line. handbook reader-guide relates-to handbook-overview"
+"text": "from request to reviewed change a useful request tells the agent what should be different when the work is finished. it does not have to prescribe the implementation. ai-forward's workflows help turn that intent into decisions, actions and a handback you can review. handbook reader-guide relates-to handbook-overview"
 },
 {
 "cat": "graph",

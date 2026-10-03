@@ -22,7 +22,35 @@ summary: >-
 - **Tier:** T2 (load-bearing workflow boundaries, local state and cross-platform installation)
 - **Author / date:** @ahutanu · 2026-10-02
 
-## Revision 100 upstream onboarding correction
+## Revision 101 presentation preservation
+
+The earlier onboarding rewrite replaced original product and reference prose rather
+than merely moving it. This correction restores the complete upstream root README,
+pack README/overview and stage-by-stage handbook guidance from committed raw Git
+source, with portable setup and `deliver` sections added alongside it. The original
+Rigor Protocol, dual-mode personas, roster, detailed standards, workflow examples,
+repository layout, maintenance loop and portal explanation remain.
+
+Whole-file reversal of the explicit additions and feature-only adjustments matches
+upstream `ccc5160603448981d6c879a8735b79129500eb64` exactly on all five source guides.
+The adjustments are limited to directly affected skill counts, new installer support,
+source/installed Codex-path clarification, prerequisites and optional source-clone
+alternatives. Controls check full original explanation blocks, not just headings;
+the prior published rewrite and a retained-heading/replaced-paragraph mutation both
+fail. The canonical upstream one-liner, host-specific entry points, human gates,
+failure guidance and same-project resume remain. Runtime files are unchanged.
+
+Independent preservation review passed the full raw-source comparison and narrow
+feature adjustments, including restored applier/host mechanics and first-class
+individual workflows. Focused documentation, history, installation-default and
+reader checks passed **88 tests and 61 subtests**. Browser checks passed **264 tests
+with 12 deliberate skips**; they retain the original specification exercise and
+compile-after-planning assertions alongside the new delivery path. Executable,
+existing skill and knowledge bytes are unchanged; managed-block changes restore
+workflow presentation only. Final aggregate and published-head native qualification
+must be checked separately, not inferred from the historical receipts below.
+
+## Revision 100 upstream onboarding correction (historical qualification)
 
 Primary onboarding now documents the upstream repository and `main`, which are
 already the bootstrap defaults. The normal command has no `--repo` or `--ref`.
