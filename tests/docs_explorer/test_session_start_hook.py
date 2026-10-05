@@ -193,5 +193,60 @@ class SessionStartHookTests(unittest.TestCase):
         self.assertEqual(self._starts(), {})
 
 
+class SessionStartHookOptInTests(unittest.TestCase):
+    """AL0.2 governs `audit-log.py append`'s default `--root` via `resolve_default_root`:
+    docs/audit/ is seeded only when it already exists on disk (the repo's own opt-in
+    signal). The session-start hook is a SECOND, independent definition of that same
+    decision (DC-190's own gate: `if not os.path.isdir(docs): return 0` on the bare
+    `docs/` directory, then an explicit `--root docs`) -- and an explicit --root is a
+    direct ask that bypasses `resolve_default_root` entirely (AL0.2's own documented
+    escape hatch). So in a repo with a bare `docs/` (common: README-only docs, no
+    docs/audit/) that never opted into the Audit Mandate, the hook's own marker write
+    creates docs/audit/ unasked -- and that directory then satisfies `append`'s opt-in
+    check on every later call, seeding the real audit-log.jsonl into the product tree
+    too (measured: `ignored docs/audit/.run-starts.json` in 51 of 138 grid-4 cells,
+    `added docs/audit/audit-log.jsonl outside` in 18). The fix: the hook must resolve
+    the root the same way `append` does -- one function, not two definitions -- by
+    never forcing an explicit --root and never gating on bare `docs/` existing."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.repo = pathlib.Path(self.tmp) / "repo"
+        # bare docs/ -- NOT opted into the Audit Mandate (no docs/audit/ yet)
+        (self.repo / "docs").mkdir(parents=True)
+        pack = self.repo / "docs" / "ai-forward-pack"
+        (pack / "hooks").mkdir(parents=True)
+        (pack / "scripts").mkdir(parents=True)
+        shutil.copy(HOOK, pack / "hooks" / "session-start.py")
+        shutil.copy(IDENTITY, pack / "hooks" / "coord_identity.py")
+        shutil.copy(AUDIT, pack / "scripts" / "audit-log.py")
+        self.hook = pack / "hooks" / "session-start.py"
+
+    def _run_hook(self, payload, host="claude"):
+        env = dict(os.environ)
+        env.pop("AGENT_SESSION", None)
+        env["AGENT_HOST"] = host
+        return subprocess.run([sys.executable, str(self.hook), "--host", host], cwd=str(self.repo),
+                              input=json.dumps(payload), capture_output=True, text=True, env=env, timeout=30)
+
+    def test_the_hook_never_seeds_docs_audit_in_a_repo_that_has_not_opted_in(self):
+        r = self._run_hook({"hook_event_name": "SessionStart", "session_id": "abc123",
+                            "cwd": str(self.repo)})
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertFalse((self.repo / "docs" / "audit").exists(),
+                          "the hook must not auto-create docs/audit/ in a repo that never "
+                          "opted into the Audit Mandate (AL0.2, PK-03)")
+
+    def test_the_hook_degrades_to_the_pack_local_fallback_instead(self):
+        r = self._run_hook({"hook_event_name": "SessionStart", "session_id": "abc123",
+                            "cwd": str(self.repo)})
+        self.assertEqual(0, r.returncode, r.stderr)
+        fallback = self.repo / ".agents" / "log" / "audit" / ".run-starts.json"
+        self.assertTrue(fallback.exists(),
+                         "the marker degrades to the pack's own local area, same as "
+                         "append's resolve_default_root (D10)")
+
+
 if __name__ == "__main__":
     unittest.main()

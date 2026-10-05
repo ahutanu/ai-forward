@@ -73,3 +73,5 @@ learnings/plans/
 # project history: absence degrades to 'no duration recorded', never to a wrong one.
 docs/audit/.run-starts.json
 docs/audit/.run-starts.json.tmp
+.agents/log/audit/.run-starts.json
+.agents/log/audit/.run-starts.json.tmp

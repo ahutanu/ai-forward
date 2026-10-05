@@ -291,7 +291,11 @@ class FreshAndGuardTests(unittest.TestCase):
         self.assertEqual("fail", rows[0]["status"])
         rows = pa.Applier(str(ROOT), tmp, dry=False, install=True, baselines=False, project="Demo").run()
         self.assertTrue(os.path.exists(os.path.join(tmp, "CLAUDE.md")))
-        self.assertTrue(os.path.exists(os.path.join(tmp, "docs/index.html")), "Docs Explorer instantiated on a fresh install")
+        self.assertFalse(os.path.exists(os.path.join(tmp, "docs/index.html")),
+                          "the Docs Explorer shell is instantiated by a content-creating "
+                          "skill once it has real content to show (V10), never by install "
+                          "-- otherwise its mere presence falsely satisfies derive's own "
+                          "opt-in check for every repo that ever ran the installer (PK-03)")
         self.assertIn("# Demo", _r(tmp, "AGENTS.md"))
         self.assertTrue(os.path.exists(os.path.join(tmp, "docs/ai-forward-pack/INSTALL.md")))
         self.assertFalse(os.path.exists(os.path.join(tmp, "docs/docs-index.js")), "never seeded (V10)")
@@ -306,6 +310,34 @@ class FreshAndGuardTests(unittest.TestCase):
         self.assertEqual("---\nname: x\n---\nbody", pa.strip_tools("---\nname: x\ntools: [Read,\n  Grep]\n---\nbody"))
         self.assertEqual(pa.normalise("see `.github/instructions/rigor-protocol.instructions.md` now"),
                          pa.normalise("see `.claude/knowledge/rigor-protocol.md`   now"))
+
+
+class DocsExplorerOptInNotSatisfiedByInstallTests(unittest.TestCase):
+    """pack-onoff-analysis.html #3 (class PK-03): `docs-graph.py derive`'s default write of
+    docs/docs-index.js is opt-in -- `_opted_into_docs_explorer` reads docs/index.html or the
+    destination file as the repo's own signal. But pack-apply's install step used to
+    instantiate docs/index.html from the SAME template a content-creating skill instantiates
+    (byte-identical output either way, V10 step 3) -- so running the installer alone, with
+    zero frontmattered content anywhere in the repo, silently satisfied that signal for
+    EVERY pack-on repo, and the next bare `derive` call (every shipped skill calls it bare,
+    no --out) wrote docs-index.js into a repo that only ran the installer and never asked
+    for the Explorer (measured: docs/index.html present pre-task, docs-index.js added
+    'outside' the task's declared scope, grid-4 cell 0413c04158823107). The fix: install
+    never creates the shell; only a skill that just created real content does, so the
+    signal stays tied to a genuine ask."""
+
+    def test_a_fresh_install_alone_does_not_let_derive_seed_docs_index_js(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, True)
+        pa.Applier(str(ROOT), tmp, dry=False, install=True, baselines=False, project="Demo").run()
+        docs_graph = os.path.join(tmp, "docs", "ai-forward-pack", "scripts", "docs-graph.py")
+        self.assertTrue(os.path.isfile(docs_graph), "install must deploy the script bundle")
+        r = subprocess.run([sys.executable, docs_graph, "derive"], cwd=tmp,
+                           capture_output=True, text=True, timeout=30)
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(tmp, "docs", "docs-index.js")),
+                          "a bare derive after install-only must still refuse: the repo "
+                          "has no content and never asked for the Explorer " + r.stderr)
 
 
 class GitignoreDoesNotReverseARepoDecision(unittest.TestCase):

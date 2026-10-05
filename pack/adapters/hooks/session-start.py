@@ -15,6 +15,13 @@ What it writes. `audit-log.py start`, keyed:
     that slot only when the entry's own session/skill marker is absent, records
     `duration_source: session-start-hook`, and consumes it - one marker measures one run.
 
+No `--root` is ever passed here: `audit-log.py`'s own `resolve_default_root` is the ONE
+place that decides docs/audit/ vs the pack's local fallback (.agents/log/), keyed off
+whether docs/audit/ already exists (AL0.2). This hook used to gate on a bare `docs/`
+existing and then force `--root docs` explicitly - a SECOND, independent opt-in
+decision that bypassed AL0.2 and seeded docs/audit/ unasked (PK-03, measured in
+grid-4). Letting `start` resolve its own root exactly as `append` does closes that gap.
+
 Contract (from the hooks reference, read 2026-09-14): stdin carries `hook_event_name`,
 `session_id`, `cwd`, and on `SubagentStart` `agent_id` + `agent_type`; a handler runs in
 the session's current directory; SessionStart cannot block. This hook prints nothing to
@@ -90,9 +97,6 @@ def main():
         agent_id = str(payload.get("agent_id") or payload.get("agentId") or "").strip()
         workspaces = payload.get("workspacePaths") or []
         cwd = workspaces[0] if workspaces else (payload.get("cwd") or payload.get("workspaceRoot") or os.getcwd())
-        docs = os.path.join(cwd, "docs")
-        if not os.path.isdir(docs):
-            return 0
         script = _audit_script(os.path.dirname(os.path.abspath(__file__)))
         if not script:
             return 0
@@ -106,7 +110,13 @@ def main():
             return 0
         if child_session:
             session = child_session
-        command = [sys.executable, script, "--root", docs, "start"]
+        # No explicit --root: AL0.2's opt-in resolution (resolve_default_root in
+        # audit-log.py) is the ONE place that decides docs/audit/ vs the pack's own
+        # local fallback (.agents/log/), keyed off whether docs/audit/ already exists
+        # on disk. An explicit --root here would be a direct ask that bypasses that
+        # check and seed docs/audit/ into a repo that never opted in (AL0.2, PK-03) --
+        # which then falsely satisfies append's own opt-in check on every later call.
+        command = [sys.executable, script, "start"]
         if session:
             command += ["--session", session]
         else:

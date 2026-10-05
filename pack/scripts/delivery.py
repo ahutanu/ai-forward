@@ -101,6 +101,15 @@ def identity(repo):
             "common_dir": absolute(git(root, "rev-parse", "--git-common-dir"))}
 
 
+# Exact ephemeral duration stores, not the durable audit/coordination log directories.
+# Git projects follow their own ignore policy; plain projects have no Git ignore seam.
+# A caller needing these runtime bytes as task inputs registers them with --input.
+RUNTIME_START_MARKERS = {
+    "docs/audit/.run-starts.json", "docs/audit/.run-starts.json.tmp",
+    ".agents/log/audit/.run-starts.json", ".agents/log/audit/.run-starts.json.tmp",
+}
+
+
 def snapshot(repo, local_area=None, details=False, _depth=0):
     # Ignored/runtime inputs require explicit --input registration.
     project = identity(repo)
@@ -129,6 +138,10 @@ def snapshot(repo, local_area=None, details=False, _depth=0):
     for name in sorted(set(filter(None, names))):
         path = Path(repo) / name
         if local_area and path.is_relative_to(Path(local_area)):
+            continue
+        if (project.get("kind") == "plain"
+                and path.relative_to(repo).as_posix() in RUNTIME_START_MARKERS
+                and path.is_file() and not path.is_symlink()):
             continue
         if path.is_symlink():
             files[name] = {"link": os.readlink(path)}

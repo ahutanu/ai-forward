@@ -1,31 +1,5 @@
 name: adoption-entrypoints
 on:
-  push:
-    branches: [feat/one-command-adoption]
-  pull_request:
-    paths:
-      - bootstrap.py
-      - pack/commands/deliver/**
-      - pack/scripts/delivery.py
-      - pack/scripts/pack-apply.py
-      - pack/adapters/hooks/run-hook.sh
-      - README.md
-      - pack/README.md
-      - pack/OVERVIEW.md
-      - pack/adapters/INSTALL.md
-      - docs/proof/one-command-adoption.md
-      - web/handbook/guides/get-started.md
-      - web/handbook/guides/workflow.md
-      - tests/docs_explorer/test_uv_hook_launcher.py
-      - tests/docs_explorer/test_bootstrap.py
-      - tests/docs_explorer/test_bootstrap_preservation.py
-      - tests/docs_explorer/test_delivery.py
-      - tests/docs_explorer/test_delivery_repairs.py
-      - tests/docs_explorer/test_delivery_submodules.py
-      - tests/docs_explorer/test_delivery_checkpoint_guards.py
-      - tests/docs_explorer/test_customer_adoption_docs.py
-      - tests/docs_explorer/test_adoption_entrypoints.py
-      - .github/workflows/adoption-entrypoints.yml
   workflow_dispatch:
 permissions:
   contents: read
@@ -53,7 +27,7 @@ jobs:
           $old = uv python find --no-config --no-project --managed-python 3.9
           "AIF_TEST_OLD_PYTHON=$old" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Routing, resume, preservation and real deployment tests
-        run: python -m pytest tests/docs_explorer/test_delivery.py tests/docs_explorer/test_delivery_repairs.py tests/docs_explorer/test_delivery_submodules.py tests/docs_explorer/test_delivery_checkpoint_guards.py tests/docs_explorer/test_bootstrap.py tests/docs_explorer/test_bootstrap_preservation.py tests/docs_explorer/test_adoption_entrypoints.py tests/docs_explorer/test_uv_hook_launcher.py tests/docs_explorer/test_customer_adoption_docs.py -q
+        run: python -m pytest tests/docs_explorer/test_delivery.py tests/docs_explorer/test_delivery_repairs.py tests/docs_explorer/test_delivery_submodules.py tests/docs_explorer/test_delivery_checkpoint_guards.py tests/docs_explorer/test_delivery_session_start.py tests/docs_explorer/test_upstream_adoption_integration.py tests/docs_explorer/test_git_identity_guard.py tests/docs_explorer/test_session_start_hook.py tests/docs_explorer/test_pack_apply.py tests/docs_explorer/test_bootstrap.py tests/docs_explorer/test_bootstrap_preservation.py tests/docs_explorer/test_adoption_entrypoints.py tests/docs_explorer/test_uv_hook_launcher.py tests/docs_explorer/test_customer_adoption_docs.py -q
       - name: Actual remote one-liner and repeat install in a plain project
         # Only GitHub's repository name and generated commit SHA are interpolated;
         # never PR titles, messages, branch names or dispatch-provided shell input.

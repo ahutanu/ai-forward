@@ -211,7 +211,7 @@ ai-forward-pack/
 
 ## Install (summary — full guide in `adapters/INSTALL.md`)
 
-**Install with the one-line setup above, or reconcile manually.** For the manual alternative, copy each source to its mapped destination per **`adapters/INSTALL.md`** (knowledge, skills, the 23 agents, templates, the Docs Explorer at `docs/index.html`), and paste the managed blocks from `adapters/managed-blocks/` into `CLAUDE.md` / `AGENTS.md`. Updates follow the **`changes` changelog in `adapters/INSTALL.md`'s frontmatter** — "what changed since the last version" — so a refresh re-copies exactly the changed sources and re-pastes the marked blocks, rather than diffing the whole tree.
+**Install with the one-line setup above, or reconcile manually.** For the manual alternative, copy each source to its mapped destination per **`adapters/INSTALL.md`** (knowledge, skills, the 23 agents, templates, the Docs Explorer template (available for the first content-creating skill to instantiate at `docs/index.html`, not copied by install)), and paste the managed blocks from `adapters/managed-blocks/` into `CLAUDE.md` / `AGENTS.md`. Updates follow the **`changes` changelog in `adapters/INSTALL.md`'s frontmatter** — "what changed since the last version" — so a refresh re-copies exactly the changed sources and re-pastes the marked blocks, rather than diffing the whole tree.
 
 Both tools share one model: **knowledge** = always-on reference, **skills** = workflow logic, **agents** = personas, **commands/prompts** = thin entry points. Only locations differ.
 
