@@ -28,6 +28,8 @@ can point at a launcher that is not installed.
 
 Native ownership is an explicit project opt-in. `coord hook --config --host
 claude|codex|copilot|grok|agy` emits a reviewable entry; it changes no settings or trust.
+Once enabled, a session working in a linked worktree that writes into the primary checkout is
+denied by name (`COORD-PRIMARY-WRITE`, PRIM-A) on every host; in-place work in the primary is not.
 Grok can keep it in a separate `.grok/hooks/coord-ownership.json`. Agy uses a local
 `ownership-guard` named section; both sync and installer refresh source-managed names
 while preserving project-owned names, and reject malformed current JSON without overwrite.

@@ -2195,6 +2195,31 @@ def _physical_spelling(path):
     return result
 
 
+class PrimaryCheckoutWrite(ValueError):
+    """A target outside this linked worktree and inside the repository's primary checkout."""
+
+
+def _in_primary_from_linked_tree(target, base):
+    """PRIM-A: True when `base` is a LINKED worktree and `target` lies in the primary checkout
+    (the main worktree, parent of the common .git dir) but not in `base`. A session working in
+    place in the primary is not a linked tree, so the Leader's own work is never this case."""
+    out, err = _git(base, "rev-parse", "--git-common-dir")
+    if err or not out or not out.strip():
+        return False
+    common = Path(out.strip())
+    common = (common if common.is_absolute() else base / common).resolve()
+    if common.name != ".git":
+        return False                      # a bare or separate-git-dir layout: no primary tree here
+    primary = common.parent
+    if primary == base:
+        return False
+    try:
+        target.relative_to(primary)
+    except ValueError:
+        return False
+    return True
+
+
 def _native_paths(path, repo, cwd):
     """Check lexical and symlink-resolved targets, relative to the actual process cwd.
 
@@ -2211,7 +2236,12 @@ def _native_paths(path, repo, cwd):
     paths = []
     canonical = _physical_spelling(candidate.resolve())
     # A resolved outside target is always refused, even if its lexical symlink is inside.
-    canonical.relative_to(base)
+    try:
+        canonical.relative_to(base)
+    except ValueError:
+        if _in_primary_from_linked_tree(canonical, base):
+            raise PrimaryCheckoutWrite(str(canonical)) from None
+        raise
     for target in (lexical, canonical):
         try:
             relative = target.relative_to(base).as_posix()
@@ -2494,6 +2524,13 @@ def cmd_hook(root, session, agent, now, stdin_text, repo=None, host=None, cwd=No
                 cwd = tool_cwd
                 repo = checkout_top(tool_cwd)
         calls = parse_hook_request(event, repo or root, host=host, cwd=cwd)
+    except PrimaryCheckoutWrite as exc:
+        # PRIM-A: refused by name on every host (Claude's generic not-checked answer is `ask`).
+        return hook_response("deny", "COORD-PRIMARY-WRITE  refused  {}\n"
+                             "  because   this session works in a linked worktree and the path is in"
+                             " the primary checkout, the Leader's fast-forward target\n"
+                             "  remedy    write it in your own tree; the primary receives work by merge"
+                             .format(_safe(str(exc), 300)), host)
     except Exception as exc:
         return _not_checked("unreadable hook payload ({})".format(exc.__class__.__name__), host)
 
