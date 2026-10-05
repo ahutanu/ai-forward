@@ -111,6 +111,36 @@ class SessionStartHookTests(unittest.TestCase):
         self.assertEqual("", r.stdout.strip())
         self.assertIn("__harness__:grok-abc", self._starts())
 
+    # MUT-A (x-harness-x-model-bench, 2026-10-04): an interrupted mutation sweep left a mutant in the
+    # primary, and nothing ran the repo's own `--check-clean` when the next session started there.
+    def _declare_checks(self, *checks):
+        (self.repo / ".agents").mkdir(exist_ok=True)
+        (self.repo / ".agents" / "session-checks.json").write_text(
+            json.dumps({"checks": list(checks)}), encoding="utf-8")
+
+    def test_a_failing_repo_declared_check_reaches_the_session_with_its_remedy(self):
+        self._declare_checks(
+            {"name": "mutation-clean", "argv": ["{python}", "-c", "import sys; print('mutant applied: a.py'); sys.exit(1)"],
+             "remedy": "run tools/mutate_check.py --restore"},
+            {"name": "always-clean", "argv": ["{python}", "-c", "print('quiet')"], "remedy": "never shown"})
+        r = self._run_hook({"hook_event_name": "SessionStart", "session_id": "abc123", "cwd": str(self.repo)})
+        self.assertEqual(r.returncode, 0, "a failing check never fails the session")
+        self.assertIn("mutation-clean", r.stdout, "the failing check is not in the model's context")
+        self.assertIn("mutant applied: a.py", r.stdout)
+        self.assertIn("tools/mutate_check.py --restore", r.stdout)
+        self.assertNotIn("always-clean", r.stdout)
+        self.assertIn("__harness__:abc123", self._starts(), "the audit marker is still written")
+
+    def test_a_passing_check_adds_nothing_and_other_hosts_report_on_stderr(self):
+        self._declare_checks({"name": "always-clean", "argv": ["{python}", "-c", "pass"], "remedy": "x"})
+        r = self._run_hook({"hook_event_name": "SessionStart", "session_id": "abc123", "cwd": str(self.repo)})
+        self.assertEqual("", r.stdout.strip())
+        self._declare_checks({"name": "dirty", "argv": ["{python}", "-c", "import sys; sys.exit(3)"], "remedy": "fix"})
+        r = self._run_hook({"hook_event_name": "session_start", "sessionId": "g1", "workspaceRoot": str(self.repo)},
+                           host="grok")
+        self.assertEqual("", r.stdout.strip(), "only Claude's SessionStart stdout is model context")
+        self.assertIn("dirty", r.stderr)
+
     def test_the_hook_is_fail_open(self):
         r = subprocess.run([sys.executable, str(self.hook), "--host", "claude"], cwd=str(self.tmp),
                            input="not json", capture_output=True, text=True, timeout=30)
