@@ -572,6 +572,44 @@ class NativeHookTests(GitCase):
                 log.write_text(original)
 
 
+class PrimaryWriteGuardTests(GitCase):
+    """PRIM-A (x-harness-x-model-bench, 2026-10-05): a seat working in its own linked worktree
+    wrote into the primary checkout by an absolute path copied from a brief. The primary is the
+    Leader's fast-forward target, so one stray file blocked the fast-forward. The native hook
+    refuses that write by name on every host (Claude's generic "not checked" was only `ask`);
+    a write inside the session's own tree, and the Leader's in-place work in the primary, are
+    not this refusal."""
+
+    def setUp(self):
+        super().setUp()
+        self.commit("a.txt")
+        self.linked = Path(self.tmp.name) / "seat-tree"
+        self.git("worktree", "add", "-q", "-b", "seat", str(self.linked))
+
+    def hook_from(self, cwd, path, host="claude"):
+        env = dict(os.environ)
+        env.pop("COORD_ROOT", None)
+        env.update(AGENT_SESSION="seat-1", AGENT_NAME="seat-1")
+        payload = {"tool_name": "Write", "tool_input": {"file_path": str(path), "content": "x"}}
+        return subprocess.run([sys.executable, str(SCRIPT), "hook", "--host", host], cwd=str(cwd),
+                              env=env, input=json.dumps(payload), capture_output=True, text=True)
+
+    def test_a_linked_tree_session_writing_into_the_primary_is_denied_by_name(self):
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                result = self.hook_from(self.linked, self.repo.resolve() / "stray.md", host=host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn("COORD-PRIMARY-WRITE", result.stdout, "the refusal does not name the primary")
+                decision = json.loads(result.stdout)["hookSpecificOutput"]["permissionDecision"]
+                self.assertEqual("deny", decision)
+
+    def test_own_tree_and_in_place_primary_writes_are_not_this_refusal(self):
+        own = self.hook_from(self.linked, self.linked.resolve() / "mine.md")
+        self.assertNotIn("COORD-PRIMARY-WRITE", own.stdout)
+        in_place = self.hook_from(self.repo, self.repo.resolve() / "leader.md")
+        self.assertNotIn("COORD-PRIMARY-WRITE", in_place.stdout)
+
+
 class HookTests(GitCase):
     PAYLOAD = '{{"session_id":"{sid}","tool_name":"Edit","tool_input":{{"file_path":"{p}"}}}}'
 
