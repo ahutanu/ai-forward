@@ -442,7 +442,10 @@ class Applier(object):
         if self.target_rev is None or self.target_rev == self.source_rev:
             return None
         if self.old_pack_sha is None:
-            rc, out = git(["log", "--format=%H", "-S", "revision: {0}".format(self.target_rev), "--",
+            # The revision may first be introduced by a merge commit. Without -m,
+            # pickaxe hides that merge and can select the later commit which *removes*
+            # the revision; its pack bytes are the new version, not the merge base.
+            rc, out = git(["log", "-m", "--format=%H", "-S", "revision: {0}".format(self.target_rev), "--",
                            "pack/adapters/INSTALL.md"], self.source)
             shas = out.split()
             self.old_pack_sha = shas[-1] if rc == 0 and shas else ""

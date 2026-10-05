@@ -37,51 +37,143 @@ class UpstreamAdoptionDocsTests(unittest.TestCase):
 
 
 class UpstreamRefreshMetadataTests(unittest.TestCase):
-    def test_current_delta_advances_revision_and_names_complete_refresh(self):
+    def test_current_delta_names_only_merge_history_refresh(self):
         text = (ROOT / 'pack/adapters/INSTALL.md').read_text(encoding='utf-8')
         frontmatter = text.split('---\n', 2)[1]
-        self.assertRegex(frontmatter, r"(?m)^revision: 103$")
-        self.assertIn("bundle_version: '2026.10.05.1'", frontmatter)
-        for source in ('adapters/hooks/session-start.py', 'scripts/pack-apply.py',
-                       'scripts/delivery.py', 'commands/deliver/reference/checkpoints.md',
-                       'adapters/hooks/git-identity-guard.py',
-                       'adapters/hooks/claude-code.settings.hooks.json',
-                       'adapters/hooks/copilot.ai-forward-hooks.json',
-                       'adapters/hooks/grok.ai-forward-hooks.json',
-                       'adapters/hooks/README.md', 'commands/addpacktorepo/SKILL.md',
-                       'adapters/copilot/prompts/addpacktorepo.prompt.md',
-                       'README.md', 'OVERVIEW.md', 'context-budget.json'):
-            with self.subTest(changed_source=source):
-                self.assertIn("'" + source + "'", frontmatter)
-        for boundary in ('docs/audit/.run-starts.json', 'docs/audit/.run-starts.json.tmp',
-                         '.agents/log/audit/.run-starts.json',
-                         '.agents/log/audit/.run-starts.json.tmp'):
-            self.assertIn(boundary, frontmatter)
+        self.assertRegex(frontmatter, r"(?m)^revision: 104$")
+        self.assertIn("bundle_version: '2026.10.05.2'", frontmatter)
+        self.assertEqual(1, frontmatter.count('  - { type: changed,'))
+        self.assertIn("paths: ['scripts/pack-apply.py', 'adapters/INSTALL.md']", frontmatter)
         for instruction in ('SOURCE', 'plan --target', 'apply --target',
-                            'full deployment map', 'complete deliver skill directories',
-                            'including both references', 'not --force', 'durable audit and coordination logs',
-                            'Antigravity', 'not wired', 'Codex', 'opt-in',
-                            'authenticated consent', 'model compliance'):
+                            'full deployment map', 'not --force', 'merge commit',
+                            'installed revision', 'local deviations'):
             self.assertIn(instruction, frontmatter)
-        self.assertNotIn('area: delivery-checkpoint-boundaries', frontmatter,
-                         'Only the current delta belongs in active frontmatter')
+        for old_area in ('upstream-install-boundaries', 'session-resume-marker-boundary',
+                         'delivery-checkpoint-boundaries'):
+            self.assertNotIn('area: ' + old_area, frontmatter,
+                             'Only the current delta belongs in active frontmatter')
 
     def test_previous_delta_and_entire_archive_remain_exact_bytes(self):
         raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
         blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
-        self.assertEqual(4, len(blocks))
-        self.assertIn('Revision 102 — 3 October 2026'.encode('utf-8'), blocks[0])
-        row = blocks[0].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+        self.assertEqual(5, len(blocks))
+        self.assertIn('Revision 103 — 5 October 2026'.encode('utf-8'), blocks[0])
+        rows = blocks[0].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+        self.assertEqual((3244, '7155ca612947aee7eb7f298d3c797dfffbb2641e2703ac35ba7a402da8f10e31'),
+                         (len(rows), hashlib.sha256(rows).hexdigest()),
+                         'Move the complete previous changes rows without rewriting them')
+        for source in (b'adapters/hooks/session-start.py', b'scripts/pack-apply.py',
+                       b'scripts/delivery.py', b'commands/deliver/reference/checkpoints.md',
+                       b'adapters/hooks/git-identity-guard.py',
+                       b'adapters/hooks/claude-code.settings.hooks.json',
+                       b'adapters/hooks/copilot.ai-forward-hooks.json',
+                       b'adapters/hooks/grok.ai-forward-hooks.json',
+                       b'adapters/hooks/README.md', b'commands/addpacktorepo/SKILL.md',
+                       b'adapters/copilot/prompts/addpacktorepo.prompt.md',
+                       b'README.md', b'OVERVIEW.md', b'context-budget.json'):
+            with self.subTest(previous_source=source):
+                self.assertIn(b"'" + source + b"'", rows)
+        self.assertIn('Revision 102 — 3 October 2026'.encode('utf-8'), blocks[1])
+        row102 = blocks[1].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
         self.assertEqual('37c677dc788ac371b1bf4716522f9d23367068ac0e914678b46fc2a2deeabfea',
-                         hashlib.sha256(row).hexdigest(), 'Move the exact previous changes row')
+                         hashlib.sha256(row102).hexdigest())
         # Complete raw collapsed blocks, including all long original history rows.
         # Hashes avoid requiring an old Git object in a shallow checkout.
         expected = (
+            (1028, 'b084ebe3a79e98734dcfbf5df1b757990f8f5c3f869e2d20687d075d9149dad3'),
             (1038, '9a56bc7f409c6c5e5f01cbe0917840cac3d3722a95ecc34465d6d3194443334f'),
             (753, 'c6b40766a5fc4f6ea47f001ed4e292dddce725204c5b00962f0910a0ff9eb674'),
             (187189, '1dc4d0d7b3cc4df881a208f02c8ce3ac02a907488f1a1b5c3df390eee4c462f7'),
         )
         self.assertEqual(expected, tuple((len(b), hashlib.sha256(b).hexdigest()) for b in blocks[1:]))
+        # Removing only the newly inserted wrapper recovers the entire previous
+        # body verbatim, including non-collapsed reader guidance.
+        body = raw.split(b'---\n', 2)[2]
+        previous_body = body.replace(blocks[0] + b'\n\n', b'', 1)
+        self.assertEqual((253406, 'c1c10bffd3420f8138d0248a42d9f4cdb48f1bca5a008155963ad3732e1fad81'),
+                         (len(previous_body), hashlib.sha256(previous_body).hexdigest()))
+
+
+class MergeIntroducedRevisionRefreshTests(unittest.TestCase):
+    def test_merge_introduced_revision_preserves_upstream_instruction_and_local_extension(self):
+        if not shutil.which('git'):
+            self.skipTest('Git is an installer prerequisite')
+        # Synthetic source history, not a published-source receipt: neither a
+        # historical SHA nor the network is needed in a shallow CI checkout.
+        # The earlier revision first appears in a merge resolution, while the
+        # latest commit removes it. A pickaxe without merge-parent comparison
+        # finds only that removal and misidentifies the old merge base.
+        with tempfile.TemporaryDirectory(prefix='merge revision refresh ') as folder:
+            source = Path(folder) / 'source'
+            target = Path(folder) / 'target'
+            shutil.copytree(ROOT / 'pack', source / 'pack', ignore=shutil.ignore_patterns('__pycache__'))
+            target.mkdir()
+            env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+            env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull,
+                       GIT_TERMINAL_PROMPT='0', PYTHONDONTWRITEBYTECODE='1')
+
+            def run(command, cwd):
+                result = subprocess.run(command, cwd=cwd, env=env, capture_output=True,
+                                        text=True, encoding='utf-8', timeout=90)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                return result.stdout
+
+            def git(*args):
+                return run(['git', '-c', 'core.autocrlf=false', '-c', 'user.name=Regression Fixture',
+                            '-c', 'user.email=fixture@example.invalid', *args], source)
+
+            def apply(mode, *args):
+                return json.loads(run([sys.executable, str(source / 'pack/scripts/pack-apply.py'),
+                                       mode, '--target', str(target), '--no-baselines', '--json',
+                                       *args], target))
+
+            install = source / 'pack/adapters/INSTALL.md'
+            skill = source / 'pack/commands/also/SKILL.md'
+            original = skill.read_bytes()
+            self.assertIn(b'# ', original)
+            old_install = re.sub(rb'(?m)^revision: \d+$', b'revision: 102', install.read_bytes())
+            install.write_bytes(old_install)
+            git('init')
+            git('add', 'pack')
+            git('commit', '-m', 'Synthetic revision 102')
+            baseline = git('rev-parse', 'HEAD').strip()
+            git('checkout', '-b', 'fixture-side')
+            (source / 'side-branch.txt').write_text('Non-pack merge parent.\n', encoding='utf-8')
+            git('add', 'side-branch.txt')
+            git('commit', '-m', 'Synthetic side parent')
+            git('checkout', baseline)
+            git('merge', '--no-ff', '--no-commit', 'fixture-side')
+            install.write_bytes(re.sub(rb'(?m)^revision: \d+$', b'revision: 103', old_install))
+            git('add', 'pack/adapters/INSTALL.md')
+            git('commit', '-m', 'Synthetic revision 103 introduced at merge')
+            old_merge = git('rev-parse', 'HEAD').strip()
+            self.assertEqual(2, len(git('rev-list', '--parents', '-n', '1', 'HEAD').split()) - 1)
+            self.assertNotIn(old_merge, git('log', '--format=%H', '-S', 'revision: 103',
+                                             '--', 'pack/adapters/INSTALL.md').split())
+            self.assertIn(old_merge, git('log', '-m', '--format=%H', '-S', 'revision: 103',
+                                         '--', 'pack/adapters/INSTALL.md').split())
+
+            apply('apply', '--install')
+            installed_skill = target / '.claude/skills/also/SKILL.md'
+            local_extension = b'\nLocal extension must survive.\n'
+            installed_skill.write_bytes(installed_skill.read_bytes() + local_extension)
+            latest_install = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+            install.write_bytes(latest_install)
+            new_instruction = b'New upstream instruction must survive.\n\n'
+            latest_skill = original.replace(b'# ', new_instruction + b'# ', 1)
+            skill.write_bytes(latest_skill)
+            git('add', 'pack')
+            git('commit', '-m', 'Synthetic revision 104 instruction')
+
+            plan = apply('plan')
+            self.assertEqual((104, 103), (plan['source_revision'], plan['target_revision']))
+            self.assertEqual('MERGE', next(row['action'] for row in plan['rows']
+                                            if row['path'] == '.claude/skills/also/SKILL.md'))
+            apply('apply')
+            merged = installed_skill.read_bytes()
+            self.assertIn(new_instruction, merged)
+            self.assertIn(local_extension, merged)
+            self.assertIn(original.split(b'# ', 1)[1], merged)
 
 
 class Existing102RefreshTests(unittest.TestCase):
@@ -202,7 +294,7 @@ class Existing102RefreshTests(unittest.TestCase):
             self.assertEqual(latest['adapters/copilot/prompts/addpacktorepo.prompt.md'],
                              (target / '.github/prompts/addpacktorepo.prompt.md').read_bytes())
             self.assertEqual(latest['adapters/INSTALL.md'], (target / 'docs/ai-forward-pack/INSTALL.md').read_bytes())
-            self.assertEqual(103, plan['source_revision'])
+            self.assertEqual(104, plan['source_revision'])
             self.assertEqual(102, plan['target_revision'])
             self.assertEqual('UPDATE', next(row['action'] for row in plan['rows']
                                            if row['path'] == 'docs/ai-forward-pack/hooks/session-start.py'))
