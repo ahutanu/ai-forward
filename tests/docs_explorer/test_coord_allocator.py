@@ -151,13 +151,15 @@ class RegisterMergeTests(AllocatorCase):
 
     def test_Q3e_unparseable_side_conflicts_rather_than_guessing(self):
         """A register the driver cannot read must not be 'merged' -- guessing here is how
-        an entry disappears. Conflict markers, exit 0 (the S12b rule)."""
+        an entry disappears. Conflict markers AND a non-zero exit (REG-C, 2026-10-05): exit 0
+        let `git merge` auto-commit the marker file; non-zero leaves the path unmerged, and the
+        markers in it keep it from looking clean (the S12b hazard)."""
         ours = self.jsonl("ours.jsonl", [entry("al-1", "a")])
         base = self.jsonl("base.jsonl", [])
         theirs = self.dir / "theirs.jsonl"
         theirs.write_text("{not json\n", encoding="utf-8", newline="\n")
         rc = self.m.cmd_merge_register(str(ours), str(base), str(theirs), "audit-log.jsonl")
-        self.assertEqual(rc, 0, "a non-zero exit leaves a clean-looking unmerged file")
+        self.assertNotEqual(rc, 0, "exit 0 lets git auto-commit the conflict markers")
         self.assertIn(CONFLICT_START, ours.read_text(encoding="utf-8"))
 
 
