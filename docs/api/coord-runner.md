@@ -98,6 +98,15 @@ An owned child gets a cleanup opportunity when the attachment CLI is stopped.
 
 **Coverage gap** — no docstring in the source.
 
+### `dispatch_base(cwd, contract)`
+
+The commit every worker tree starts from: the contract's `base` (a branch, tag or
+commit) when it names one, else the invoking checkout's HEAD.
+
+BASE-A (x-harness-x-model-bench, 2026-10-04): with HEAD as the only base, a dirty primary
+froze every dispatch, because the integration head was a branch the primary could not
+fast-forward to. The base is resolved once, here, and pinned in the manifest as a sha.
+
 ### `identity(value)`
 
 **Coverage gap** — no docstring in the source.
@@ -136,6 +145,6 @@ Require the native exact-ID policy before preparation and fingerprinting.
 
 ## Coverage
 
-- Public functions: **17** · documented: **3** (**18%**)
+- Public functions: **18** · documented: **4** (**22%**)
 - Undocumented (recorded, not invented): `load_module`, `require`, `encoded`, `digest`, `read_json`, `private_write`, `git`, `identity`, `text`, `integer`, `copilot_model`, `relative_path`, `child_env`, `file_hash`
 

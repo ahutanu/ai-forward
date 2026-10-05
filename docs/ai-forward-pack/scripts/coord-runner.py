@@ -142,6 +142,26 @@ def git(cwd, *args):
     return result.stdout.strip()
 
 
+def dispatch_base(cwd, contract):
+    """The commit every worker tree starts from: the contract's `base` (a branch, tag or
+    commit) when it names one, else the invoking checkout's HEAD.
+
+    BASE-A (x-harness-x-model-bench, 2026-10-04): with HEAD as the only base, a dirty primary
+    froze every dispatch, because the integration head was a branch the primary could not
+    fast-forward to. The base is resolved once, here, and pinned in the manifest as a sha."""
+    if "base" not in contract:
+        return git(cwd, "rev-parse", "HEAD")
+    base = contract["base"]
+    require(text(base) and len(base) <= 256 and not base.startswith("-")
+            and not any(ord(c) < 32 for c in base), "RUN-BASE",
+            "Name the dispatch base as a branch, tag or commit (not an option).")
+    result = subprocess.run(["git", "rev-parse", "--verify", "--quiet", base + "^{commit}"], cwd=str(cwd),
+                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
+    require(result.returncode == 0 and result.stdout.strip(), "RUN-BASE",
+            "Name a dispatch base that resolves to a commit in this repository.")
+    return result.stdout.strip()
+
+
 def identity(value):
     require(isinstance(value, str) and len(value) <= 80 and not core.session_id_error(value),
             "RUN-IDENTITY", "Use a unique portable session/run id of at most 80 characters.")
@@ -423,7 +443,7 @@ class Runner:
         workers = self.validate(contract)
         require(not git(self.cwd, "ls-files", "-u"), "RUN-INDEX", "Resolve the invoking checkout's unmerged index first.")
         manifest = {"schema": "coord-prepared/1", "run_id": contract["run_id"], "owner": contract["owner"],
-                    "parallelism": contract["parallelism"], "base": git(self.cwd, "rev-parse", "HEAD"),
+                    "parallelism": contract["parallelism"], "base": dispatch_base(self.cwd, contract),
                     "contract_sha256": digest(contract), "workers": workers, "created_at": time.time()}
         directory = self.directory(manifest["run_id"])
         directory.parent.mkdir(mode=0o700, exist_ok=True)

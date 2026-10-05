@@ -40,7 +40,9 @@ opt-out marker because it names the shapes; the marker is `machine-path-ok`):
   <drive>:\Users\   <drive>:/Users/   /Users/<name>   /home/<name>   /opt/homebrew/   machine-path-ok
   \.pyenv/           AppData\Local     AppData/Local                                machine-path-ok
 A line may opt out with the marker `machine-path-ok` when the path is a fixture and the
-test says why (the exemption is visible in the diff; the pattern is not silently widened).
+test says why (the exemption is visible in the diff; the pattern is not silently widened). A
+byte-exact captured record opts out per FILE with the git attribute: `<pattern> machine-path-ok`
+in .gitattributes (a line marker would change the bytes its readers hash).
 
 USAGE
   python3 verify-no-machine-paths.py               scan the tracked surfaces of this repo
@@ -67,6 +69,13 @@ EXIT  0 clean  ·  1 a machine path was found  ·  2 usage / git unavailable
 
 **Coverage gap** — no docstring in the source.
 
+### `exempt_files(root, rels)`
+
+Files whose git attribute `machine-path-ok` is SET (`<pattern> machine-path-ok` in
+.gitattributes). A byte-exact captured record (a recorded native session, a hashed golden)
+cannot carry a line marker without changing the bytes its readers pin, so it opts out per
+file - visibly, in a tracked file - instead of the gate being widened. None = git failed.
+
 ### `scan(root)`
 
 **Coverage gap** — no docstring in the source.
@@ -78,6 +87,6 @@ fixture is accepted, and an opted-out line is skipped. Exit 0 only if all three 
 
 ## Coverage
 
-- Public functions: **4** · documented: **1** (**25%**)
+- Public functions: **5** · documented: **2** (**40%**)
 - Undocumented (recorded, not invented): `tracked_files`, `in_scope`, `scan`
 
