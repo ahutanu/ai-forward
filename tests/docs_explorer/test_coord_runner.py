@@ -37,6 +37,44 @@ class PlatformAdmissionTests(unittest.TestCase):
         self.assertEqual("RUN-PLATFORM", raised.exception.code)
 
 
+class DispatchBaseTests(unittest.TestCase):
+    """BASE-A (x-harness-x-model-bench, 2026-10-04): every dispatch based its worker trees on the
+    invoking checkout's HEAD, so one dirty file in the primary froze the dispatch base. A contract
+    may name the base (a branch or commit); without one, the invoking HEAD stays the base."""
+
+    def setUp(self):
+        with mock.patch.object(sys, "path", [str(SOURCE), *sys.path]):
+            spec = importlib.util.spec_from_file_location("runner_base_test", SOURCE / "coord-runner.py")
+            self.runner = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(self.runner)
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.repo = Path(tmp.name)
+        for args in (["init", "-q", "-b", "main"], ["config", "user.email", "test@example.invalid"],
+                     ["config", "user.name", "Base test"], ["commit", "-q", "--allow-empty", "-m", "one"],
+                     ["branch", "integrate/x"], ["checkout", "-q", "integrate/x"],
+                     ["commit", "-q", "--allow-empty", "-m", "two"], ["checkout", "-q", "main"]):
+            subprocess.run(["git", *args], cwd=self.repo, check=True, capture_output=True)
+
+    def sha(self, ref):
+        return subprocess.run(["git", "rev-parse", ref], cwd=self.repo, check=True, capture_output=True,
+                              text=True, encoding="utf-8").stdout.strip()
+
+    def test_a_contract_base_names_the_dispatch_base_and_its_absence_keeps_head(self):
+        self.assertTrue(hasattr(self.runner, "dispatch_base"),
+                        "the runner has no dispatch base other than the invoking checkout's HEAD")
+        self.assertEqual(self.sha("integrate/x"), self.runner.dispatch_base(self.repo, {"base": "integrate/x"}))
+        self.assertEqual(self.sha("HEAD"), self.runner.dispatch_base(self.repo, {}))
+
+    def test_an_unresolvable_or_option_shaped_base_is_refused(self):
+        self.assertTrue(hasattr(self.runner, "dispatch_base"))
+        for base in ("no-such-branch", "-x", "", 7, "main\nx"):
+            with self.subTest(base=base):
+                with self.assertRaises(self.runner.Refused) as raised:
+                    self.runner.dispatch_base(self.repo, {"base": base})
+                self.assertEqual("RUN-BASE", raised.exception.code)
+
+
 @unittest.skipUnless(os.name == "posix", "initial interactive runner is a POSIX pilot")
 class RunnerTests(unittest.TestCase):
     def setUp(self):
@@ -382,6 +420,19 @@ class RunnerTests(unittest.TestCase):
         prepared = self.prepare(cwd=linked)
         self.assertEqual(prepared["base"], self.git("rev-parse", "HEAD", cwd=linked).stdout.strip())
         self.assertTrue((Path(prepared["workers"][0]["worktree"]) / "different.txt").exists())
+
+    def test_contract_base_decouples_dispatch_from_the_invoking_checkout(self):
+        # BASE-A: the integration head is a branch the primary has not fast-forwarded to.
+        self.git("checkout", "-qb", "integrate/next")
+        (self.repo / "integrated.txt").write_text("integration head", encoding="utf-8")
+        self.git("add", "integrated.txt")
+        self.git("commit", "-qm", "integrated")
+        self.git("checkout", "-q", "main")
+        (self.repo / "dirty.txt").write_text("primary is dirty", encoding="utf-8")
+        self.contract["base"] = "integrate/next"
+        prepared = self.prepare()
+        self.assertEqual(prepared["base"], self.git("rev-parse", "integrate/next").stdout.strip())
+        self.assertTrue((Path(prepared["workers"][0]["worktree"]) / "integrated.txt").exists())
 
     def test_symlink_evidence_never_satisfies_receipt(self):
         self.contract["workers"][0]["argv"][-1] = "missing"
