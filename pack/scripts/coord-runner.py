@@ -44,14 +44,38 @@ MAX_DOCUMENT = 2 * 1024 * 1024
 # (RUN-B). LEADER_CHECK_TIMEOUT gives a single check >3.5x that measured worst case.
 LEADER_CHECK_TIMEOUT = 5
 # assume: a housekeeping leader check (no operation deadline of its own -- the periodic
-# in-run check, the renewal, and the post-completion re-check) may retry for this long
-# before treating an unresponsive check as lost authority. 2x LEADER_CHECK_TIMEOUT stays
-# far below a worker's own attempt deadline and the lease TTL, so the dispatch loop stays
-# responsive to a genuinely wedged check (see test_blocked_git_does_not_hold_attempt_cleanup).
-# Confirmed by running the reproduction in the Measured section (four workers + a dotnet
-# build) against this bound; wrong if a live check regularly needs longer than this under
-# ordinary (non-wedged) load, which nothing measured here shows -- recheck if it recurs.
-LEADER_RETRY_BUDGET = 2 * LEADER_CHECK_TIMEOUT
+# in-run check, the renewal, and the post-completion re-check) tolerates slow checks until
+# the last observed lease expiry is one check window away, never for a fixed budget. Basis:
+# the fixed 2x LEADER_CHECK_TIMEOUT budget it replaces cancelled run w2-lgc-e1e4
+# (x-harness-x-model-bench, 2026-10-05) at 1,298 s with 833 s of lease left, under one full
+# pytest suite plus two worker gates; and before the observed expiry no other session can
+# take the designation (leader_decide refuses pin/reclaim of a live lease with
+# COORD-LEADER-HELD), so slowness alone cannot hide a new holder. Only the holder's own
+# release can, and that is seen at the next check that answers. Wrong if a designation can
+# change holder before its expires_at by any path other than the holder's release -- then a
+# slow check could keep an in-flight turn running for up to one lease without authority.
+# Prompts and approvals still need a positive answer inside their own deadline (worker_fence).
+
+
+def housekeeping_check(check, lease, epoch):
+    """One bounded leader check for a caller with no operation deadline (RUN-B).
+
+    True while authority stands. A definitive refusal or a changed epoch ends it at once. A
+    check that only ran slow (LeaderCheckSlow) is not lost authority while the last observed
+    lease expiry is more than one check window away; the caller checks again on its next
+    tick, so the dispatch loop never blocks for longer than one check. `check(window)` returns
+    a leader row, or None for a renewal, which carries no row."""
+    try:
+        row = check(min(LEADER_CHECK_TIMEOUT, lease["expires_at"] - time.time()))
+    except LeaderCheckSlow:
+        return time.time() + LEADER_CHECK_TIMEOUT < lease["expires_at"]
+    except (Refused, OSError, ValueError):
+        return False
+    if row is not None:
+        if row["epoch"] != epoch:
+            return False
+        lease["expires_at"] = row["expires_at"]
+    return True
 
 
 def load_module(name, filename):
@@ -752,12 +776,13 @@ class Runner:
                 "RUN-LEADER", "Use the live designated Owner; the runner never pins or steals leadership.")
         return row
 
-    def leader_retrying(self, owner, deadline, renew_run=None):
+    def leader_retrying(self, owner, deadline, renew_run=None, stopped=lambda: False):
         """Retry a leader check while its deadline allows -- never a fixed per-attempt
         timeout. Only a definitive epoch/liveness answer (raised by leader() as a plain
-        Refused) or the deadline itself ends the retry; a bounded-subprocess timeout
-        (LeaderCheckSlow) is retried instead of read as lost authority (RUN-B)."""
+        Refused), the deadline itself, or a stopped run ends the retry; a bounded-subprocess
+        timeout (LeaderCheckSlow) is retried instead of read as lost authority (RUN-B)."""
         while True:
+            require(not stopped(), "RUN-LEADER", "The run was stopped; no further check is admitted.")
             window = min(LEADER_CHECK_TIMEOUT, deadline - time.time())
             require(window > 0, "RUN-LEADER", "Lease or attempt deadline expired; retain the worker evidence.")
             try:
@@ -924,12 +949,16 @@ class Runner:
                 stop.set()
             return stop.is_set()
 
-        def fence(remaining):
+        def fence(remaining=None):
+            """Positive confirmation of authority. `remaining` is the caller's operation
+            deadline; None (a housekeeping check) retries slow checks until the observed
+            lease could expire before the next answer (RUN-B)."""
             if cancelled():
                 return False
             try:
-                deadline = min(time.time() + remaining, lease["expires_at"])
-                row = self.leader_retrying(owner, deadline)
+                horizon = lease["expires_at"] - (LEADER_CHECK_TIMEOUT if remaining is None else 0)
+                deadline = horizon if remaining is None else min(time.time() + remaining, horizon)
+                row = self.leader_retrying(owner, deadline, stopped=stop.is_set)
                 require(row["epoch"] == admission["epoch"], "RUN-LEADER", "The leader epoch changed; no further dispatch is admitted.")
                 lease["expires_at"] = row["expires_at"]
                 return not cancelled()
@@ -1043,7 +1072,7 @@ class Runner:
                                 result.update(state="blocked", code="RUN-DECISION-NOT-CHECKED")
                             elif state["open_count"]:
                                 result.update(state="blocked", code="RUN-DECISION-OPEN")
-                            elif not fence(LEADER_RETRY_BUDGET):
+                            elif not fence():
                                 result.update(state="cancelled", code=lease["reason"])
                             else:
                                 result["state"] = "ready_for_review"
@@ -1065,15 +1094,21 @@ class Runner:
                     done, pending = wait(pending, timeout=0.1, return_when=FIRST_COMPLETED)
                     results.extend(f.result() for f in done)
                     if not stop.is_set() and time.monotonic() >= next_check:
-                        if fence(LEADER_RETRY_BUDGET):
-                            if lease["expires_at"] - time.time() <= float(admission["ttl"]) * 2 / 3:
-                                try:
-                                    self.leader_retrying(owner, min(time.time() + LEADER_RETRY_BUDGET,
-                                                          lease["expires_at"]), renew_run=manifest["run_id"])
-                                    fence(LEADER_RETRY_BUDGET)
-                                except (Refused, OSError, ValueError):
-                                    lease["reason"] = "RUN-LEADER"
-                                    stop.set()
+                        # RUN-B: one bounded check per tick, so a slow check never blocks the
+                        # loop for longer than LEADER_CHECK_TIMEOUT nor cancels a live lease.
+                        def check(window):
+                            return self.leader(owner, timeout=window)
+
+                        def renew(window):
+                            return self.leader(owner, timeout=window, renew_run=manifest["run_id"])
+
+                        held = not cancelled() and housekeeping_check(check, lease, admission["epoch"])
+                        if held and lease["expires_at"] - time.time() <= float(admission["ttl"]) * 2 / 3:
+                            held = (housekeeping_check(renew, lease, admission["epoch"])
+                                    and housekeeping_check(check, lease, admission["epoch"]))
+                        if not held:
+                            lease["reason"] = lease["reason"] or "RUN-LEADER"
+                            stop.set()
                         next_check = time.monotonic() + 0.5
         finally:
             stop.set()
