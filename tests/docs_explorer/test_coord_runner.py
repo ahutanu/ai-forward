@@ -75,6 +75,56 @@ class DispatchBaseTests(unittest.TestCase):
                 self.assertEqual("RUN-BASE", raised.exception.code)
 
 
+class HousekeepingCheckTests(unittest.TestCase):
+    """RUN-B recurrence (x-harness-x-model-bench run w2-lgc-e1e4, 2026-10-05): the periodic leader
+    check cancelled the run with RUN-LEADER at 1,298 s while the lease had 833 s left; the host was
+    running a full pytest suite and two worker gates. A check with no operation deadline of its own
+    gave up after a fixed 10 s of slow checks. Slowness is not lost authority while the observed
+    lease cannot expire before the next answer; a refusal or a changed epoch still ends it at once."""
+
+    def setUp(self):
+        with mock.patch.object(sys, "path", [str(SOURCE), *sys.path]):
+            spec = importlib.util.spec_from_file_location("runner_housekeeping_test", SOURCE / "coord-runner.py")
+            self.runner = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(self.runner)
+        self.assertTrue(hasattr(self.runner, "housekeeping_check"),
+                        "a periodic leader check has no rule but a fixed retry budget")
+
+    def slow(self, window):
+        raise self.runner.LeaderCheckSlow("slow")
+
+    def test_a_slow_check_keeps_authority_while_the_lease_has_time_left(self):
+        lease = {"expires_at": time.time() + 833}
+        windows = []
+        def check(window):
+            windows.append(window)
+            self.slow(window)
+        # Far longer than the old 2 x 5 s budget: every tick is slow, none is lost authority.
+        for _ in range(30):
+            self.assertTrue(self.runner.housekeeping_check(check, lease, 7))
+        self.assertTrue(all(0 < w <= self.runner.LEADER_CHECK_TIMEOUT for w in windows))
+
+    def test_a_slow_check_gives_up_once_the_lease_could_expire_before_the_next_answer(self):
+        lease = {"expires_at": time.time() + self.runner.LEADER_CHECK_TIMEOUT - 0.5}
+        self.assertFalse(self.runner.housekeeping_check(self.slow, lease, 7))
+
+    def test_a_changed_epoch_or_a_refusal_ends_authority_at_once(self):
+        lease = {"expires_at": time.time() + 833}
+        self.assertFalse(self.runner.housekeeping_check(
+            lambda window: {"epoch": 8, "expires_at": time.time() + 900}, lease, 7))
+        def refused(window):
+            raise self.runner.Refused("RUN-LEADER", "Use the live designated Owner")
+        self.assertFalse(self.runner.housekeeping_check(refused, lease, 7))
+
+    def test_an_answer_refreshes_the_observed_expiry(self):
+        lease = {"expires_at": time.time() + 10}
+        later = time.time() + 900
+        self.assertTrue(self.runner.housekeeping_check(lambda window: {"epoch": 7, "expires_at": later}, lease, 7))
+        self.assertEqual(later, lease["expires_at"])
+        self.assertTrue(self.runner.housekeeping_check(lambda window: None, lease, 7), "a renewal answers no row")
+        self.assertEqual(later, lease["expires_at"])
+
+
 @unittest.skipUnless(os.name == "posix", "initial interactive runner is a POSIX pilot")
 class RunnerTests(unittest.TestCase):
     def setUp(self):
@@ -512,6 +562,29 @@ class RunnerTests(unittest.TestCase):
         process, marker = self.running()
         (self.repo / "slow-leader-once").write_text("fault", encoding="utf-8")
         stdout, stderr = process.communicate(timeout=25)
+        self.assertEqual(process.returncode, 0, stdout + stderr)
+        result = json.loads(stdout.splitlines()[-1])
+        self.assertEqual(result["state"], "ready_for_review", stdout + stderr)
+        self.assertIsNone(result["code"])
+
+    def test_sustained_slow_leader_checks_do_not_cancel_a_valid_lease(self):
+        # RUN-B recurrence (run w2-lgc-e1e4): every leader check runs past LEADER_CHECK_TIMEOUT
+        # for longer than the old 10 s budget, while the lease (TTL 300 s via pin()) stays live.
+        script = self.scripts / "coord-core.py"
+        source = script.read_text(encoding="utf-8")
+        script.write_text(source.replace(
+            'def _git_status(repo, *args, stdin=None):',
+            'def _git_status(repo, *args, stdin=None):\n'
+            '    if (Path(repo) / "slow-leader").exists() and args[:1] == ("rev-parse",) and "refs/coord/leader" in args:\n'
+            '        time.sleep(6)'), encoding="utf-8")
+        self.contract["workers"][0]["argv"][-1] = "delay"
+        self.contract["workers"][0]["prompts"] *= 3
+        self.contract["workers"][0]["deadline_seconds"] = 40
+        process, marker = self.running()
+        (self.repo / "slow-leader").write_text("fault", encoding="utf-8")
+        time.sleep(14)
+        (self.repo / "slow-leader").unlink()
+        stdout, stderr = process.communicate(timeout=60)
         self.assertEqual(process.returncode, 0, stdout + stderr)
         result = json.loads(stdout.splitlines()[-1])
         self.assertEqual(result["state"], "ready_for_review", stdout + stderr)
