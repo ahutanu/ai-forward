@@ -777,8 +777,16 @@ class _Session:
             current_model = models.get("currentModelId") if isinstance(models, dict) else None
             self.result["selected_model"] = current_model if _identifier(current_model) else None
             if expected_model is not None:
-                self.rpc("session/set_model", {"sessionId": created["sessionId"], "modelId": expected_model})
+                answer = self.rpc("session/set_model", {"sessionId": created["sessionId"], "modelId": expected_model})
                 self.result["selected_model_set"] = True
+                # SERVE-A: Grok 1.0.41 reports the session's model as _meta.model = {"Ok": id}
+                # (spike 2026-10-05). A report other than the pin fails closed before any prompt;
+                # no report (Copilot answers {}) is checked later from native evidence.
+                meta = answer.get("_meta")
+                if isinstance(meta, dict) and "model" in meta:
+                    if meta["model"] != {"Ok": expected_model}:
+                        raise _Failure("session_model_mismatch", "blocked")
+                    self.result["selected_model"] = expected_model
                 self.event("session_model_selected", requested_model=expected_model)
             self.event("session_created", selected_model=self.result["selected_model"])
             if mode_id is not None:

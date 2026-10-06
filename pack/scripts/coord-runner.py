@@ -191,6 +191,28 @@ def copilot_model(argv):
     return models[0]
 
 
+def expected_model(worker):
+    """The model the transport must select and confirm before any prompt, or None.
+
+    SERVE-A (x-harness-x-model-bench run w2-g3-e1e4): a Grok argv pin (-m / --model) was never
+    sent as session/set_model, so Grok's ACP default answered instead. An unpinned Grok worker
+    keeps the earlier behaviour; an ambiguous pin is refused."""
+    if worker["harness"] == "copilot":
+        return copilot_model(worker["argv"])
+    if worker["harness"] != "grok":
+        return None
+    argv = worker["argv"]
+    models = [arg.split("=", 1)[1] for arg in argv if arg.startswith("--model=")]
+    for index, arg in enumerate(argv):
+        if arg in ("-m", "--model"):
+            models.append(argv[index + 1] if index + 1 < len(argv) else "")
+    if not models:
+        return None
+    require(len(models) == 1 and text(models[0]) and not models[0].startswith("-"),
+            "RUN-GROK-MODEL", "Pin one explicit Grok model with -m or --model.")
+    return models[0]
+
+
 def copilot_model_evidence(session_id, env, expected):
     """Check actual native inference events, never the advertised ACP model list."""
     from coord_files import read_regular
@@ -976,8 +998,9 @@ class Runner:
                                    "next_prompt": next_prompt if policy["mailbox"] else None,
                                    "permission_handler": permission_handler if policy["permissions"] == "ask" else None,
                                    "mode_id": policy.get("mode_id")}
-                    if worker["harness"] == "copilot":
-                        options["expected_model"] = copilot_model(worker["argv"])
+                    pin = expected_model(worker)
+                    if pin is not None:
+                        options["expected_model"] = pin
                     deadline = time.monotonic() + worker["deadline_seconds"]
                     attempts = []
                     bytes_used = 0
