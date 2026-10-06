@@ -1025,7 +1025,7 @@ window.PACK_INDEX = {
 "summary": "Prepare and run an opt-in, qualified multi-harness coordination contract.",
 "path": "pack/scripts/coord-runner.py",
 "kind": "script",
-"text": "coord-runner.py prepare and run an opt-in, qualified multi-harness coordination contract. run `prepare --contract file`, qualify the resulting checkout-specific fingerprints, then `run --run id --qualification file`. `status --run id` never replays work. the existing coordinator remains responsible for decisions and semantic review. load_module __init__ __init__ require encoded digest interruption read_json private_write git dispatch_base identity text integer copilot_model copilot_model_evidence copilot_policy relative_path child_env file_hash __init__ directory event compiled_prompts access_roots validate prepare public_manifest load controls control attach attach_owned checkout_identity admitted resolve_executable fingerprint fingerprints bounded_profile bounded_prompt leader leader_retrying renew_admitted worker_identity verify status retained_tree run cancel_signal cancelled fence execute worker_fence next_prompt permission_handler main"
+"text": "coord-runner.py prepare and run an opt-in, qualified multi-harness coordination contract. run `prepare --contract file`, qualify the resulting checkout-specific fingerprints, then `run --run id --qualification file`. `status --run id` never replays work. the existing coordinator remains responsible for decisions and semantic review. housekeeping_check load_module __init__ __init__ require encoded digest interruption read_json private_write git dispatch_base identity text integer copilot_model expected_model copilot_model_evidence copilot_policy relative_path child_env file_hash __init__ directory event compiled_prompts access_roots validate prepare public_manifest load controls control attach attach_owned checkout_identity admitted resolve_executable fingerprint fingerprints bounded_profile bounded_prompt leader leader_retrying renew_admitted worker_identity verify status retained_tree run cancel_signal cancelled fence execute worker_fence next_prompt permission_handler check renew main"
 },
 {
 "cat": "scripts",
@@ -1913,10 +1913,10 @@ window.PACK_INDEX = {
 "cat": "graph",
 "id": "api-index",
 "title": "API reference — the deployed script bundle",
-"summary": "Generated API reference for the pack's public surface — the deployed script bundle. 557 public functions across 45 modules, 47% carrying a docstring.",
+"summary": "Generated API reference for the pack's public surface — the deployed script bundle. 559 public functions across 45 modules, 48% carrying a docstring.",
 "path": "docs/api/index.md",
 "kind": "api",
-"text": "api reference — the deployed script bundle generated api reference for the pack's public surface — the deployed script bundle. 557 public functions across 45 modules, 47% carrying a docstring. api scripts generated index documents architecture"
+"text": "api reference — the deployed script bundle generated api reference for the pack's public surface — the deployed script bundle. 559 public functions across 45 modules, 48% carrying a docstring. api scripts generated index documents architecture"
 },
 {
 "cat": "graph",

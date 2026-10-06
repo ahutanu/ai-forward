@@ -9,7 +9,7 @@ links:
   - { to: architecture, rel: documents }
 review-by: "2027-03-03"
 summary: >-
-  Generated API reference for the pack's public surface — the deployed script bundle. 557 public functions across 45 modules, 47% carrying a docstring.
+  Generated API reference for the pack's public surface — the deployed script bundle. 559 public functions across 45 modules, 48% carrying a docstring.
 ---
 
 # API reference — the deployed script bundle
@@ -32,7 +32,7 @@ with no docstring is listed as a **coverage gap** rather than described from gue
 | [`coord-core.py`](coord-core.md) | 99 | 74 | 37 | coord-core.py - agent coordination, Phase 1 walking skeleton. |
 | [`coord-decide.py`](coord-decide.md) | 12 | 3 | 3 | coord-decide.py - the Owner seat's mechanism: decision request -> numbered ruling (D6). |
 | [`coord-mail.py`](coord-mail.md) | 22 | 5 | 4 | coord-mail.py - the local message layer: per-session inbox files, ledger twins, bounded dispatch. |
-| [`coord-runner.py`](coord-runner.md) | 18 | 4 | 5 | Prepare and run an opt-in, qualified multi-harness coordination contract. |
+| [`coord-runner.py`](coord-runner.md) | 20 | 6 | 5 | Prepare and run an opt-in, qualified multi-harness coordination contract. |
 | [`coord_files.py`](coord_files.md) | 4 | 3 | — | Bounded regular-file reads with pinned, non-reparse Windows ancestors. |
 | [`coord_ids.py`](coord_ids.md) | 2 | 2 | — | coord_ids.py - collision-proof identifiers, in ONE place. |
 | [`coord_native.py`](coord_native.md) | 1 | 0 | — | Read-only Codex thread metadata over its measured local WebSocket endpoint. |
@@ -69,5 +69,5 @@ with no docstring is listed as a **coverage gap** rather than described from gue
 | [`visual-assets-setup.py`](visual-assets-setup.md) | 12 | 5 | — | visual-assets-setup.py - wire up a generation backend for UI visual assets (AI-Forward). |
 | [`xaml-token-lint.py`](xaml-token-lint.md) | 9 | 0 | — | xaml-token-lint.py — first-slice token linter for XAML/native UI markup. |
 
-**Total** — 557 public functions across 45 modules, **264 documented (47%)**.
+**Total** — 559 public functions across 45 modules, **266 documented (48%)**.
 

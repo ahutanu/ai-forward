@@ -59,8 +59,8 @@ Design: docs/design/coord-core-phase1.md
 | `list` | list seam requests |
 | `log` | ledger maintenance: `portable <file>...` normalizes diagnostic paths in existing rows (F-3) |
 | `mail` | send | read | ack | dispatch (delegates to coord-mail.py) |
-| `merge-derived` | the .gitattributes merge driver (always 0) |
-| `merge-register` | union two append-only registers (always 0) |
+| `merge-derived` | the .gitattributes merge driver (0 resolved; 1 with conflict markers) |
+| `merge-register` | union two append-only registers (0 merged; 1 with conflict markers) |
 | `metrics` | the four measures this layer exists to move |
 | `plugin` | emit the bundle both harnesses read; never installs |
 | `precommit` | the universal floor: refuse unclaimed staged paths |
@@ -804,10 +804,12 @@ parallel `git add` staged the file, and the commit carried the markers.
 
 ### `cmd_merge_derived(root, repo, result_path, base_path, theirs_path, real_path)`
 
-The .gitattributes merge driver. ALWAYS returns 0 -- see _write_conflict.
+The .gitattributes merge driver for `derived` artifacts.
 
-Resolves a `derived` artifact to OURS and records that a regeneration is owed; anything
-it cannot classify as derived gets conventional conflict markers instead.
+Resolves a `derived` artifact to OURS, records that a regeneration is owed, and returns 0.
+Anything it cannot classify as derived gets conventional conflict markers AND returns 1
+(REG-C's sibling, 2026-10-05): with exit 0, `git merge` read the marker file as a clean
+merge and auto-committed it. The markers keep the unmerged path from looking clean (S12b).
 
 ### `cmd_regen(root, repo, timeout=…)`
 

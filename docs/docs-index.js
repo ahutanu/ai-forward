@@ -822,7 +822,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "d9447213ab3315c434a7592a266a61d89743845f9c81dc30f2426df6fffd1c32"
+      "sourceSha256": "fbe888e419d7e461d85b8ffcad2be80207cda73325d21cc54969475445d63e46"
     },
     {
       "id": "api-coord-decide",
@@ -897,7 +897,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "67002d5a1b78f1d17c0940b363a91b94dc7f3aff7780202db7064d7a698c5dbd"
+      "sourceSha256": "7e1fc043029e36330cee7d00b7ede401174bf46e441db046ae6c3d19cb8ced06"
     },
     {
       "id": "api-coord_files",
@@ -1159,7 +1159,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-03",
       "reviewSuggested": [],
-      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 557 public functions across 45 modules, 47% carrying a docstring.",
+      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 559 public functions across 45 modules, 48% carrying a docstring.",
       "tags": [
         "api",
         "scripts",
@@ -1173,7 +1173,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "d5fea0759fa17c8c90f21b19cc55bf0bf6de31bd7c77f2949495f5f888508471"
+      "sourceSha256": "2fca815d9848c5f4ebef30a92656b229457c31cfa57d9450f9348220c57ae1d9"
     },
     {
       "id": "api-marker-lint",
@@ -3782,7 +3782,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "3d142e7b197b63da277a714b02619b95280aae86d9e0430b6fcd74039b02a86b"
+      "sourceSha256": "a938afcc7da5172c1c8e20d37fb93a0bba2ee7bddc73257c7d37b80f31595df2"
     },
     {
       "id": "design-coordination-runtime-v2",
@@ -12076,5 +12076,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "fce2fd29792cc2b4848f7d603ddbaa13e387a1407da361979d52e986361f8d04"
+  "graphSha256": "46b2501ef475b7580671a1bde8ef306875ede6d1f2248dd0d41c21fff217e7de"
 };

@@ -1406,7 +1406,7 @@ def _build_parser():
     ci.add_argument("--force", action="store_true",
                     help="replace an existing registry (it is repo configuration)")
     ci.add_argument("--timeout", type=float, default=180)
-    md = sub.add_parser("merge-derived", help="the .gitattributes merge driver (always 0)")
+    md = sub.add_parser("merge-derived", help="the .gitattributes merge driver (0 resolved; 1 with conflict markers)")
     md.add_argument("result"); md.add_argument("base")
     md.add_argument("theirs"); md.add_argument("realpath")
     # P4 / P6: the message layer and the board live in sibling scripts; `coord mail …` and
@@ -1424,7 +1424,7 @@ def _build_parser():
     alloc.add_argument("--scheme", required=True)
     res = sub.add_parser("resolve", help="resolve an id prefix; never picks a first match")
     res.add_argument("prefix"); res.add_argument("--register", required=True)
-    mr = sub.add_parser("merge-register", help="union two append-only registers (always 0)")
+    mr = sub.add_parser("merge-register", help="union two append-only registers (0 merged; 1 with conflict markers)")
     mr.add_argument("result"); mr.add_argument("base")
     mr.add_argument("theirs"); mr.add_argument("realpath")
     pl = sub.add_parser("plugin", help="emit the bundle both harnesses read; never installs")
@@ -4317,7 +4317,8 @@ def _write_conflict(result_path, ours_path, theirs_path, reason):
     file unmerged with OURS content. It looks clean, and `git add .` commits ours and
     silently discards theirs. Writing the markers makes the failure visible in the file --
     where a human, `git diff --check`, and the staged-markers scan all see it. The caller
-    decides the exit: merge-register exits 1 after this (REG-C), so git stops as well.
+    decides the exit: merge-register and merge-derived exit 1 after this (REG-C), so git
+    stops as well.
     """
     def read(p):
         try:
@@ -4332,10 +4333,12 @@ def _write_conflict(result_path, ours_path, theirs_path, reason):
 
 
 def cmd_merge_derived(root, repo, result_path, base_path, theirs_path, real_path):
-    """The .gitattributes merge driver. ALWAYS returns 0 -- see _write_conflict.
+    """The .gitattributes merge driver for `derived` artifacts.
 
-    Resolves a `derived` artifact to OURS and records that a regeneration is owed; anything
-    it cannot classify as derived gets conventional conflict markers instead.
+    Resolves a `derived` artifact to OURS, records that a regeneration is owed, and returns 0.
+    Anything it cannot classify as derived gets conventional conflict markers AND returns 1
+    (REG-C's sibling, 2026-10-05): with exit 0, `git merge` read the marker file as a clean
+    merge and auto-committed it. The markers keep the unmerged path from looking clean (S12b).
     """
     try:
         klass, reason = classify(root, real_path)
@@ -4346,19 +4349,19 @@ def cmd_merge_derived(root, repo, result_path, base_path, theirs_path, real_path
             _write_conflict(result_path, result_path, theirs_path,
                             "{} is classified {}{}; not resolving".format(
                                 real_path, klass, " (" + reason + ")" if reason else ""))
-            return 0
+            return 1
         # Resolve to ours, byte for byte. `result_path` (%A) already holds ours; touching
         # nothing else is the whole of STRIDE B8's mitigation -- %P is identity, never a
         # write target.
         record_regen_owed(root, real_path)
         return 0
-    except Exception as exc:                      # never exit non-zero; never raise
+    except Exception as exc:                      # never raise; markers, then stop git
         try:
             _write_conflict(result_path, result_path, theirs_path,
                             "driver error: {}".format(exc.__class__.__name__))
         except Exception:
             pass
-        return 0
+        return 1
 
 
 def cmd_regen(root, repo, timeout=120):
