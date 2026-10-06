@@ -124,6 +124,8 @@ coord plugin --emit <dir>                  # write the .claude-plugin bundle bot
 
 **`coord merge-derived` always exits 0.** S12b is the reason: a non-zero exit leaves the file **unmerged, with ours content, and no conflict markers** — a state that looks clean and silently discards the other side on `git add .`. Whenever the driver cannot resolve safely it **writes conventional conflict markers itself** and exits 0, so the failure is visible in the file rather than hidden in the index.
 
+> **Superseded 2026-10-05 (REG-C, revision 99).** Exit 0 with markers let `git merge` read the marker file as a clean merge and auto-commit it. The driver now writes the markers **and** exits 1: git stops with the path unmerged, and the markers keep it from looking clean, so S12b's hazard (no markers) does not return. `merge-register` took the same change in revision 98. Proof: `tests/docs_explorer/test_coord_merge_safety.py` (a real `git merge --no-verify` stops) and Q7/Q11 in `test_coord_derived.py`.
+
 > **AMENDED DURING IMPLEMENTATION (2026-08-23) — the driver resolves, it does not regenerate.**
 > This section originally had the driver *regenerating* the artifact during the merge. That
 > cannot be correct: git runs merge drivers **per file, in arbitrary order**, so a derived
