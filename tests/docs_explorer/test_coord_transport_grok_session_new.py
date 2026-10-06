@@ -81,5 +81,51 @@ class GrokSessionNewWatcherTests(unittest.TestCase):
                 self.assertIsNone(result["session_id"])
 
 
+def _run_initialize(version, ack, grok_shell=True):
+    """XPORT-A, initialize: measured 2026-10-05 (run w2-k2a-e1e4, Grok 1.0.41,
+    `protocol_error_phase: "initialize"`), the ack arrived before the initialize response.
+    The release is only known once that response arrives, so the floor is checked then."""
+    meta = {"grokShell": True, "agentVersion": version} if grok_shell else {}
+    init = {"jsonrpc": "2.0", "id": 1, "result": {
+        "protocolVersion": 1, "agentInfo": {"name": "grok", "version": version}, "_meta": meta}}
+    created = {"jsonrpc": "2.0", "id": 2, "result": {"sessionId": "s-1"}}
+    result = {"session_id": None, "compatibility_responses": 0, "reported_version": None,
+              "reported_version_source": None, "progress_updates": 0}
+    session = ct._Session(_Wire([ack, init, created]), result, lambda event: None,
+                          lambda left: True, [])
+    try:
+        session.acp("/tmp", [], [], None, False, None, None)
+    except ct._Failure as failure:
+        return result, failure, session
+    return result, None, session
+
+
+class GrokInitializeWatcherTests(unittest.TestCase):
+    def test_watcher_ack_before_the_initialize_response_creates_the_session(self):
+        for ident in ("skills-reload", "workflows-reload"):
+            for reloaded in (0, 1):
+                with self.subTest(ident=ident, reloaded=reloaded):
+                    ack = {"id": ident, "jsonrpc": "2.0", "result": {"result": {"reloaded": reloaded}}}
+                    result, failure, session = _run_initialize("1.0.41", ack)
+                    self.assertIsNone(failure, "the measured order must initialize and create the session")
+                    self.assertEqual(("s-1", 1), (result["session_id"], result["compatibility_responses"]))
+
+    def test_anything_else_unsolicited_during_initialize_is_still_a_protocol_error(self):
+        cases = [
+            ("1.0.41", {"id": "surprise", "jsonrpc": "2.0", "result": {"result": {"reloaded": 0}}}, True),
+            ("1.0.41", {"id": "skills-reload", "jsonrpc": "2.0", "result": {"result": {"reloaded": 0, "x": 1}}}, True),
+            ("1.0.41", {"id": "skills-reload", "jsonrpc": "2.0", "result": {"result": {"reloaded": 2}}}, True),
+            ("1.0.41", {"id": "skills-reload", "jsonrpc": "2.0", "result": {"result": {"reloaded": True}}}, True),
+            ("1.0.33", WATCHER, True),
+            ("1.0.41", WATCHER, False),
+        ]
+        for version, message, grok_shell in cases:
+            with self.subTest(version=version, message=message, grok_shell=grok_shell):
+                result, failure, session = _run_initialize(version, message, grok_shell)
+                self.assertIsNotNone(failure)
+                self.assertEqual(("protocol_error", "initialize"), (failure.code, session.phase))
+                self.assertIsNone(result["session_id"])
+
+
 if __name__ == "__main__":
     unittest.main()
