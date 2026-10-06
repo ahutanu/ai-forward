@@ -523,6 +523,7 @@ class _Session:
         self.creating_session_id = None
         self.creating_updates = 0
         self.grok_reload_compat = False
+        self.initialize_watcher_acks = 0  # held until the initialize response names the release
         self.next_prompt = next_prompt
         self.permission_handler = permission_handler
         self.max_turns = max_turns
@@ -711,12 +712,18 @@ class _Session:
             # XPORT-A: the same acknowledgement also races ahead of the session/new response
             # (measured 2026-10-03, Grok 1.0.41, `reloaded: 0`), so session/new accepts it too and
             # the reloaded count may be 0 or 1. Ids, shape and release floor stay as they were.
-            if (self.grok_reload_compat
-                    and (method == "session/new" or (method == "session/prompt" and self.result["session_id"]))
-                    and message.get("id") in GROK_WATCHER_IDS
-                    and message in ({"jsonrpc": "2.0", "id": message["id"], "result": {"result": {"reloaded": n}}}
-                                    for n in (0, 1))
-                    and type(message["result"]["result"]["reloaded"]) is int):
+            # It also arrives before the initialize response (measured 2026-10-05, run w2-k2a-e1e4,
+            # Grok 1.0.41). The release is unknown until that response, so acp() checks the floor
+            # then and refuses the held acknowledgements below it.
+            watcher_ack = (message.get("id") in GROK_WATCHER_IDS
+                           and message in ({"jsonrpc": "2.0", "id": message["id"], "result": {"result": {"reloaded": n}}}
+                                           for n in (0, 1))
+                           and type(message["result"]["result"]["reloaded"]) is int)
+            if watcher_ack and method == "initialize":
+                self.initialize_watcher_acks += 1
+                continue
+            if (watcher_ack and self.grok_reload_compat
+                    and (method == "session/new" or (method == "session/prompt" and self.result["session_id"]))):
                 self.result["compatibility_responses"] += 1
                 continue
             if type(message.get("id")) is not int or message["id"] != request_id:
@@ -759,6 +766,10 @@ class _Session:
                 self.result["reported_version_source"] = "grok._meta.agentVersion"
             self.grok_reload_compat = (_grok_release_at_least(metadata.get("agentVersion"), GROK_RELOAD_FLOOR)
                                        and self.result["reported_version"] == metadata.get("agentVersion"))
+        if self.initialize_watcher_acks:
+            if not self.grok_reload_compat:
+                raise _Failure("protocol_error")
+            self.result["compatibility_responses"] += self.initialize_watcher_acks
         auth = info.get("authMethods", [])
         if not isinstance(auth, list):
             raise _Failure("protocol_error")
