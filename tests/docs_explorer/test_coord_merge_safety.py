@@ -113,6 +113,39 @@ class RegisterClassTests(MergeSafetyCase):
         self.assertIn(MARK, (self.repo / "notes.md").read_text(encoding="utf-8"))
 
 
+class DerivedDriverTests(MergeSafetyCase):
+    """REG-C's sibling: `merge-derived` on a path the registry does not classify `derived` wrote
+    conflict markers and exited 0, so `git merge` auto-committed the markers (found 2026-10-05
+    by the Lane F sweep of REG-C). The same treatment: keep the markers, exit 1."""
+
+    def test_a_real_merge_of_an_authored_file_under_a_derived_pattern_stops(self):
+        self.write(".agents/artifacts.yml",
+                   "docs/gen/*: derived {} -c \"pass\"\ndocs/gen/hand.txt: authored\n".format(sys.executable))
+        self.write("docs/gen/hand.txt", "base\n")
+        self.commit_all("base")
+        installed = self.cli("install")
+        self.assertEqual(0, installed.returncode, installed.stdout + installed.stderr)
+        self.assertIn("docs/gen/* merge=coord-regen",
+                      (self.repo / ".gitattributes").read_text(encoding="utf-8").splitlines())
+        self.commit_all("attributes")
+        trunk = self.git("symbolic-ref", "--short", "HEAD").stdout.strip()
+        self.git("checkout", "-qb", "side")
+        self.write("docs/gen/hand.txt", "side edit\n")
+        self.commit_all("side")
+        self.git("checkout", "-q", trunk)
+        self.write("docs/gen/hand.txt", "trunk edit\n")
+        self.commit_all("trunk")
+        head = self.git("rev-parse", "HEAD").stdout.strip()
+        # --no-verify skips the pre-merge-commit staged-markers hook, so the driver's own exit
+        # is the only control under test (the hook is the second line, GATE-B).
+        merged = self.git("merge", "--no-edit", "--no-verify", "side", check=False)
+        self.assertNotEqual(0, merged.returncode, "git merge auto-committed an authored file's conflict markers")
+        self.assertEqual(head, self.git("rev-parse", "HEAD").stdout.strip())
+        text = (self.repo / "docs/gen/hand.txt").read_text(encoding="utf-8")
+        self.assertIn(MARK, text)
+        self.assertIn("side edit", text, "theirs was discarded rather than surfaced")
+
+
 class AttributesReconcileTests(MergeSafetyCase):
     def test_install_removes_merge_lines_the_registry_no_longer_declares(self):
         self.write(".agents/artifacts.yml", "docs/audit/*.jsonl: register\n")
