@@ -94,7 +94,7 @@ class CopilotPluginLifecycle(unittest.TestCase):
     def test_lifecycle_target_oracle_accepts_escaped_repr_and_physical_alias(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            physical = root / (r"C:\Users\runneradmin" if os.name != "nt" else "runneradmin")
+            physical = root / (r"C:\Users\runneradmin" if os.name != "nt" else "runneradmin")  # machine-path-ok: synthetic Windows repr-escaping fixture beneath the temporary root
             physical.mkdir()
             target = physical / "session-start.py"
             target.write_text("# actual hook\n", encoding="utf-8")
