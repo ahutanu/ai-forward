@@ -822,7 +822,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "4c4c76fea7b5d3443c6747597ea017c75484ea946e48bbf15c201cdae7e901f7"
+      "sourceSha256": "bd8bc41e2d962726252a1f8b0b745fe28b9d49956c1ec5c5e15524236160576f"
     },
     {
       "id": "api-coord-decide",
@@ -897,7 +897,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "24c69a3d3548083fdbdd0531670c4964d59611f139de6f2515bdf3e669428a5f"
+      "sourceSha256": "98567ef47f95e199f8555d5aa62cd13d8d9528204f67efeff92858be5f5521ec"
     },
     {
       "id": "api-coord_files",
@@ -1184,7 +1184,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-03",
       "reviewSuggested": [],
-      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 576 public functions across 46 modules, 45% carrying a docstring.",
+      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 582 public functions across 46 modules, 46% carrying a docstring.",
       "tags": [
         "api",
         "scripts",
@@ -1198,7 +1198,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "0c4563832fa79f8b32b1bf89745685ab5916c05e8ab049920586bba1eff952c5"
+      "sourceSha256": "f0bdcae257d715716b2fa0b2fff1411be1f00f991667d5a1ceb56975b3c6867c"
     },
     {
       "id": "api-marker-lint",
@@ -1648,7 +1648,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "0d30f3ecffcee77370fc68d5e9e3974093e75e683f177f8fa80cb7910ea591a5"
+      "sourceSha256": "80639e11be72cb41693512af00aadea67695d21780803edc920b0f826b676dbd"
     },
     {
       "id": "api-verify-no-new-console-launches",
@@ -3807,7 +3807,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "3d142e7b197b63da277a714b02619b95280aae86d9e0430b6fcd74039b02a86b"
+      "sourceSha256": "a938afcc7da5172c1c8e20d37fb93a0bba2ee7bddc73257c7d37b80f31595df2"
     },
     {
       "id": "design-coordination-runtime-v2",
@@ -12236,5 +12236,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "c5632d5c27cce20bfe11cf3bd2947b6b9aa4961ce9a3003f552aa8f526d46ccf"
+  "graphSha256": "f84c2a4897ea9cf725c39e42f97adb3e15e9da02a753d0134468809b6b633206"
 };

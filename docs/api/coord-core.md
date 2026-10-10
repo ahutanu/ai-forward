@@ -59,8 +59,8 @@ Design: docs/design/coord-core-phase1.md
 | `list` | list seam requests |
 | `log` | ledger maintenance: `portable <file>...` normalizes diagnostic paths in existing rows (F-3) |
 | `mail` | send | read | ack | dispatch (delegates to coord-mail.py) |
-| `merge-derived` | the .gitattributes merge driver (always 0) |
-| `merge-register` | union two append-only registers (always 0) |
+| `merge-derived` | the .gitattributes merge driver (0 resolved; 1 with conflict markers) |
+| `merge-register` | union two append-only registers (0 merged; 1 with conflict markers) |
 | `metrics` | the four measures this layer exists to move |
 | `plugin` | emit the bundle both harnesses read; never installs |
 | `precommit` | the universal floor: refuse unclaimed staged paths |
@@ -71,6 +71,7 @@ Design: docs/design/coord-core-phase1.md
 | `request` | a typed seam request: add | receive | ack | resolve | expire | list (sent -> received -> acked -> resolved | expired) |
 | `resolve` | resolve a seam request |
 | `session` | one session per working tree; `heartbeat` samples progress |
+| `staged-markers` | refuse staged conflict markers (the pre-merge-commit hook) |
 | `tail` | the merged chronological stream |
 | `track` | the running track: one state per (session, work item) from heartbeats and worktree mtimes - live | stalled | blocked | done; empty corpus is NOT CHECKED |
 | `who` | who leads, as of which epoch, until when |
@@ -125,6 +126,10 @@ Design: docs/design/coord-core-phase1.md
 ### `CoordError`
 
 _(no docstring — coverage gap)_
+
+### `PrimaryCheckoutWrite`
+
+A target outside this linked worktree and inside the repository's primary checkout.
 
 ## Functions
 
@@ -430,7 +435,14 @@ not guess.
 
 ### `cmd_merge_register(result_path, base_path, theirs_path, real_path)`
 
-The merge driver for `register`-class artifacts. ALWAYS exits 0 (the S12b rule).
+The merge driver for `register`-class artifacts.
+
+Exit 0 only for a clean union. A merge it cannot make writes conflict markers into the
+result AND exits 1 (REG-C, measured 2026-10-05 in a consuming repo): with exit 0, `git
+merge` read the marker file as a clean merge and auto-committed it. With exit 1 git stops
+and leaves the path unmerged, and the markers in the file keep it from looking clean (the
+S12b hazard: an unmerged file holding only OURS invites `git add .`), where the staged-
+markers scan refuses to commit it.
 
 ### `load_registry(root)`
 
@@ -780,12 +792,24 @@ lines that are not JSON; the writer's own dump (sort_keys) is used for the rewri
 
 **Coverage gap** — no docstring in the source.
 
+### `staged_marker_hits(repo)`
+
+Lines the index ADDS that start with a conflict marker, as `path:line` strings.
+Returns (hits, error). GATE-B, 2026-10-05: a conflict-resolution edit failed while a
+parallel `git add` staged the file, and the commit carried the markers.
+
+### `cmd_staged_markers(repo)`
+
+**Coverage gap** — no docstring in the source.
+
 ### `cmd_merge_derived(root, repo, result_path, base_path, theirs_path, real_path)`
 
-The .gitattributes merge driver. ALWAYS returns 0 -- see _write_conflict.
+The .gitattributes merge driver for `derived` artifacts.
 
-Resolves a `derived` artifact to OURS and records that a regeneration is owed; anything
-it cannot classify as derived gets conventional conflict markers instead.
+Resolves a `derived` artifact to OURS, records that a regeneration is owed, and returns 0.
+Anything it cannot classify as derived gets conventional conflict markers AND returns 1
+(REG-C's sibling, 2026-10-05): with exit 0, `git merge` read the marker file as a clean
+merge and auto-committed it. The markers keep the unmerged path from looking clean (S12b).
 
 ### `cmd_regen(root, repo, timeout=…)`
 
@@ -859,5 +883,5 @@ it; runtime paths stay in quoted expansions, never eval or interpolated source c
 
 ## Coverage
 
-- Public functions: **97** · documented: **73** (**75%**)
-- Undocumented (recorded, not invented): `make_event`, `check`, `read_decisions`, `request_log_path`, `read_request_events`, `cmd_leader`, `regen_command`, `record_regen_owed`, `regen_owed`, `clear_regen_owed`, `detect_harness`, `cmd_precommit`, `cmd_guard`, `session_contract_path`, `owner_rows_for_path`, `cmd_session_list`, `cmd_collaborate`, `cmd_request`, `cmd_worktree`, `cmd_session`, `cmd_metrics`, `cmd_track`, `cmd_install`, `cmd_doctor`
+- Public functions: **99** · documented: **74** (**75%**)
+- Undocumented (recorded, not invented): `make_event`, `check`, `read_decisions`, `request_log_path`, `read_request_events`, `cmd_leader`, `regen_command`, `record_regen_owed`, `regen_owed`, `clear_regen_owed`, `detect_harness`, `cmd_precommit`, `cmd_guard`, `session_contract_path`, `owner_rows_for_path`, `cmd_session_list`, `cmd_collaborate`, `cmd_request`, `cmd_worktree`, `cmd_session`, `cmd_metrics`, `cmd_track`, `cmd_install`, `cmd_staged_markers`, `cmd_doctor`

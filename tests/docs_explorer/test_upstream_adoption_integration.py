@@ -37,28 +37,141 @@ class UpstreamAdoptionDocsTests(unittest.TestCase):
 
 
 class UpstreamRefreshMetadataTests(unittest.TestCase):
-    def test_current_delta_names_only_merge_history_refresh(self):
-        text = (ROOT / 'pack/adapters/INSTALL.md').read_text(encoding='utf-8')
-        frontmatter = text.split('---\n', 2)[1]
-        self.assertRegex(frontmatter, r"(?m)^revision: 104$")
-        self.assertIn("bundle_version: '2026.10.05.2'", frontmatter)
+    def test_current_owner_ruling_guidance_does_not_register_markdown_as_jsonl(self):
+        from install_guidance import current_install_body
+        body = current_install_body((ROOT / 'pack/adapters/INSTALL.md').read_text(encoding='utf-8'))
+        self.assertNotIn('docs/notes/rulings.md: register', body)
+        self.assertIn('docs/notes/rulings.md: authored', body)
+        registry = (ROOT / '.agents/artifacts.yml').read_text(encoding='utf-8')
+        self.assertIn('docs/notes/rulings.md: authored', registry)
+        self.assertNotIn('docs/notes/rulings.md: register', registry)
+        attributes = (ROOT / '.gitattributes').read_text(encoding='utf-8')
+        self.assertNotIn('docs/notes/rulings.md merge=coord-register', attributes)
+
+    def test_current_delta_names_only_upstream_coordination_refresh(self):
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        frontmatter = raw.split(b'---\n', 2)[1].decode('utf-8')
+        self.assertRegex(frontmatter, r"(?m)^revision: 105$")
+        self.assertIn("bundle_version: '2026.10.10.1'", frontmatter)
         self.assertEqual(1, frontmatter.count('  - { type: changed,'))
-        self.assertIn("paths: ['scripts/pack-apply.py', 'adapters/INSTALL.md']", frontmatter)
+        self.assertIn('area: upstream-coordination-refresh', frontmatter)
+        path_match = re.search(r"paths: \[(.*?)\], deploy:", frontmatter)
+        self.assertIsNotNone(path_match, 'The current delta must list its deployed source paths')
+        assert path_match is not None
+        paths = path_match.group(1)
+        self.assertEqual({
+            'scripts/pack-apply.py', 'scripts/coord-core.py', 'scripts/coord-runner.py', 'scripts/coord_transport.py',
+            'scripts/verify-no-machine-paths.py', 'adapters/hooks/session-start.py',
+            'adapters/hooks/README.md', 'commands/execute-with-coordination/reference/launch.md',
+            'adapters/copilot/prompts/execute-with-coordination.prompt.md',
+            'context-budget.json', 'adapters/INSTALL.md',
+        }, set(re.findall(r"'([^']+)'", paths)))
+        self.assertIn('counts: { lenses: 23, skills: 30, knowledge_docs: 40, templates: 29, scripts: 47 }',
+                      frontmatter)
         for instruction in ('SOURCE', 'plan --target', 'apply --target',
-                            'full deployment map', 'not --force', 'merge commit',
-                            'installed revision', 'local deviations'):
-            self.assertIn(instruction, frontmatter)
-        for old_area in ('upstream-install-boundaries', 'session-resume-marker-boundary',
-                         'delivery-checkpoint-boundaries'):
+                            'full deployment map', 'not --force', 'revision 104 to 105',
+                            'installed revision', 'local deviations', 'project-owned settings',
+                            'existing ownership opt-ins', 'every installed skill surface',
+                            'Copilot prompt', 'context-budget.json', 'regenerate installed and reader surfaces'):
+            with self.subTest(instruction=instruction):
+                self.assertIn(instruction, frontmatter)
+        for old_area in ('merge-introduced-revision-refresh', 'upstream-install-boundaries',
+                         'session-resume-marker-boundary', 'delivery-checkpoint-boundaries'):
             self.assertNotIn('area: ' + old_area, frontmatter,
                              'Only the current delta belongs in active frontmatter')
+        self.assertNotRegex(raw, rb'(?m)^(?:<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)(?: |$)')
+
+    def test_current_deploy_requires_explicit_coordination_reconciliation(self):
+        frontmatter = (ROOT / 'pack/adapters/INSTALL.md').read_bytes().split(b'---\n', 2)[1].decode('utf-8')
+        deploy = frontmatter.split("deploy: '", 1)[1].split("', summary:", 1)[0]
+        for instruction in ('already explicitly installed coordination',
+                            'coord-core.py install', 'ONCE in the PRIMARY checkout',
+                            'pre-merge-commit', '.gitattributes', 'coord-core.py doctor',
+                            'COORD-REGISTER-NOT-JSONL', 'reclassify', 'authored', '.jsonl',
+                            'after reclassification', 'review',
+                            'Refresh does not run coord install',
+                            'create .agents/session-checks.json', 'enable ownership guards',
+                            'grant trust or permissions', 'select models',
+                            'session checks remain repo-declared and opt-in'):
+            with self.subTest(instruction=instruction):
+                self.assertIn(instruction, deploy)
+        self.assertNotIn('coord install` need not be re-run', deploy,
+                         'The later upstream row cannot cancel the revision 98 hook/attribute migration')
+
+    def test_current_summary_covers_both_upstream_coordination_deltas(self):
+        frontmatter = (ROOT / 'pack/adapters/INSTALL.md').read_bytes().split(b'---\n', 2)[1].decode('utf-8')
+        summary = frontmatter.split("summary: '", 1)[1]
+        for behavior in ('upstream revisions 98 and 99', '41',
+                         'Grok', 'session/set_model', 'session_model_mismatch', 'RUN-GROK-MODEL',
+                         'watcher acknowledgement', 'initialize', 'session/new',
+                         'lease expiry', 'dispatch base', 'RUN-BASE',
+                         'relative glob', 'machine-path-ok', 'py -3',
+                         'repo-declared session checks', 'fail-open',
+                         'merge-register', 'merge-derived', 'exit 1', 'conflict markers',
+                         'staged-markers', 'pre-merge-commit', 'COORD-PRIMARY-WRITE',
+                         'opt-in native ownership', 'gate-stamp', 'suite-lock', 'mutation tooling'):
+            with self.subTest(behavior=behavior):
+                self.assertIn(behavior, summary)
+
+    def test_revision_104_row_and_whole_file_provenance_remain_exact_bytes(self):
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
+        self.assertEqual(7, len(blocks))
+        self.assertIn('Revision 104 — 5 October 2026'.encode('utf-8'), blocks[0])
+        rows = blocks[0].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+        self.assertEqual((1096, 'ab8f69cc5198fcb8c2732083b4794e9c1daeca0bbd429f8bab6268e4da3db7a1'),
+                         (len(rows), hashlib.sha256(rows).hexdigest()),
+                         'Archive the complete previous active row verbatim')
+        prefix, frontmatter, body = raw.split(b'---\n', 2)
+        for block in blocks[:2]:
+            self.assertEqual(1, body.count(block + b'\n\n'))
+            body = body.replace(block + b'\n\n', b'', 1)
+        # Reverse only the necessary JSONL-only upstream policy correction.
+        new_guidance = (b'session has an unresolved decision request it sent; every path it cannot evaluate exits 0. Keep\n'
+            b'`docs/notes/rulings.md: authored` below the managed block of `.agents/artifacts.yml` so it is edited\n'
+            b'by its designated session and integrated by reviewed merge; `register` is only for `.jsonl` ledgers,\n'
+            b'not Markdown ruling headings.')
+        old_guidance = (b'session has an unresolved decision request it sent; every path it cannot evaluate exits 0. Add\n'
+            b'`docs/notes/rulings.md: register` below the managed block of `.agents/artifacts.yml` so a join merges\n'
+            b'rulings by union.')
+        self.assertEqual(1, body.count(new_guidance))
+        body = body.replace(new_guidance, old_guidance, 1)
+        self.assertEqual((256805, '96c6c4fc94067a7fce8643ee01ee0055eb4a3ac6dab228519f5bd6426b408c0a'),
+                         (len(body), hashlib.sha256(body).hexdigest()),
+                         'Removing only new archives must recover the full revision 104 body')
+        old_frontmatter = frontmatter.split(b'changes:\n', 1)[0] + b'changes:\n' + rows + b'\n'
+        old_frontmatter = old_frontmatter.replace(b'revision: 105\n', b'revision: 104\n', 1)
+        old_frontmatter = old_frontmatter.replace(b"bundle_version: '2026.10.10.1'",
+                                                  b"bundle_version: '2026.10.05.2'", 1)
+        recovered = b'---\n'.join((prefix, old_frontmatter, body))
+        self.assertEqual((258778, '0938e861737e33098342dbc4c4674f12721e5166d3686f3fd93b5d2f95e3c134'),
+                         (len(recovered), hashlib.sha256(recovered).hexdigest()),
+                         'No unauthorized frontmatter or presentation edits outside the current delta')
+
+    def test_upstream_98_99_rows_retained_verbatim_with_distinct_provenance(self):
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
+        self.assertEqual(7, len(blocks))
+        self.assertIn('Upstream revisions 98 and 99 — 10 October 2026'.encode('utf-8'), blocks[1])
+        self.assertIn(b'7ea5dea861ef3893628cdc3cbf80e18b96e09bf4', blocks[1])
+        self.assertIn(b'upstream revision 99 is not the earlier contribution revision 99', blocks[1])
+        rows = blocks[1].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0].splitlines()
+        self.assertEqual((
+            (2271, 'eb9f861d9660d7dc0b5da3fe569e661cb8fc395990b0596e3545cf3faabe6f70'),
+            (2526, '8be15c23f501fe2e2dc72651c40db6545bdd2865b2158a3baaab5455d1660a70'),
+        ), tuple((len(row), hashlib.sha256(row).hexdigest()) for row in rows))
+        for row in rows:
+            self.assertEqual(1, raw.count(row), 'Retain each raw upstream row exactly once')
+        self.assertIn(b'area: adoption-quality', blocks[-1],
+                      'The earlier contribution revision 99 remains in its original history')
 
     def test_previous_delta_and_entire_archive_remain_exact_bytes(self):
         raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
         blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
-        self.assertEqual(5, len(blocks))
-        self.assertIn('Revision 103 — 5 October 2026'.encode('utf-8'), blocks[0])
-        rows = blocks[0].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+        self.assertEqual(7, len(blocks))
+        previous_blocks = blocks[2:]
+        self.assertIn('Revision 103 — 5 October 2026'.encode('utf-8'), previous_blocks[0])
+        rows = previous_blocks[0].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
         self.assertEqual((3244, '7155ca612947aee7eb7f298d3c797dfffbb2641e2703ac35ba7a402da8f10e31'),
                          (len(rows), hashlib.sha256(rows).hexdigest()),
                          'Move the complete previous changes rows without rewriting them')
@@ -73,8 +186,8 @@ class UpstreamRefreshMetadataTests(unittest.TestCase):
                        b'README.md', b'OVERVIEW.md', b'context-budget.json'):
             with self.subTest(previous_source=source):
                 self.assertIn(b"'" + source + b"'", rows)
-        self.assertIn('Revision 102 — 3 October 2026'.encode('utf-8'), blocks[1])
-        row102 = blocks[1].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+        self.assertIn('Revision 102 — 3 October 2026'.encode('utf-8'), previous_blocks[1])
+        row102 = previous_blocks[1].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
         self.assertEqual('37c677dc788ac371b1bf4716522f9d23367068ac0e914678b46fc2a2deeabfea',
                          hashlib.sha256(row102).hexdigest())
         # Complete raw collapsed blocks, including all long original history rows.
@@ -85,13 +198,24 @@ class UpstreamRefreshMetadataTests(unittest.TestCase):
             (753, 'c6b40766a5fc4f6ea47f001ed4e292dddce725204c5b00962f0910a0ff9eb674'),
             (187189, '1dc4d0d7b3cc4df881a208f02c8ce3ac02a907488f1a1b5c3df390eee4c462f7'),
         )
-        self.assertEqual(expected, tuple((len(b), hashlib.sha256(b).hexdigest()) for b in blocks[1:]))
-        # Removing only the newly inserted wrapper recovers the entire previous
-        # body verbatim, including non-collapsed reader guidance.
+        self.assertEqual(expected, tuple((len(b), hashlib.sha256(b).hexdigest()) for b in previous_blocks[1:]))
+        # Removing only the newly inserted wrappers recovers the entire previous
+        # body verbatim, including non-collapsed reader guidance. Retain the older
+        # revision 103-to-104 recovery oracle as well as the new whole-file one.
         body = raw.split(b'---\n', 2)[2]
-        previous_body = body.replace(blocks[0] + b'\n\n', b'', 1)
+        for block in blocks[:3]:
+            self.assertEqual(1, body.count(block + b'\n\n'))
+            body = body.replace(block + b'\n\n', b'', 1)
+        body = body.replace(
+            b'session has an unresolved decision request it sent; every path it cannot evaluate exits 0. Keep\n'
+            b'`docs/notes/rulings.md: authored` below the managed block of `.agents/artifacts.yml` so it is edited\n'
+            b'by its designated session and integrated by reviewed merge; `register` is only for `.jsonl` ledgers,\n'
+            b'not Markdown ruling headings.',
+            b'session has an unresolved decision request it sent; every path it cannot evaluate exits 0. Add\n'
+            b'`docs/notes/rulings.md: register` below the managed block of `.agents/artifacts.yml` so a join merges\n'
+            b'rulings by union.', 1)
         self.assertEqual((253406, 'c1c10bffd3420f8138d0248a42d9f4cdb48f1bca5a008155963ad3732e1fad81'),
-                         (len(previous_body), hashlib.sha256(previous_body).hexdigest()))
+                         (len(body), hashlib.sha256(body).hexdigest()))
 
 
 class MergeIntroducedRevisionRefreshTests(unittest.TestCase):
@@ -158,15 +282,19 @@ class MergeIntroducedRevisionRefreshTests(unittest.TestCase):
             local_extension = b'\nLocal extension must survive.\n'
             installed_skill.write_bytes(installed_skill.read_bytes() + local_extension)
             latest_install = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+            revision_match = re.search(rb'(?m)^revision: (\d+)$', latest_install)
+            self.assertIsNotNone(revision_match)
+            assert revision_match is not None
+            source_revision = int(revision_match.group(1))
             install.write_bytes(latest_install)
             new_instruction = b'New upstream instruction must survive.\n\n'
             latest_skill = original.replace(b'# ', new_instruction + b'# ', 1)
             skill.write_bytes(latest_skill)
             git('add', 'pack')
-            git('commit', '-m', 'Synthetic revision 104 instruction')
+            git('commit', '-m', 'Synthetic latest revision instruction')
 
             plan = apply('plan')
-            self.assertEqual((104, 103), (plan['source_revision'], plan['target_revision']))
+            self.assertEqual((source_revision, 103), (plan['source_revision'], plan['target_revision']))
             self.assertEqual('MERGE', next(row['action'] for row in plan['rows']
                                             if row['path'] == '.claude/skills/also/SKILL.md'))
             apply('apply')
@@ -224,6 +352,10 @@ class Existing102RefreshTests(unittest.TestCase):
             changed = [*changed_text, 'context-budget.json', 'adapters/INSTALL.md',
                        *('adapters/hooks/' + name for name in configs)]
             latest = {name: (source / 'pack' / name).read_bytes() for name in changed}
+            revision_match = re.search(rb'(?m)^revision: (\d+)$', latest['adapters/INSTALL.md'])
+            self.assertIsNotNone(revision_match)
+            assert revision_match is not None
+            source_revision = int(revision_match.group(1))
             for name in changed_text:
                 with (source / 'pack' / name).open('ab') as stream:
                     stream.write(b'\n# Synthetic revision102 baseline, not published source.\n')
@@ -294,7 +426,7 @@ class Existing102RefreshTests(unittest.TestCase):
             self.assertEqual(latest['adapters/copilot/prompts/addpacktorepo.prompt.md'],
                              (target / '.github/prompts/addpacktorepo.prompt.md').read_bytes())
             self.assertEqual(latest['adapters/INSTALL.md'], (target / 'docs/ai-forward-pack/INSTALL.md').read_bytes())
-            self.assertEqual(104, plan['source_revision'])
+            self.assertEqual(source_revision, plan['source_revision'])
             self.assertEqual(102, plan['target_revision'])
             self.assertEqual('UPDATE', next(row['action'] for row in plan['rows']
                                            if row['path'] == 'docs/ai-forward-pack/hooks/session-start.py'))

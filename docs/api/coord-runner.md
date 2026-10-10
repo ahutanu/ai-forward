@@ -66,6 +66,16 @@ _(no docstring — coverage gap)_
 
 ## Functions
 
+### `housekeeping_check(check, lease, epoch)`
+
+One bounded leader check for a caller with no operation deadline (RUN-B).
+
+True while authority stands. A definitive refusal or a changed epoch ends it at once. A
+check that only ran slow (LeaderCheckSlow) is not lost authority while the last observed
+lease expiry is more than one check window away; the caller checks again on its next
+tick, so the dispatch loop never blocks for longer than one check. `check(window)` returns
+a leader row, or None for a renewal, which carries no row.
+
 ### `load_module(name, filename)`
 
 **Coverage gap** — no docstring in the source.
@@ -98,6 +108,15 @@ An owned child gets a cleanup opportunity when the attachment CLI is stopped.
 
 **Coverage gap** — no docstring in the source.
 
+### `dispatch_base(cwd, contract)`
+
+The commit every worker tree starts from: the contract's `base` (a branch, tag or
+commit) when it names one, else the invoking checkout's HEAD.
+
+BASE-A (x-harness-x-model-bench, 2026-10-04): with HEAD as the only base, a dirty primary
+froze every dispatch, because the integration head was a branch the primary could not
+fast-forward to. The base is resolved once, here, and pinned in the manifest as a sha.
+
 ### `identity(value)`
 
 **Coverage gap** — no docstring in the source.
@@ -113,6 +132,14 @@ An owned child gets a cleanup opportunity when the attachment CLI is stopped.
 ### `copilot_model(argv)`
 
 **Coverage gap** — no docstring in the source.
+
+### `expected_model(worker)`
+
+The model the transport must select and confirm before any prompt, or None.
+
+SERVE-A (x-harness-x-model-bench run w2-g3-e1e4): a Grok argv pin (-m / --model) was never
+sent as session/set_model, so Grok's ACP default answered instead. An unpinned Grok worker
+keeps the earlier behaviour; an ambiguous pin is refused.
 
 ### `copilot_model_evidence(session_id, env, expected)`
 
@@ -136,5 +163,5 @@ Require the native exact-ID policy before preparation and fingerprinting.
 
 ## Coverage
 
-- Public functions: **17** · documented: **3** (**18%**)
+- Public functions: **20** · documented: **6** (**30%**)
 - Undocumented (recorded, not invented): `load_module`, `require`, `encoded`, `digest`, `read_json`, `private_write`, `git`, `identity`, `text`, `integer`, `copilot_model`, `relative_path`, `child_env`, `file_hash`

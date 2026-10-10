@@ -747,5 +747,170 @@ class TheFirstHopIsClosedByRunningTheSourcesOwnCopy(unittest.TestCase):
         self.assertIn("# pack-apply: decline spikes/", text, "and the record must survive")
 
 
+class RevisionCollisionSourceHistoryTests(unittest.TestCase):
+    """A revision number is not an identity across independent Git lineages."""
+
+    def _history(self, folder):
+        source = pathlib.Path(folder) / 'source'
+        source.mkdir()
+
+        def git(*args, check=True):
+            result = subprocess.run(
+                ['git', '-c', 'core.autocrlf=false', '-c', 'user.name=Fixture',
+                 '-c', 'user.email=fixture@example.invalid', *args], cwd=source,
+                capture_output=True, text=True, timeout=30)
+            if check:
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            return result.stdout.strip()
+
+        def install(revision, lineage):
+            return '---\nrevision: {}\nlineage: {}\n---\nFull immutable installation guidance: {}.\n'.format(
+                revision, lineage, lineage)
+
+        git('init', '-q')
+        _w(source, 'pack/adapters/INSTALL.md', install(98, 'common'))
+        _w(source, 'pack/README.md', 'Common instructions.\n\nStable paragraph.\n\nEnd.\n')
+        git('add', 'pack')
+        git('commit', '-qm', 'Common revision 98')
+        common = git('rev-parse', 'HEAD')
+        histories = []
+        for lineage in ('earlier', 'upstream'):
+            git('checkout', '-qb', lineage, common)
+            old_install = install(99, lineage)
+            old_readme = '{} instructions.\n\nStable paragraph.\n\nEnd.\n'.format(lineage)
+            _w(source, 'pack/adapters/INSTALL.md', old_install)
+            _w(source, 'pack/README.md', old_readme)
+            git('add', 'pack')
+            git('commit', '-qm', 'Independent {} revision 99'.format(lineage))
+            histories.append((old_install, old_readme, git('rev-parse', 'HEAD')))
+        # Same-number continuation: provenance must search full INSTALL history,
+        # not just the commit that introduced the numeric revision.
+        old_install = install(99, 'upstream-corrected')
+        old_readme = 'Corrected upstream instructions.\n\nStable paragraph.\n\nEnd.\n'
+        _w(source, 'pack/adapters/INSTALL.md', old_install)
+        _w(source, 'pack/README.md', old_readme)
+        git('add', 'pack')
+        git('commit', '-qm', 'Correct guidance without renumbering revision 99')
+        histories.append((old_install, old_readme, git('rev-parse', 'HEAD')))
+        git('merge', '--no-ff', '--no-commit', 'earlier', check=False)
+        latest_install = install(105, 'integrated')
+        latest_readme = 'Latest integrated instructions.\n\nStable paragraph.\n\nEnd.\n'
+        _w(source, 'pack/adapters/INSTALL.md', latest_install)
+        _w(source, 'pack/README.md', latest_readme)
+        git('add', 'pack')
+        git('commit', '-qm', 'Integrated revision 105 with both parents')
+        self.assertEqual(3, len(git('rev-list', '--parents', '-n', '1', 'HEAD').split()))
+        return source, histories, latest_install, latest_readme
+
+    def test_duplicate_revision_uses_installed_full_guidance_for_each_lineage(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source, histories, latest_install, latest_readme = self._history(folder)
+            local_note = '\nProject-specific README note.\n'
+            for index, (installed, original, sha) in enumerate(histories):
+                with self.subTest(installed_sha=sha):
+                    target = pathlib.Path(folder) / str(index)
+                    _w(target, 'docs/ai-forward-pack/INSTALL.md', installed)
+                    dest = _w(target, 'docs/ai-forward-pack/README.md', original + local_note)
+                    os.chmod(dest, 0o755)
+                    app = pa.Applier(str(source), str(target), dry=True)
+                    app.place('bundle', 'README.md', dest, latest_readme)
+                    self.assertIn(('docs/ai-forward-pack/README.md', 'MERGE'), _rows(app.rows))
+                    self.assertEqual(original + local_note, pathlib.Path(dest).read_text())
+                    app = pa.Applier(str(source), str(target), dry=False)
+                    app.place('bundle', 'README.md', dest, latest_readme)
+                    self.assertEqual(latest_readme + local_note, pathlib.Path(dest).read_text())
+                    self.assertEqual(0o111, os.stat(dest).st_mode & 0o111)
+                    _w(target, 'docs/ai-forward-pack/INSTALL.md', latest_install)
+                    repeat = pa.Applier(str(source), str(target), dry=False)
+                    repeat.place('bundle', 'README.md', dest, latest_readme)
+                    self.assertIn(('docs/ai-forward-pack/README.md', 'KEEP'), _rows(repeat.rows))
+                    self.assertEqual(latest_readme + local_note, pathlib.Path(dest).read_text())
+
+
+    def test_identical_guidance_with_different_pack_bytes_is_ambiguous_per_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source, histories, latest_install, latest = self._history(folder)
+            installed, original, _ = histories[1]
+            _w(source, 'pack/adapters/INSTALL.md', installed)
+            _w(source, 'pack/README.md', 'Different pack bytes under identical guidance.\n')
+            for message in ('Ambiguous revision 99 bytes', 'Return to revision 105'):
+                subprocess.run(['git', '-C', str(source), 'add', 'pack'], check=True)
+                subprocess.run(['git', '-C', str(source), '-c', 'user.name=Fixture',
+                                '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', message], check=True)
+                _w(source, 'pack/adapters/INSTALL.md', latest_install)
+                _w(source, 'pack/README.md', latest)
+            target = pathlib.Path(folder) / 'target'
+            _w(target, 'docs/ai-forward-pack/INSTALL.md', installed)
+            dest = _w(target, 'docs/ai-forward-pack/README.md', original)
+            app = pa.Applier(str(source), str(target), dry=False)
+            app.place('bundle', 'README.md', dest, latest)
+            self.assertIn(('docs/ai-forward-pack/README.md', 'CONFLICT'), _rows(app.rows))
+            self.assertEqual(original, pathlib.Path(dest).read_text())
+            # Multiple matching snapshots are fine when this file's bytes agree.
+            self.assertEqual(installed, app._old_pack_text('adapters/INSTALL.md'))
+
+    def test_unknown_installed_guidance_has_no_numeric_revision_fallback(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source, histories, _, latest = self._history(folder)
+            target = pathlib.Path(folder) / 'target'
+            installed, original, _ = histories[0]
+            _w(target, 'docs/ai-forward-pack/INSTALL.md', installed + 'Unknown local guidance.\n')
+            dest = _w(target, 'docs/ai-forward-pack/README.md', original)
+            app = pa.Applier(str(source), str(target), dry=False)
+            app.place('bundle', 'README.md', dest, latest)
+            self.assertIn(('docs/ai-forward-pack/README.md', 'CONFLICT'), _rows(app.rows))
+            self.assertEqual(original, pathlib.Path(dest).read_text())
+            self.assertEqual(latest, _r(target, 'docs/ai-forward-pack/conflicts/docs/ai-forward-pack/README.md'))
+
+    def test_local_overlap_still_conflicts_with_known_lineage(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source, histories, _, latest = self._history(folder)
+            target = pathlib.Path(folder) / 'target'
+            installed, _, _ = histories[1]
+            _w(target, 'docs/ai-forward-pack/INSTALL.md', installed)
+            local = 'Local replacement instructions.\n\nStable paragraph.\n\nEnd.\n'
+            dest = _w(target, 'docs/ai-forward-pack/README.md', local)
+            app = pa.Applier(str(source), str(target), dry=False)
+            app.place('bundle', 'README.md', dest, latest)
+            self.assertIn(('docs/ai-forward-pack/README.md', 'CONFLICT'), _rows(app.rows))
+            self.assertEqual(local, pathlib.Path(dest).read_text())
+
+    def test_provenance_is_captured_before_install_metadata_advances(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source, histories, latest_install, latest = self._history(folder)
+            target = pathlib.Path(folder) / 'target'
+            installed, original, _ = histories[1]
+            _w(target, 'docs/ai-forward-pack/INSTALL.md', installed)
+            dest = _w(target, 'docs/ai-forward-pack/README.md', original)
+            app = pa.Applier(str(source), str(target), dry=False)
+            _w(target, 'docs/ai-forward-pack/INSTALL.md', latest_install)
+            app.place('bundle', 'README.md', dest, latest)
+            self.assertIn(('docs/ai-forward-pack/README.md', 'UPDATE'), _rows(app.rows))
+            self.assertEqual(latest, pathlib.Path(dest).read_text())
+
+
+class SessionCheckDeclarationPortabilityTests(unittest.TestCase):
+    def test_declared_checks_are_trackable_but_runtime_and_project_policy_stay_owned(self):
+        with tempfile.TemporaryDirectory() as target:
+            subprocess.run(['git', 'init', '-q', target], check=True)
+            declaration = _w(target, '.agents/session-checks.json', '{"checks": []}\n')
+            private = _w(target, '.agents/private.json', '{"local": true}\n')
+            rows = pa.Applier(str(ROOT), target, dry=False, install=True, baselines=False).run()
+            self.assertFalse([row for row in rows if row['status'] == 'fail'])
+            self.assertEqual('{"checks": []}\n', pathlib.Path(declaration).read_text(encoding='utf-8'))
+            for name, expected in [('.agents/session-checks.json', 1), ('.agents/private.json', 0),
+                                   ('.agents/log/audit/.run-starts.json', 0),
+                                   ('.agents/log/audit/audit-log.jsonl', 1)]:
+                result = subprocess.run(['git', '-C', target, 'check-ignore', '--quiet', name])
+                self.assertEqual(expected, result.returncode, name)
+            subprocess.run(['git', '-C', target, 'add', '.agents/session-checks.json'], check=True)
+            self.assertEqual('.agents/session-checks.json', subprocess.check_output(
+                ['git', '-C', target, 'ls-files', '.agents/session-checks.json'], text=True).strip())
+            before = _r(target, '.gitignore')
+            pa.Applier(str(ROOT), target, dry=False, install=True, baselines=False).run()
+            self.assertEqual(before, _r(target, '.gitignore'))
+            self.assertEqual('{"local": true}\n', pathlib.Path(private).read_text(encoding='utf-8'))
+
+
 if __name__ == "__main__":
     unittest.main()

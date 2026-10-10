@@ -4,9 +4,10 @@ Design: docs/design/coord-federation-phase3.md (test plan Q6..Q14).
 
 Q7 leads, and is written to fail first. Spike S12b established the hazard: a merge driver
 that exits non-zero leaves the file UNMERGED, carrying OURS content, with NO conflict
-markers. It looks clean. `git add .` then commits ours and silently discards theirs. So the
-driver must never exit non-zero -- on any internal failure it writes conventional conflict
-markers itself, and the failure becomes visible in the file rather than hidden in the index.
+markers. It looks clean. `git add .` then commits ours and silently discards theirs. So on
+any path it cannot resolve the driver writes conventional conflict markers itself, and the
+failure becomes visible in the file rather than hidden in the index. It then exits 1 (REG-C,
+2026-10-05): with exit 0, `git merge` reads the marker file as clean and auto-commits it.
 
 Q11 is the highest-severity case in the phase: a registry that marks a source tree `derived`
 would authorise a merge to overwrite authored work.
@@ -82,13 +83,14 @@ class MergeDriverTests(DerivedCase):
         b = self.write("tmp_B", theirs)    # %B - theirs
         return a, o, b
 
-    def test_Q7_driver_writes_conflict_markers_and_exits_zero_when_it_cannot_resolve(self):
-        """Q7 / H4 / S12b. THE case that can silently discard someone's work.
+    def test_Q7_driver_writes_conflict_markers_and_exits_one_when_it_cannot_resolve(self):
+        """Q7 / H4 / S12b / REG-C. THE case that can silently discard someone's work.
 
-        A driver exiting non-zero leaves an unmerged file with OURS content and no markers.
-        It looks clean; `git add .` commits ours and loses theirs. So whenever the driver
-        cannot resolve safely it writes the markers itself and exits 0 -- the failure
-        becomes visible in the file, where a human and `git diff --check` both see it.
+        A driver exiting non-zero with NO markers leaves an unmerged file with OURS content.
+        It looks clean; `git add .` commits ours and loses theirs (S12b). A driver exiting 0
+        WITH markers lets `git merge` auto-commit the markers (REG-C). So whenever the driver
+        cannot resolve safely it writes the markers itself AND exits 1 -- git stops, and the
+        failure is visible in the file, where a human and `git diff --check` both see it.
 
         Here the registry is unparseable, so nothing can be classified.
         """
@@ -99,7 +101,7 @@ class MergeDriverTests(DerivedCase):
         rc = self.m.cmd_merge_derived(self.root, self.repo, str(a), str(o), str(b),
                                       "docs/gen.txt")
 
-        self.assertEqual(rc, 0, "a non-zero exit leaves a clean-looking unmerged file")
+        self.assertEqual(rc, 1, "exit 0 lets git auto-commit the marker file (REG-C)")
         content = a.read_text(encoding="utf-8")
         self.assertIn(CONFLICT_START, content, "could not resolve, yet wrote no marker")
         self.assertIn(CONFLICT_MID, content)
@@ -142,7 +144,7 @@ class MergeDriverTests(DerivedCase):
         rc = self.m.cmd_merge_derived(self.root, self.repo, str(a), str(o), str(b),
                                       "src/Ingest/Reader.cs")
 
-        self.assertEqual(rc, 0, "the driver must still not exit non-zero")
+        self.assertEqual(rc, 1, "an unresolved path must stop git, markers and all (REG-C)")
         content = a.read_text(encoding="utf-8")
         self.assertIn(CONFLICT_START, content,
                       "an unclassified path was resolved instead of conflicted")

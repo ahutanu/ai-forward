@@ -55,6 +55,57 @@ class InstalledSessionResumeTests(unittest.TestCase):
                 finally:
                     fixture.doCleanups()
 
+    def test_declared_startup_checks_run_without_waiving_reviewed_product_drift(self):
+        for plain in (False, True):
+            for modifies_product in (False, True):
+                with self.subTest(project='plain' if plain else 'git', mutation=modifies_product):
+                    fixture = guards.DeliveryCheckpointGuardTests('runTest')
+                    fixture.setUp()
+                    try:
+                        rows = pa.Applier(str(ROOT), str(fixture.repo), dry=False,
+                                          install=True, baselines=False).run()
+                        self.assertFalse([row for row in rows if row['status'] == 'fail'])
+                        installed = fixture.repo / 'docs/ai-forward-pack'
+                        check = fixture.repo / 'startup_check.py'
+                        check.write_text(
+                            'from pathlib import Path\nimport sys\n'
+                            'Path(sys.argv[1]).write_text("observed", encoding="utf-8")\n'
+                            + ('Path("app.py").write_text("changed by declared check", encoding="utf-8")\n'
+                               if modifies_product else ''), encoding='utf-8')
+                        external = Path(fixture.tmp.name) / 'startup-observed.txt'
+                        settings = fixture.repo / '.agents/session-checks.json'
+                        settings.write_text(json.dumps({'checks': [{'name': 'declared check',
+                            'argv': ['{python}', str(check), str(external)],
+                            'remedy': 'Inspect the startup check result.'}]}), encoding='utf-8')
+                        # Native hosts start once before the reviewed checkpoint.
+                        # Include that seam so normal Python import caches predate review.
+                        subprocess.run([sys.executable, str(installed / 'hooks/session-start.py'),
+                            '--host', 'claude'], input=json.dumps({'hook_event_name': 'SessionStart',
+                            'session_id': 'initial-declared-fixture', 'cwd': str(fixture.repo)}),
+                            cwd=fixture.repo, capture_output=True, text=True, encoding='utf-8',
+                            check=True, timeout=30)
+                        with mock.patch.object(fixtures, 'SCRIPT', installed / 'scripts/delivery.py'):
+                            fixture.reviewed(tier='T1', plain=plain)
+                            proof = fixture.write('permission-proof.json', {'observed': 'paused fixture'})
+                            paused = fixture.run_cli('pause', '--task', 'demo', '--kind', 'permission',
+                                '--authority', 'human', '--question', 'Allow check?',
+                                '--actor', 'author', '--evidence', proof)
+                            receipt = fixture.receipt(paused)
+                            result = subprocess.run([sys.executable, str(installed / 'hooks/session-start.py'),
+                                '--host', 'claude'], input=json.dumps({'hook_event_name': 'SessionStart',
+                                'session_id': 'declared-fixture', 'cwd': str(fixture.repo)}),
+                                cwd=fixture.repo, capture_output=True, text=True, encoding='utf-8', timeout=30)
+                            self.assertEqual(0, result.returncode, result.stderr)
+                            self.assertEqual('observed', external.read_text(encoding='utf-8'))
+                            if modifies_product:
+                                failure = fixture.run_cli('resume', '--task', 'demo', '--receipt', receipt, ok=False)
+                                self.assertIn('input drift:', failure.stderr)
+                            else:
+                                self.assertEqual('verify', fixture.run_cli('resume', '--task', 'demo',
+                                    '--receipt', receipt)['next'])
+                    finally:
+                        fixture.doCleanups()
+
     def test_runtime_marker_exclusions_do_not_hide_durable_records_or_product_edits(self):
         for plain in (False, True):
             with self.subTest(project='plain' if plain else 'git'):

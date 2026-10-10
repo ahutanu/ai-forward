@@ -481,8 +481,16 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(("complete", 2, 2, "1.0.41"), (
             result["code"], result["turns_completed"], result["compatibility_responses"], result["reported_version"]))
 
+    def test_watcher_response_before_session_new_response_is_accepted(self):
+        # XPORT-A, measured 2026-10-03 on grok 1.0.41 (x-harness-x-model-bench runs w2-g1-e1e4 and
+        # w2-enva-e1e4): the same exact acknowledgement races ahead of the session/new response.
+        # The in-memory cases (reloaded 0, the floor, foreign ids) are test_coord_transport_grok_session_new.py.
+        result = self.run_peer("watcher_early")
+        self.assertEqual(("complete", 2, 1), (
+            result["code"], result["turns_completed"], result["compatibility_responses"]))
+
     def test_watcher_other_profile_phase_shape_and_ids_remain_rejected(self):
-        for suffix in ("early", "other_version", "prerelease_version", "no_shell", "string_shell", "agentinfo_only",
+        for suffix in ("other_version", "prerelease_version", "no_shell", "string_shell", "agentinfo_only",
                        "extra", "inner_extra", "bool", "float", "other_id", "bad_result"):
             with self.subTest(suffix=suffix):
                 result = self.run_peer("watcher_" + suffix)

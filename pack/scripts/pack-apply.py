@@ -202,6 +202,7 @@ GITIGNORE_LINES = ["*.jsonl.lock", "spikes/", "docs/audit/.run-starts.json",
                    "docs/audit/.run-starts.json.tmp",
                    ".agents/*", "!.agents/artifacts.yml", "!.agents/log/",
                    "!.agents/skills*", "!.agents/hooks.json", "!.agents/rules*",
+                   "!.agents/session-checks.json",
                    ".agents/mail/", ".agents/log/audit/.run-starts.json",
                    ".agents/log/audit/.run-starts.json.tmp"]
 # D10 (ratified 2026-09-19): the coord ledgers `.agents/log/` are TRACKED by default - git is the
@@ -361,9 +362,11 @@ class Applier(object):
         self.baselines = baselines
         self.allow_stale = allow_stale
         self.rows = []
-        self.old_pack_sha = None
+        self.old_pack_shas = None
         self.source_rev, self.source_meta = self._source_revision()
         self.target_rev = self._target_revision()
+        # Snapshot provenance before apply advances the installed INSTALL.md.
+        self.target_install_text = read(os.path.join(self.target, "docs", "ai-forward-pack", "INSTALL.md"))
 
     def _project_name(self):
         """The TARGET repo's canonical name -- never `basename(target)` (class PACK-P).
@@ -437,22 +440,38 @@ class Applier(object):
         return int(rev.group(1)) if rev else None
 
     def _old_pack_text(self, rel):
-        """The pack file as it was at the target's installed revision, from the source's history.
-        None when unresolvable (no git, revision unknown, file did not exist) - then no merge base."""
+        """Resolve installed bytes by full INSTALL provenance, not a revision number.
+
+        Independent lineages can publish the same revision; even one lineage can
+        correct it without renumbering. Compare the immutable installed guidance
+        with reachable source snapshots (including merge-parent comparisons).
+        Missing or ambiguous provenance is not a merge base.
+        """
         if self.target_rev is None or self.target_rev == self.source_rev:
             return None
-        if self.old_pack_sha is None:
-            # The revision may first be introduced by a merge commit. Without -m,
-            # pickaxe hides that merge and can select the later commit which *removes*
-            # the revision; its pack bytes are the new version, not the merge base.
-            rc, out = git(["log", "-m", "--format=%H", "-S", "revision: {0}".format(self.target_rev), "--",
-                           "pack/adapters/INSTALL.md"], self.source)
-            shas = out.split()
-            self.old_pack_sha = shas[-1] if rc == 0 and shas else ""
-        if not self.old_pack_sha:
+        if self.old_pack_shas is None:
+            self.old_pack_shas = []
+            # Include pack-only edits too: identical INSTALL text does not prove
+            # identical pack bytes. Never choose the oldest/newest matching tree.
+            rc, out = git(["log", "--full-history", "-m", "--format=%H", "--", "pack"], self.source)
+            if rc != 0 or self.target_install_text is None:
+                return None
+            installed = self.target_install_text.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
+            for sha in dict.fromkeys(out.split()):
+                rc, guidance = git(["show", sha + ":pack/adapters/INSTALL.md"], self.source)
+                revision = re.search(r"^revision:\s*(\d+)\s*$", guidance, re.M)
+                if (rc == 0 and revision is not None and int(revision.group(1)) == self.target_rev
+                        and guidance.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n") == installed):
+                    self.old_pack_shas.append(sha)
+        if not self.old_pack_shas:
             return None
-        rc, out = git(["show", "{0}:pack/{1}".format(self.old_pack_sha, rel.replace("\\", "/"))], self.source)
-        return out if rc == 0 else None
+        old = None
+        for sha in self.old_pack_shas:
+            rc, text = git(["show", "{0}:pack/{1}".format(sha, rel.replace("\\", "/"))], self.source)
+            if rc != 0 or (old is not None and text != old):
+                return None
+            old = text
+        return old
 
     # ---- primitive writes
     def _write(self, dest, text):

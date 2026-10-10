@@ -197,6 +197,39 @@ class NoMachinePathsLintTests(unittest.TestCase):
             self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
             self.assertIn("artifacts.yml", proc.stdout)
 
+    # HYG-VERIFY (x-harness-x-model-bench, 2026-10-04): three gate findings from a consuming repo.
+    def lint_repo(self, files, attributes=None):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = pathlib.Path(tmp.name)
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+        for rel, text in files.items():
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text(text, encoding="utf-8", newline="\n")
+        if attributes is not None:
+            (root / ".gitattributes").write_text(attributes, encoding="utf-8", newline="\n")
+        subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+        return self.run_lint(cwd=root)
+
+    def test_a_relative_glob_or_dot_segment_named_home_is_not_a_machine_path(self):
+        proc = self.lint_repo({"tests/scrub.py": 'GLOBS = ["cells/*/home/config.json", "./home/x", "?/Users/a"]\n'})
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        proc = self.lint_repo({"tests/scrub.py": 'HOME = "/home/alice/x"\n'})  # machine-path-ok: the fixture
+        self.assertEqual(proc.returncode, 1, "an absolute home path must still be refused")
+
+    def test_a_byte_exact_record_opts_out_per_file_through_gitattributes(self):
+        record = {"tests/fixtures/rec/a.jsonl": '{"cwd": "C:/Users/operator/.agents/skills"}\n'}  # machine-path-ok: the fixture
+        self.assertEqual(self.lint_repo(record).returncode, 1, "without the attribute the record is refused")
+        proc = self.lint_repo(record, attributes="tests/fixtures/rec/*.jsonl machine-path-ok\n")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        proc = self.lint_repo(record, attributes="tests/fixtures/rec/*.jsonl -machine-path-ok\n")
+        self.assertEqual(proc.returncode, 1, "an unset attribute is not an exemption")
+
+    def test_the_fix_text_names_the_windows_interpreter_beside_the_token(self):
+        proc = self.lint_repo({"tests/a.py": 'P = "C:\\Users\\x\\AppData"\n'})
+        self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+        self.assertIn("py -3", proc.stdout, "the remedy names python3 with no Windows substitution")
+
 
 AGY_LAUNCHER = "git -c alias.aif-hook=!sh aif-hook docs/ai-forward-pack/hooks/run-hook.sh "
 

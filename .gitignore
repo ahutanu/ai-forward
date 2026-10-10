@@ -29,6 +29,7 @@ spikes/
 !.agents/artifacts.yml
 !.agents/skills*
 !.agents/hooks.json
+!.agents/session-checks.json
 !.agents/rules*
 !.agents/log/
 .agents/mail/
