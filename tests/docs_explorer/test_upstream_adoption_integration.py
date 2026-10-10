@@ -611,10 +611,15 @@ class UpstreamWorkflowPolicyTests(unittest.TestCase):
             b' tests/docs_explorer/test_copilot_runner.py'
             b' tests/docs_explorer/test_prestart_scope_guidance.py'
             b' tests/docs_explorer/test_delivery_preexecution_gates.py'
+            b' tests/docs_explorer/test_native_repair_runtime_budget.py'
         )
         self.assertEqual(1, jobs.count(repair_tests))
         jobs = jobs.replace(repair_tests, b'', 1)
         unchanged_jobs = jobs.replace(added_tests, b'', 1)
+        unchanged_jobs = unchanged_jobs.replace(
+            b'    # Preserve the complete matrix inventory; Windows filesystem controls need\n'
+            b'    # more than the historical 20-minute cap after the recovery regressions.\n'
+            b'    timeout-minutes: 45', b'    timeout-minutes: 20', 1)
         self.assertEqual('43c5bf864846a145f963e1d05282a6cddbed778571a93dbb89e47be782f9794d',
                          hashlib.sha256(unchanged_jobs).hexdigest())
         self.assertIn(b'os: [ubuntu-latest, macos-latest, windows-latest]', jobs)

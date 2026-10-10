@@ -434,6 +434,31 @@ class PackDoctorCoordinationModeTests(unittest.TestCase):
 
 
 class PackDoctorPortableInvocationTests(unittest.TestCase):
+    def assert_uv_remedy_uses_executable(self, fix, executable):
+        import shlex
+        from pathlib import PureWindowsPath
+        parts = fix.split("`")
+        self.assertEqual(3, len(parts), fix)
+        argv = shlex.split(parts[1])  # The documented uv command uses POSIX quoting, even on Windows.
+        self.assertEqual(["uv", "run", "--no-config", "--no-project", "--python"], argv[:5])
+        self.assertEqual(7, len(argv), argv)
+        path_type = PureWindowsPath if PureWindowsPath(executable).drive else Path
+        self.assertEqual(path_type(executable), path_type(argv[5]))
+        self.assertEqual("docs/ai-forward-pack/scripts/pack-doctor.py", argv[6])
+
+    def test_uv_remedy_oracle_compares_parsed_windows_executable(self):
+        executable = r"C:\Program Files\Python\python.exe"
+        fix = ('use `uv run --no-config --no-project --python '
+               '"C:/Program Files/Python/python.exe" '
+               'docs/ai-forward-pack/scripts/pack-doctor.py` with this existing interpreter')
+        self.assertNotIn(executable, fix)  # The old raw-string oracle is false.
+        self.assert_uv_remedy_uses_executable(fix, executable)
+        for wrong in (fix.replace("python.exe", "other.exe"),
+                      fix.replace("python.exe", "python.exe.backup"),
+                      fix.replace("uv run", "echo uv run")):
+            with self.subTest(wrong=wrong), self.assertRaises(AssertionError):
+                self.assert_uv_remedy_uses_executable(wrong + " " + executable, executable)
+
     @unittest.skipUnless(shutil.which("uv"), "requires an already installed uv; never downloads")
     def test_real_offline_uv_does_not_claim_caller_native_python_readiness(self):
         uv = shutil.which("uv")
@@ -466,7 +491,7 @@ class PackDoctorPortableInvocationTests(unittest.TestCase):
             self.assertIn("not verified", result["detail"])
             self.assertNotIn("documented commands run as written", result["detail"])
             self.assertIn("uv run", result["fix"])
-            self.assertIn(sys.executable, result["fix"])
+            self.assert_uv_remedy_uses_executable(result["fix"], command[command.index("--python") + 1])
 
 
 if __name__ == "__main__":

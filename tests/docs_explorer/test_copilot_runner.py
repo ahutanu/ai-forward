@@ -80,6 +80,43 @@ class CopilotAdmission(unittest.TestCase):
 class CopilotPluginLifecycle(unittest.TestCase):
     """Real installed hook subprocesses, not native host/model qualification."""
 
+    def assert_lifecycle_startup_target(self, lifecycle, expected):
+        import ast
+        assignments = [node for node in ast.parse(lifecycle).body
+                       if isinstance(node, ast.Assign)
+                       and any(isinstance(target, ast.Name) and target.id == "SCRIPTS"
+                               for target in node.targets)]
+        self.assertEqual(1, len(assignments), "expected one literal SCRIPTS mapping")
+        scripts = ast.literal_eval(assignments[0].value)
+        self.assertIsInstance(scripts, dict)
+        self.assertTrue(Path(scripts["session-start.py"]).samefile(expected), scripts)
+
+    def test_lifecycle_target_oracle_accepts_escaped_repr_and_physical_alias(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            physical = root / (r"C:\Users\runneradmin" if os.name != "nt" else "runneradmin")
+            physical.mkdir()
+            target = physical / "session-start.py"
+            target.write_text("# actual hook\n", encoding="utf-8")
+            alias = root / "RUNNER~1"
+            alias.mkdir()
+            expected = alias / target.name
+            os.link(target, expected)
+            wrong = root / "wrong-session-start.py"
+            wrong.write_text("# not the hook\n", encoding="utf-8")
+            lifecycle = "raise RuntimeError('inspection must never execute')\nSCRIPTS = " + repr(
+                {"session-start.py": str(target)}) + "\n"
+            self.assertNotIn(str(expected), lifecycle)  # Old serialized-path oracle fails.
+            self.assertNotIn(str(target), lifecycle)  # Even the physical path is repr-escaped.
+            self.assert_lifecycle_startup_target(lifecycle, target)
+            self.assert_lifecycle_startup_target(lifecycle, expected)
+            with self.assertRaises(AssertionError):
+                self.assert_lifecycle_startup_target(lifecycle, wrong)
+            misleading = lifecycle.replace(repr(str(target)), repr(str(wrong))) + "# " + str(expected)
+            self.assertIn(str(expected), misleading)  # A decoy comment fooled the old oracle.
+            with self.assertRaises(AssertionError):
+                self.assert_lifecycle_startup_target(misleading, expected)
+
     def test_malformed_or_unknown_managed_commands_are_refused_before_writes(self):
         import json
         import shutil
@@ -183,7 +220,8 @@ class CopilotPluginLifecycle(unittest.TestCase):
                     self.assertIn('[COORD, "hook", "--host", "copilot"]',
                                   (plugin / "hooks/hook.py").read_text(encoding="utf-8"))
                     lifecycle = (plugin / "hooks/lifecycle.py").read_text(encoding="utf-8")
-                    self.assertIn(str(project / "docs/ai-forward-pack/hooks/session-start.py"), lifecycle)
+                    self.assert_lifecycle_startup_target(
+                        lifecycle, project / "docs/ai-forward-pack/hooks/session-start.py")
                     for cwd in (project, child):
                         for event in ("SessionStart", "SubagentStart"):
                             session = ("plain" if plain else "git") + "-" + cwd.name + "-" + event

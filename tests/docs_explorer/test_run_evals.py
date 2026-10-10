@@ -1,4 +1,5 @@
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -416,14 +417,46 @@ class DeliverFeatureArtifactTests(unittest.TestCase):
                 self.assertTrue(any("stdout" in failure for failure in failures), failures)
 
     def test_correct_lf_and_crlf_complete_the_positive_oracle(self):
-        for newline in (b"\n", b"\r\n"):
-            with self.subTest(newline=newline):
-                self.module.seed(self.case, str(self.workspace))
-                self.write_app(self.CORRECT_APP)
-                for name in ("app.py", "verify_clamp.py"):
-                    path = self.workspace / name
-                    path.write_bytes(path.read_bytes().replace(b"\n", newline))
-                self.assertEqual([], self.check())
+        contents = {item["path"]: item["content"] for item in self.case["setup"]}
+        contents["app.py"] = self.CORRECT_APP
+        real_open = open
+
+        def windows_seed_writer(path, mode, **kwargs):
+            # Use the real text writer: newline=None translates LF this way on Windows.
+            return real_open(path, mode, newline="\r\n", **kwargs)
+
+        for windows_translation in (False, True):
+            for newline in (b"\n", b"\r\n"):
+                with self.subTest(windows_translation=windows_translation, newline=newline):
+                    if windows_translation:
+                        with mock.patch.object(self.module, "open", side_effect=windows_seed_writer, create=True):
+                            self.module.seed(self.case, str(self.workspace))
+                        with io.TextIOWrapper(io.BytesIO(), encoding="utf-8", newline="\r\n") as writer:
+                            writer.write(self.CORRECT_APP)
+                            writer.flush()
+                            (self.workspace / "app.py").write_bytes(writer.buffer.getvalue())
+                        for name, content in contents.items():
+                            self.assertEqual(content.encode("utf-8").replace(b"\n", b"\r\n"),
+                                             (self.workspace / name).read_bytes())
+                        if newline == b"\r\n":
+                            # Old-code control: replacing LF in native CRLF doubles CR.
+                            for name in contents:
+                                path = self.workspace / name
+                                path.write_bytes(path.read_bytes().replace(b"\n", newline))
+                                self.assertIn(b"\r\r\n", path.read_bytes())
+                            self.assertTrue(any("verifier identity changed" in failure
+                                                for failure in self.check()))
+                    else:
+                        self.module.seed(self.case, str(self.workspace))
+                        self.write_app(self.CORRECT_APP)
+                    # Derive fixture bytes from canonical inputs, never native text output.
+                    for name, content in contents.items():
+                        path = self.workspace / name
+                        expected = content.encode("utf-8").replace(b"\n", newline)
+                        path.write_bytes(content.encode("utf-8").replace(b"\n", newline))
+                        self.assertEqual(expected, path.read_bytes())
+                        self.assertEqual(content, path.read_text(encoding="utf-8"))
+                    self.assertEqual([], self.check())
 
     def test_system_exit_at_import_first_call_or_final_boundary_is_refused(self):
         for stage, content in (

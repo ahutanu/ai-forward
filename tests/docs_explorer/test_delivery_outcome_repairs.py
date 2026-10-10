@@ -668,6 +668,25 @@ class DeliveryOutcomeRepairsTests(unittest.TestCase):
                 self.assertIn("input drift:", self.run_cli("status", "--task", "registered", ok=False).stderr)
                 self.assertEqual(registered["inputs"][-1]["path"], str(markers[0]))
 
+    def test_duration_marker_fixture_accepts_a_symlinked_temporary_root(self):
+        alias = Path(self.tmp.name) / "temporary-root-alias"
+        try:
+            alias.symlink_to(Path(self.tmp.name).resolve(), target_is_directory=True)
+        except OSError:
+            if os.name == "nt":
+                self.skipTest("Host does not permit directory symlink creation")
+            raise
+        aliased_tmp = tempfile.TemporaryDirectory(dir=alias)
+        self.addCleanup(aliased_tmp.cleanup)
+        self.assertNotEqual(Path(aliased_tmp.name), Path(aliased_tmp.name).resolve())
+        original_tmp = self.tmp
+        self.tmp = aliased_tmp
+        try:
+            # Exercise the same fixture and all link/directory safety assertions.
+            self.test_duration_marker_exemption_never_hides_filesystem_links_or_directories()
+        finally:
+            self.tmp = original_tmp
+
     def test_duration_marker_exemption_never_hides_filesystem_links_or_directories(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location("delivery_marker_fixture", SCRIPT)
@@ -677,6 +696,7 @@ class DeliveryOutcomeRepairsTests(unittest.TestCase):
         for plain in (False, True):
             with self.subTest(plain=plain):
                 self.project(f"marker-links-{plain}", plain)
+                self.repo = self.repo.resolve()
                 marker = self.repo / "src/docs/audit/.run-starts.json"
                 marker.parent.mkdir(parents=True)
                 marker.write_text("{}", encoding="utf-8")
