@@ -98,7 +98,7 @@ class CopilotPluginLifecycle(unittest.TestCase):
             physical.mkdir()
             target = physical / "session-start.py"
             target.write_text("# actual hook\n", encoding="utf-8")
-            alias = root / "RUNNER~1"
+            alias = root / "physical-alias"  # Never collide with a native 8.3 alias of the target directory.
             alias.mkdir()
             expected = alias / target.name
             os.link(target, expected)

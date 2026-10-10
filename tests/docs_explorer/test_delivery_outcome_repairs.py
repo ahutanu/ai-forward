@@ -717,7 +717,8 @@ class DeliveryOutcomeRepairsTests(unittest.TestCase):
                 self.assertFalse(helper.runtime_start_marker(marker, self.repo.resolve()))
                 (marker / "durable.json").write_text("{}", encoding="utf-8")
                 observed = helper.snapshot(self.repo, started["local_area"], details=True)
-                self.assertIn("src/docs/audit/.run-starts.json/durable.json", observed["entries"])
+                durable_key = str(Path("src/docs/audit/.run-starts.json/durable.json")) if plain else "src/docs/audit/.run-starts.json/durable.json"
+                self.assertIn(durable_key, observed["entries"])
                 (marker / "durable.json").unlink()
                 marker.rmdir()
                 marker.parent.rmdir()
