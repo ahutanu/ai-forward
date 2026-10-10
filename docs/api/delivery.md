@@ -32,6 +32,7 @@ Conditional delivery routing and local checkpoint integrity, not a workflow runn
 | `--authorization` | _(no help text — coverage gap)_ |
 | `--closure` | _(no help text — coverage gap)_ |
 | `--compiled-id` | _(no help text — coverage gap)_ |
+| `--decision-evidence` | _(no help text — coverage gap)_ |
 | `--evidence` | _(no help text — coverage gap)_ |
 | `--facts` | _(no help text — coverage gap)_ |
 | `--input` | _(no help text — coverage gap)_ |
@@ -41,6 +42,7 @@ Conditional delivery routing and local checkpoint integrity, not a workflow runn
 | `--receipt` | _(no help text — coverage gap)_ |
 | `--repo` | _(no help text — coverage gap)_ |
 | `--review` | _(no help text — coverage gap)_ |
+| `--scope-change` | Explicit agent-recorded human scope reconciliation for this prestart task; not consent authentication |
 | `--stage` | _(no help text — coverage gap)_ |
 | `--state-root` | _(no help text — coverage gap)_ |
 | `--task` | _(no help text — coverage gap)_ |
@@ -67,11 +69,27 @@ Conditional delivery routing and local checkpoint integrity, not a workflow runn
 
 **Coverage gap** — no docstring in the source.
 
+### `runtime_start_marker_name(path, root)`
+
+Match a marker suffix lexically, without granting a runtime exemption.
+
+### `runtime_start_marker(path, root, allow_missing=…)`
+
+Exact regular stores; snapshots may also omit genuinely absent stores.
+
 ### `snapshot(repo, local_area=…, details=…, _depth=…)`
 
 **Coverage gap** — no docstring in the source.
 
 ### `file_record(path)`
+
+**Coverage gap** — no docstring in the source.
+
+### `capture_file(path)`
+
+Interpretation and evidence digest must originate in one byte capture.
+
+### `read_json_record(path)`
 
 **Coverage gap** — no docstring in the source.
 
@@ -87,6 +105,10 @@ Refuse aliases and special files; a missing leaf remains a valid create/delete s
 
 **Coverage gap** — no docstring in the source.
 
+### `compilation(audit_root, compiled_id)`
+
+**Coverage gap** — no docstring in the source.
+
 ### `contract(audit_root, compiled_id)`
 
 **Coverage gap** — no docstring in the source.
@@ -99,7 +121,7 @@ Refuse aliases and special files; a missing leaf remains a valid create/delete s
 
 **Coverage gap** — no docstring in the source.
 
-### `save(path, state)`
+### `save(path, state, reviewed_snapshot=…)`
 
 **Coverage gap** — no docstring in the source.
 
@@ -108,6 +130,21 @@ Refuse aliases and special files; a missing leaf remains a valid create/delete s
 **Coverage gap** — no docstring in the source.
 
 ### `load(repo, task, check_tree=…, state_root=…)`
+
+**Coverage gap** — no docstring in the source.
+
+### `check_prestart(state, repo, task, state_root)`
+
+A recovery pointer, not accepted work or permission to dispatch.
+
+### `check_scope_change(previous, accepted, receipt)`
+
+Validate an agent-recorded explicit change, not authenticate human consent.
+
+The agent must check the original answer's meaning and authority before
+authoring this record; arbitrary nonempty evidence is not reconciliation.
+
+### `check_prestart_conversion(state)`
 
 **Coverage gap** — no docstring in the source.
 
@@ -141,5 +178,5 @@ Refuse aliases and special files; a missing leaf remains a valid create/delete s
 
 ## Coverage
 
-- Public functions: **23** · documented: **1** (**4%**)
-- Undocumented (recorded, not invented): `route`, `read_json`, `digest`, `git`, `identity`, `snapshot`, `file_record`, `check_records`, `compiler`, `contract`, `local_area`, `state_path`, `save`, `view`, `load`, `new_gate`, `resume`, `begin_repair`, `recheck_repair`, `close_outcome`, `execute`, `locked_execute`
+- Public functions: **31** · documented: **6** (**19%**)
+- Undocumented (recorded, not invented): `route`, `read_json`, `digest`, `git`, `identity`, `snapshot`, `file_record`, `read_json_record`, `check_records`, `compiler`, `compilation`, `contract`, `local_area`, `state_path`, `save`, `view`, `load`, `check_prestart_conversion`, `new_gate`, `resume`, `begin_repair`, `recheck_repair`, `close_outcome`, `execute`, `locked_execute`

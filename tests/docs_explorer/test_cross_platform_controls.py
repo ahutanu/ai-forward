@@ -127,8 +127,13 @@ class HookAdapterConformanceTests(unittest.TestCase):
                     self.assertNotIn("../", command, "a path that escapes the repo")
                     self.assertNotRegex(command, r"[A-Za-z]:\\|/Users/|/home/|/opt/homebrew/",  # machine-path-ok: the assertion
                                         "a machine-specific path in a tracked hook config")
-                    self.assertTrue(command.startswith(AGY_LAUNCHER))
-                    self.assertNotIn("$(", command)
+                    if "session-start.py" in command:
+                        import runpy
+                        startup = runpy.run_path(str(REPO / "pack/scripts/pack-apply.py"))["STARTUP_LAUNCHER"]
+                        self.assertEqual(startup + "session-start.py --host grok", command)
+                    else:
+                        self.assertTrue(command.startswith(AGY_LAUNCHER))
+                        self.assertNotIn("$(", command)
 
     @unittest.skipUnless(shutil.which("sh"), "needs a POSIX sh (Git Bash provides one on Windows)")
     def test_the_claude_command_executes_under_sh_with_a_hook_payload(self):
@@ -344,13 +349,24 @@ class CopilotHookShellTests(unittest.TestCase):
         return rows
 
     def test_every_command_copilot_runs_is_one_quote_free_launcher_invocation(self):
+        import runpy
+        startup = runpy.run_path(str(REPO / "pack/scripts/pack-apply.py"))["STARTUP_LAUNCHER"]
         for source, command in self.sources():
             with self.subTest(source=source, command=command):
+                if "session-start.py" in command:
+                    # Only this fixed bootstrap is quoted: sh and PowerShell hold
+                    # it as one argument before Git invokes sh. It is not a cmd
+                    # contract; AGY and ownership retain their measured raw form.
+                    suffix = command.removeprefix(startup)
+                    self.assertTrue(command.startswith(startup), command)
+                    self.assertIn(suffix, ["session-start.py --host " + host
+                                          for host in ("claude", "grok", "copilot")])
+                    continue
                 for token in ("$", "`", "[ ", "'", '"', ";", "&&", "||", "%", "|", "<", ">"):
                     self.assertNotIn(token, command, f"{token!r} is shell-specific: pwsh, cmd.exe and sh read it differently")
                 self.assertTrue(command.startswith(AGY_LAUNCHER), command)
 
-    def assert_every_command_reaches_its_script(self, launch):
+    def assert_every_command_reaches_its_script(self, launch, native="sh"):
         import re
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp) / "a checkout"
@@ -360,6 +376,13 @@ class CopilotHookShellTests(unittest.TestCase):
             subprocess.run(["git", "init", "-q", str(root)], check=True)
             shutil.copyfile(HOOKS / "run-hook.sh", hooks / "run-hook.sh")
             rows = self.sources()
+            if native == "cmd":
+                # Startup's quoted bootstrap is a documented sh/PowerShell
+                # contract. Keep real cmd coverage for all unchanged raw hooks
+                # and ownership; AGY has its separate complete native control.
+                rows = [(source, command) for source, command in rows
+                        if "session-start.py" not in command]
+                self.assertTrue(any(source.startswith("ownership") for source, _ in rows))
             for _source, command in rows:
                 name = re.search(r"([\w-]+\.py)", command).group(1)
                 for folder in (hooks, scripts):
@@ -381,7 +404,7 @@ class CopilotHookShellTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt" and shutil.which("git"), "cmd.exe exists only on Windows")
     def test_every_command_copilot_runs_reaches_its_script_under_cmd(self):
-        self.assert_every_command_reaches_its_script(lambda command: "cmd /d /c " + command)
+        self.assert_every_command_reaches_its_script(lambda command: "cmd /d /c " + command, native="cmd")
 
     @unittest.skipUnless(shutil.which("sh") and shutil.which("git"), "sh or git is absent")
     def test_every_command_copilot_runs_reaches_its_script_under_sh(self):

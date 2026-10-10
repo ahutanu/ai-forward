@@ -1047,7 +1047,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "05c513f9003078a9460c860ed10c7494edd86159f08ffa509a09170fbbc08e28"
+      "sourceSha256": "e5098dc01c82a24a25df5bc8add6dcd3507a4186611a814a6d2905de7ac152f2"
     },
     {
       "id": "api-design-lint",
@@ -1184,7 +1184,7 @@ window.DOCS_INDEX = {
       "phase": "",
       "reviewBy": "2027-03-03",
       "reviewSuggested": [],
-      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 582 public functions across 46 modules, 46% carrying a docstring.",
+      "summary": "Generated API reference for the pack's public surface — the deployed script bundle. 590 public functions across 46 modules, 46% carrying a docstring.",
       "tags": [
         "api",
         "scripts",
@@ -1198,7 +1198,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "f0bdcae257d715716b2fa0b2fff1411be1f00f991667d5a1ceb56975b3c6867c"
+      "sourceSha256": "32cfe8010e02e83104aec2e504fa9b0aa8bbee818eab6bee82e8b6d69e1a7d7b"
     },
     {
       "id": "api-marker-lint",
@@ -1323,7 +1323,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "187714ff0ad017824c34db2c14c8dbd537b333ce5cac02657f13f0ddcf8aa35e"
+      "sourceSha256": "27f6dc3319505d015e722d27c8d52ac3b208e0c7c1594d7c79744aa26d5b5c0b"
     },
     {
       "id": "api-platform_process",
@@ -5613,7 +5613,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "c2149405b2ba19bb92c40dcaa28afdb844812323b9348644ea8e7212aa260450"
+      "sourceSha256": "469fb7a6dd0fae68880441763771baa0804d108047669e3fa547c633d783c738"
     },
     {
       "id": "handbook-glossary",
@@ -6117,7 +6117,7 @@ window.DOCS_INDEX = {
         }
       ],
       "diagrams": [],
-      "sourceSha256": "ed3eea23a6fd91275397cdd77c6fa832ec28cd68499421fe492683ca980769fe"
+      "sourceSha256": "d96b29f9b3075781228bb849dc841a77404690887f038b8b5ce5af6b9f734042"
     },
     {
       "id": "handbook-skill-design-slice",
@@ -12236,5 +12236,5 @@ window.DOCS_INDEX = {
       "description": "Open an interactive knowledge artifact."
     }
   ],
-  "graphSha256": "f84c2a4897ea9cf725c39e42f97adb3e15e9da02a753d0134468809b6b633206"
+  "graphSha256": "8eb2ef84f11bddc3b700e9d4ba08166d5bc0a7b0ddb6ebb1f2fd35c83c42bd64"
 };

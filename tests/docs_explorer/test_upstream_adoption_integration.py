@@ -17,6 +17,36 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def recovered_revision_105_install():
+    """Recover the exact previous source from its raw archive, without Git/cache.
+
+    Older 104/103 oracles deliberately receive this recovered source, so their
+    published expected hashes remain unchanged when a new delta is archived.
+    """
+    raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+    prefix, frontmatter, body = raw.split(b'---\n', 2)
+    blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', body, re.S)
+    if not blocks or 'Revision 105 — 10 October 2026'.encode('utf-8') not in blocks[0]:
+        raise AssertionError('The complete revision105 archive must precede all older history')
+    archive = blocks[0]
+    rows = archive.split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+    if (len(rows), hashlib.sha256(rows).hexdigest()) != (
+            4551, '2e873e2aa09dee95cf70fa0a3a55f309f1b7cdb433bd79bc901ef3e2dd75f09b'):
+        raise AssertionError('The recovered revision105 delta is not byte-exact')
+    if body.count(archive + b'\n\n') != 1:
+        raise AssertionError('The revision105 archive must occur exactly once')
+    body = body.replace(archive + b'\n\n', b'', 1)
+    prior_frontmatter = frontmatter.split(b'changes:\n', 1)[0] + b'changes:\n' + rows + b'\n'
+    prior_frontmatter = prior_frontmatter.replace(b'revision: 106\n', b'revision: 105\n', 1)
+    prior_frontmatter = prior_frontmatter.replace(b"bundle_version: '2026.10.10.2'",
+                                                b"bundle_version: '2026.10.10.1'", 1)
+    recovered = b'---\n'.join((prefix, prior_frontmatter, body))
+    if (len(recovered), hashlib.sha256(recovered).hexdigest()) != (
+            269033, 'a316fe8f9f413ba21a955292edc6fec119a41b3c8744cabafe806f220c4a2051'):
+        raise AssertionError('Reversal must recover the complete revision105 source, not a projection')
+    return recovered
+
+
 class UpstreamAdoptionDocsTests(unittest.TestCase):
     def test_manual_guidance_leaves_explorer_instantiation_to_content_skills(self):
         cases = (
@@ -36,6 +66,104 @@ class UpstreamAdoptionDocsTests(unittest.TestCase):
                 self.assertIn('not copied by install', paragraph)
 
 
+class DeliveryOutcomeRefreshMetadataTests(unittest.TestCase):
+    def test_revision_105_archive_and_entire_body_reversal_preserve_source_bytes(self):
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
+        self.assertEqual(8, len(blocks), 'Add one archive without deleting any existing history')
+        self.assertIn('Revision 105 — 10 October 2026'.encode('utf-8'), blocks[0])
+        rows = blocks[0].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+        self.assertEqual((4551, '2e873e2aa09dee95cf70fa0a3a55f309f1b7cdb433bd79bc901ef3e2dd75f09b'),
+                         (len(rows), hashlib.sha256(rows).hexdigest()),
+                         'Archive the COMPLETE previous active changes, including the long summary')
+        self.assertEqual(1, raw.count(rows), 'The old active delta must occur once, in history')
+        expected_old_blocks = (
+            (1229, '1eb78ac90646167b59ad0685b7d9443d4d56054e677ce9f49f94c44631e14728'),
+            (5454, '28bd8bc19a95ac4ddf298cb5280b155127043f8535353bbc024b37ef788c5832'),
+            (3397, '17d9f0ddea6826eb6961ac843b054a5e1e2779b1650a5f504f08d424875999fa'),
+            (1028, 'b084ebe3a79e98734dcfbf5df1b757990f8f5c3f869e2d20687d075d9149dad3'),
+            (1038, '9a56bc7f409c6c5e5f01cbe0917840cac3d3722a95ecc34465d6d3194443334f'),
+            (753, 'c6b40766a5fc4f6ea47f001ed4e292dddce725204c5b00962f0910a0ff9eb674'),
+            (187189, '1dc4d0d7b3cc4df881a208f02c8ce3ac02a907488f1a1b5c3df390eee4c462f7'),
+        )
+        self.assertEqual(expected_old_blocks,
+                         tuple((len(block), hashlib.sha256(block).hexdigest()) for block in blocks[1:]),
+                         'Every old history byte and its order must remain untouched')
+        prefix, frontmatter, body = raw.split(b'---\n', 2)
+        self.assertEqual(1, body.count(blocks[0] + b'\n\n'))
+        self.assertIn(b'### Prior revisions\n\n' + blocks[0] + b'\n\n' + blocks[1], body)
+        old_body = body.replace(blocks[0] + b'\n\n', b'', 1)
+        self.assertEqual((263605, 'e738c7bda1c73f689955a338d139f6f2e4b578d147e0b85088ebeb07f1d008ab'),
+                         (len(old_body), hashlib.sha256(old_body).hexdigest()),
+                         'Removing only the new archive recovers all revision105 body guidance verbatim')
+        old_frontmatter = frontmatter.split(b'changes:\n', 1)[0] + b'changes:\n' + rows + b'\n'
+        old_frontmatter = old_frontmatter.replace(b'revision: 106\n', b'revision: 105\n', 1)
+        old_frontmatter = old_frontmatter.replace(b"bundle_version: '2026.10.10.2'",
+                                                  b"bundle_version: '2026.10.10.1'", 1)
+        recovered = b'---\n'.join((prefix, old_frontmatter, old_body))
+        self.assertEqual((269033, 'a316fe8f9f413ba21a955292edc6fec119a41b3c8744cabafe806f220c4a2051'),
+                         (len(recovered), hashlib.sha256(recovered).hexdigest()),
+                         'Only revision, bundle version, current delta and one archive may change')
+
+    def test_revision_106_names_seven_repairs_and_preservation_first_refresh(self):
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        frontmatter = raw.split(b'---\n', 2)[1].decode('utf-8')
+        self.assertRegex(frontmatter, r"(?m)^revision: 106$")
+        self.assertIn("bundle_version: '2026.10.10.2'", frontmatter)
+        self.assertEqual(1, frontmatter.count('  - { type: changed,'))
+        self.assertIn('area: delivery-outcome-repairs', frontmatter)
+        self.assertIn('counts: { lenses: 23, skills: 30, knowledge_docs: 40, templates: 29, scripts: 47 }',
+                      frontmatter)
+        paths = re.search(r"paths: \[(.*?)\], deploy:", frontmatter)
+        self.assertIsNotNone(paths, 'The current delta must list its deployed source paths')
+        assert paths is not None
+        named_paths = set(re.findall(r"'([^']+)'", paths.group(1)))
+        required_paths = {
+            'scripts/delivery.py', 'commands/deliver/SKILL.md',
+            'commands/deliver/reference/checkpoints.md', 'adapters/copilot/prompts/deliver.prompt.md',
+            'commands/execute-with-coordination/reference/launch.md',
+            'adapters/copilot/prompts/execute-with-coordination.prompt.md',
+            'evals/cases/deliver-feature-01.json', 'evals/run-evals.py', 'scripts/pack-doctor.py',
+            'adapters/hooks/run-hook.sh', 'adapters/hooks/claude-code.settings.hooks.json',
+            'adapters/hooks/copilot.ai-forward-hooks.json', 'adapters/hooks/grok.ai-forward-hooks.json',
+            'scripts/pack-apply.py', 'adapters/hooks/README.md',
+            'context-budget.json', 'adapters/INSTALL.md',
+        }
+        self.assertTrue(required_paths <= named_paths,
+                        f'Missing current repair paths: {sorted(required_paths - named_paths)}')
+        for path in named_paths:
+            with self.subTest(source_path=path):
+                self.assertTrue((ROOT / 'pack' / path).is_file(), path)
+        for instruction in ('SOURCE', 'plan --target', 'apply --target', 'full deployment map',
+                            'revision 105 to 106', 'not --force', 'installed revision',
+                            'local deviations', 'project-owned settings', 'custom hook entries',
+                            'existing ownership opt-ins', 'unresolved checkpoints',
+                            'integrity hashes', 'every installed skill surface', 'Copilot prompt',
+                            'context-budget.json', 'regenerate installed and reader surfaces',
+                            'source-only eval runner and case', 'source Git history', 'original INSTALL guidance',
+                            'conflicts', 'reset', 'grant trust or permissions', 'select models',
+                            'enable ownership guards', 'session checks remain repo-declared and opt-in'):
+            with self.subTest(instruction=instruction):
+                self.assertIn(instruction, frontmatter)
+        summary = frontmatter.split("summary: '", 1)[1]
+        for behavior in ('final verification snapshot', 'every verification pause',
+                         'same captured bytes', 'oracle completion', 'os._exit(0)', 'T1',
+                         'inactive coordination', 'not applicable', 'uv',
+                         'durable pre-start', 'same-task', 'settled compilation',
+                         'persisted startup argv', 'Git and plain', 'subdirectories',
+                         'nested ephemeral duration markers', 'durable audit and coordination logs',
+                         'explicitly registered inputs', 'symlinks',
+                         'authenticated consent', 'live orchestration'):
+            with self.subTest(behavior=behavior):
+                self.assertIn(behavior, summary)
+        for old_area in ('upstream-coordination-refresh', 'merge-introduced-revision-refresh',
+                         'upstream-install-boundaries', 'session-resume-marker-boundary',
+                         'delivery-checkpoint-boundaries'):
+            self.assertNotIn('area: ' + old_area, frontmatter,
+                             'Only the current delta belongs in active frontmatter')
+        self.assertNotRegex(raw, rb'(?m)^(?:<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)(?: |$)')
+
+
 class UpstreamRefreshMetadataTests(unittest.TestCase):
     def test_current_owner_ruling_guidance_does_not_register_markdown_as_jsonl(self):
         from install_guidance import current_install_body
@@ -48,8 +176,8 @@ class UpstreamRefreshMetadataTests(unittest.TestCase):
         attributes = (ROOT / '.gitattributes').read_text(encoding='utf-8')
         self.assertNotIn('docs/notes/rulings.md merge=coord-register', attributes)
 
-    def test_current_delta_names_only_upstream_coordination_refresh(self):
-        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+    def test_historical_105_delta_names_only_upstream_coordination_refresh(self):
+        raw = recovered_revision_105_install()
         frontmatter = raw.split(b'---\n', 2)[1].decode('utf-8')
         self.assertRegex(frontmatter, r"(?m)^revision: 105$")
         self.assertIn("bundle_version: '2026.10.10.1'", frontmatter)
@@ -81,8 +209,8 @@ class UpstreamRefreshMetadataTests(unittest.TestCase):
                              'Only the current delta belongs in active frontmatter')
         self.assertNotRegex(raw, rb'(?m)^(?:<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)(?: |$)')
 
-    def test_current_deploy_requires_explicit_coordination_reconciliation(self):
-        frontmatter = (ROOT / 'pack/adapters/INSTALL.md').read_bytes().split(b'---\n', 2)[1].decode('utf-8')
+    def test_historical_105_deploy_requires_explicit_coordination_reconciliation(self):
+        frontmatter = recovered_revision_105_install().split(b'---\n', 2)[1].decode('utf-8')
         deploy = frontmatter.split("deploy: '", 1)[1].split("', summary:", 1)[0]
         for instruction in ('already explicitly installed coordination',
                             'coord-core.py install', 'ONCE in the PRIMARY checkout',
@@ -98,8 +226,8 @@ class UpstreamRefreshMetadataTests(unittest.TestCase):
         self.assertNotIn('coord install` need not be re-run', deploy,
                          'The later upstream row cannot cancel the revision 98 hook/attribute migration')
 
-    def test_current_summary_covers_both_upstream_coordination_deltas(self):
-        frontmatter = (ROOT / 'pack/adapters/INSTALL.md').read_bytes().split(b'---\n', 2)[1].decode('utf-8')
+    def test_historical_105_summary_covers_both_upstream_coordination_deltas(self):
+        frontmatter = recovered_revision_105_install().split(b'---\n', 2)[1].decode('utf-8')
         summary = frontmatter.split("summary: '", 1)[1]
         for behavior in ('upstream revisions 98 and 99', '41',
                          'Grok', 'session/set_model', 'session_model_mismatch', 'RUN-GROK-MODEL',
@@ -114,7 +242,7 @@ class UpstreamRefreshMetadataTests(unittest.TestCase):
                 self.assertIn(behavior, summary)
 
     def test_revision_104_row_and_whole_file_provenance_remain_exact_bytes(self):
-        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        raw = recovered_revision_105_install()
         blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
         self.assertEqual(7, len(blocks))
         self.assertIn('Revision 104 — 5 October 2026'.encode('utf-8'), blocks[0])
@@ -149,7 +277,7 @@ class UpstreamRefreshMetadataTests(unittest.TestCase):
                          'No unauthorized frontmatter or presentation edits outside the current delta')
 
     def test_upstream_98_99_rows_retained_verbatim_with_distinct_provenance(self):
-        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        raw = recovered_revision_105_install()
         blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
         self.assertEqual(7, len(blocks))
         self.assertIn('Upstream revisions 98 and 99 — 10 October 2026'.encode('utf-8'), blocks[1])
@@ -166,7 +294,7 @@ class UpstreamRefreshMetadataTests(unittest.TestCase):
                       'The earlier contribution revision 99 remains in its original history')
 
     def test_previous_delta_and_entire_archive_remain_exact_bytes(self):
-        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        raw = recovered_revision_105_install()
         blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
         self.assertEqual(7, len(blocks))
         previous_blocks = blocks[2:]
@@ -467,6 +595,25 @@ class UpstreamWorkflowPolicyTests(unittest.TestCase):
         # body, not just headings. Permissions, every OS and native cmd remain.
         jobs = raw[raw.index(b'permissions:\n'):]
         self.assertEqual(1, jobs.count(added_tests))
+        # Revision106 adds only the maintained repair/native parser checks to the
+        # same read-only job. Reverse that exact addition before applying the
+        # retained complete original-job oracle below.
+        repair_tests = (
+            b' tests/docs_explorer/test_delivery_outcome_repairs.py'
+            b' tests/docs_explorer/test_delivery_startup_composition.py'
+            b' tests/docs_explorer/test_delivery_recovery_guidance.py'
+            b' tests/docs_explorer/test_delivery_repair_ci_coverage.py'
+            b' tests/docs_explorer/test_pack_doctor.py'
+            b' tests/docs_explorer/test_run_evals.py'
+            b' tests/docs_explorer/test_cross_platform_controls.py'
+            b' tests/docs_explorer/test_coord_enforcement.py'
+            b' tests/docs_explorer/test_coord_install_path.py'
+            b' tests/docs_explorer/test_copilot_runner.py'
+            b' tests/docs_explorer/test_prestart_scope_guidance.py'
+            b' tests/docs_explorer/test_delivery_preexecution_gates.py'
+        )
+        self.assertEqual(1, jobs.count(repair_tests))
+        jobs = jobs.replace(repair_tests, b'', 1)
         unchanged_jobs = jobs.replace(added_tests, b'', 1)
         self.assertEqual('43c5bf864846a145f963e1d05282a6cddbed778571a93dbb89e47be782f9794d',
                          hashlib.sha256(unchanged_jobs).hexdigest())

@@ -102,12 +102,47 @@ def identity(repo):
 
 
 # Exact ephemeral duration stores, not the durable audit/coordination log directories.
-# Git projects follow their own ignore policy; plain projects have no Git ignore seam.
+# Payload cwd may be a descendant; tracked Git markers are ephemeral too.
 # A caller needing these runtime bytes as task inputs registers them with --input.
 RUNTIME_START_MARKERS = {
     "docs/audit/.run-starts.json", "docs/audit/.run-starts.json.tmp",
     ".agents/log/audit/.run-starts.json", ".agents/log/audit/.run-starts.json.tmp",
 }
+
+
+def runtime_start_marker_name(path, root):
+    """Match a marker suffix lexically, without granting a runtime exemption."""
+    relative = path.relative_to(root)
+    return any(relative.parts[-len(Path(name).parts):] == Path(name).parts for name in RUNTIME_START_MARKERS)
+
+
+def runtime_start_marker(path, root, allow_missing=False):
+    """Exact regular stores; snapshots may also omit genuinely absent stores."""
+    if not runtime_start_marker_name(path, root):
+        return False
+    relative = path.relative_to(root)
+    current = root
+    for part in relative.parts:
+        current = current / part
+        try:
+            info = current.lstat()
+        except FileNotFoundError:
+            # Git cached paths survive os.replace consuming a tracked .tmp.
+            # Never treat an alias or a marker-directory descendant as absent
+            # runtime bookkeeping. Explicit inputs use independent file records.
+            return (allow_missing and path.resolve() == path.absolute()
+                    and not any(runtime_start_marker_name(parent, root) for parent in path.parents
+                                if parent != root and parent.is_relative_to(root)))
+        if (stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0)
+                & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+            return False
+        if current == path:
+            return stat.S_ISREG(info.st_mode) and path.resolve().is_relative_to(root)
+        if not stat.S_ISDIR(info.st_mode) or runtime_start_marker_name(current, root):
+            # A marker-shaped directory's descendants are durable, even when a
+            # later leaf happens to repeat a duration-store suffix.
+            return False
+    return False
 
 
 def snapshot(repo, local_area=None, details=False, _depth=0):
@@ -118,7 +153,8 @@ def snapshot(repo, local_area=None, details=False, _depth=0):
         names = []
         for directory, folders, files in os.walk(repo, followlinks=False):
             names.extend(str(Path(directory, name).relative_to(repo))
-                         for name in folders if Path(directory, name).is_symlink())
+                         for name in folders if Path(directory, name).is_symlink()
+                         or runtime_start_marker_name(Path(directory, name), repo))
             folders[:] = [name for name in folders
                           if name not in {".git", "node_modules", "__pycache__", ".venv", "venv"}
                           and not (local_area and Path(directory, name).is_relative_to(Path(local_area)))
@@ -126,6 +162,35 @@ def snapshot(repo, local_area=None, details=False, _depth=0):
             names.extend(str(Path(directory, name).relative_to(repo)) for name in files)
     else:
         names = git(repo, "ls-files", "-z", "--cached", "--others", "--exclude-standard").split("\0")
+        # Git marker ignores also hide directories' durable descendants. Recover
+        # only these exact suffixes and their children, not all ignored artifacts.
+        exact_patterns = [":(glob)**/" + name for name in sorted(RUNTIME_START_MARKERS)]
+        patterns = exact_patterns + [pattern + "/**" for pattern in exact_patterns]
+        ignored = git(repo, "ls-files", "-z", "--others", "--ignored", "--exclude-standard",
+                      "--", *patterns).split("\0")
+        names.extend(name for name in ignored if name and not runtime_start_marker(repo / name, repo))
+        # Git omits FIFOs/sockets and can miss explicitly unignored empty
+        # directories. Discover exact stores independently of Git/ignore policy;
+        # never add ordinary ignored regular files or traverse filesystem links.
+        for directory, folders, _ in os.walk(repo, followlinks=False):
+            folders[:] = [name for name in folders
+                          if name not in {".git", "node_modules", "__pycache__", ".venv", "venv"}
+                          and not (local_area and Path(directory, name).is_relative_to(Path(local_area)))
+                          and not Path(directory, name).is_symlink()
+                          and not (getattr(Path(directory, name).lstat(), "st_file_attributes", 0)
+                                   & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))]
+            relative = Path(directory).relative_to(repo).parts
+            if relative[-2:] != ("docs", "audit") and relative[-3:] != (".agents", "log", "audit"):
+                continue
+            for marker in (".run-starts.json", ".run-starts.json.tmp"):
+                path = Path(directory, marker)
+                try:
+                    info = path.lstat()
+                except FileNotFoundError:
+                    continue
+                if (not stat.S_ISREG(info.st_mode) or getattr(info, "st_file_attributes", 0)
+                        & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+                    names.append(str(path.relative_to(repo)))
     gitlinks = {}
     indexed = {}
     if project.get("kind") != "plain":
@@ -139,12 +204,16 @@ def snapshot(repo, local_area=None, details=False, _depth=0):
         path = Path(repo) / name
         if local_area and path.is_relative_to(Path(local_area)):
             continue
-        if (project.get("kind") == "plain"
-                and path.relative_to(repo).as_posix() in RUNTIME_START_MARKERS
-                and path.is_file() and not path.is_symlink()):
+        if runtime_start_marker(path, repo, allow_missing=True):
             continue
         if path.is_symlink():
             files[name] = {"link": os.readlink(path)}
+        elif runtime_start_marker_name(path, repo) and path.is_dir():
+            files[name] = {"directory": True}
+        elif runtime_start_marker_name(path, repo) and path.exists() and not path.is_file():
+            # Nonregular stores are durable type sentinels, never content reads
+            # (opening a FIFO could block; a socket has no file byte stream).
+            files[name] = {"special": stat.S_IFMT(path.lstat().st_mode)}
         elif name in gitlinks:
             # An uninitialized checkout must not accidentally recurse into its
             # parent repository. Never follow directory symlinks to submodules.
@@ -176,13 +245,23 @@ def snapshot(repo, local_area=None, details=False, _depth=0):
 
 
 def file_record(path):
+    return capture_file(path)[1]
+
+
+def capture_file(path):
+    """Interpretation and evidence digest must originate in one byte capture."""
     path = Path(path).absolute()
     if path.is_symlink() or not path.is_file() or path.stat().st_size == 0:
         raise ValueError("evidence missing: supply a nonempty regular file")
     content = path.read_bytes()
     if not content.strip():
         raise ValueError("evidence missing: supply a nonempty regular file")
-    return {"path": str(path), "sha256": hashlib.sha256(content).hexdigest()}
+    return content, {"path": str(path), "sha256": hashlib.sha256(content).hexdigest()}
+
+
+def read_json_record(path):
+    content, record = capture_file(path)
+    return json.loads(content.decode("utf-8")), record
 
 
 def validate_scoped_product_path(path, root):
@@ -233,21 +312,29 @@ def compiler():
     return module
 
 
-def contract(audit_root, compiled_id):
+def compilation(audit_root, compiled_id):
     engine = compiler()
     entry = engine.find_entry(str(audit_root), compiled_id, "compilation")
-    if not entry or entry.get("dispatchable") is not True or not isinstance(entry.get("compiled"), dict):
-        raise ValueError("contract refused: use a finished dispatchable compilation id")
+    if not entry or not isinstance(entry.get("compiled"), dict):
+        raise ValueError("contract refused: use a recorded compilation id with a compiled document")
     doc = entry["compiled"]
     raw = engine.find_entry(str(audit_root), doc.get("raw_id"), "prompt")
     if not raw or engine.check_schema(doc) or engine._gate().verify_document(doc, raw["prompt"]):
         raise ValueError("contract refused: compiler provenance gate failed")
+    return {"entry": entry, "raw_entry": raw}
+
+
+def contract(audit_root, compiled_id):
+    accepted = compilation(audit_root, compiled_id)
+    if accepted["entry"].get("dispatchable") is not True:
+        raise ValueError("contract refused: use a finished dispatchable compilation id")
+    doc = accepted["entry"]["compiled"]
     if (doc.get("mode") == "not-compiled"
             or any(not isinstance(request, dict) or not isinstance(request.get("answer"), str)
                    or not request["answer"].strip() or request["answer"].strip().lower() == "unanswered"
                    for request in doc.get("decision_requests", []))):
         raise ValueError("contract refused: unresolved compiler decisions")
-    return {"entry": entry, "raw_entry": raw}
+    return accepted
 
 
 def local_area(repo, state_root=None):
@@ -274,7 +361,21 @@ def state_path(repo, task, state_root=None):
     return area / (task + ".json")
 
 
-def save(path, state):
+def save(path, state, reviewed_snapshot=None):
+    # Recheck captured inputs immediately before persistence. Refusal leaves the
+    # prior checkpoint intact; this is observation, not filesystem isolation.
+    check_records(state.get("inputs", []), "input")
+    for row in state.get("completed", []) + state.get("partial", []) + state.get("decisions", []) + state.get("repairs", []):
+        check_records(row["evidence"], "evidence")
+    if state.get("gate"):
+        check_records(state["gate"]["evidence"], "evidence")
+    if state.get("prestart"):
+        check_records(state["prestart"]["evidence"], "evidence")
+    if state.get("phase") == "prestart":
+        check_records(state["evidence"], "evidence")
+    if (reviewed_snapshot is not None
+            and snapshot(state["identity"]["root"], state.get("local_area")) != reviewed_snapshot):
+        raise ValueError("input drift: verification cannot adopt changed workspace; reconcile and repair the authored stage before independent re-review")
     state["integrity"] = digest({k: v for k, v in state.items() if k != "integrity"})
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", newline="\n", dir=path.parent, delete=False) as handle:
@@ -286,6 +387,8 @@ def save(path, state):
 
 
 def view(state):
+    if state.get("phase") == "prestart":
+        return {**state, "next": None}
     done = len(state["completed"])
     return {**state, "next": state["stages"][done] if done < len(state["stages"]) else None}
 
@@ -296,6 +399,9 @@ def load(repo, task, check_tree=True, state_root=None):
     if (not isinstance(state, dict) or state.get("version") != 2
             or state.get("integrity") != digest({k: v for k, v in state.items() if k != "integrity"})):
         raise ValueError("checkpoint refused: corrupt or unsupported checkpoint; do not infer progress")
+    if state.get("phase") == "prestart":
+        check_prestart(state, repo, task, state_root)
+        return path, state
     try:
         selected = route(state["facts"])
         valid = (all(isinstance(state[k], str) and state[k].strip() for k in ("task", "audit_root", "compiled_id", "raw"))
@@ -354,6 +460,14 @@ def load(repo, task, check_tree=True, state_root=None):
         raise ValueError("identity drift: checkpoint belongs to a different task or worktree")
     if contract(state["audit_root"], state["compiled_id"]) != state["contract"]:
         raise ValueError("contract drift: re-ground and request a new accepted contract")
+    if "prestart" in state:
+        check_prestart(state["prestart"], repo, task, state_root)
+        if (state["prestart"]["raw_id"] != state["contract"]["entry"]["compiled"]["raw_id"]
+                or state["prestart"]["draft"]["raw_entry"] != state["contract"]["raw_entry"]):
+            raise ValueError("contract drift: prestart original request changed")
+        check_prestart_conversion(state)
+    elif any("scope_change" in row or "scope_change_record" in row for row in state["decisions"]):
+        raise ValueError("prestart refused: scope reconciliation requires its original prestart record")
     check_records(state["inputs"], "input")
     for completed in state["completed"] + state["partial"] + state["decisions"] + state.get("repairs", []):
         check_records(completed["evidence"], "evidence")
@@ -362,6 +476,84 @@ def load(repo, task, check_tree=True, state_root=None):
     if check_tree and snapshot(state["identity"]["root"], state.get("local_area")) != state["snapshot"]:
         raise ValueError("input drift: workspace changed since the checkpoint")
     return path, state
+
+
+def check_prestart(state, repo, task, state_root):
+    """A recovery pointer, not accepted work or permission to dispatch."""
+    if (not isinstance(state, dict) or state.get("version") != 2 or state.get("phase") != "prestart"
+            or state.get("integrity") != digest({k: v for k, v in state.items() if k != "integrity"})
+            or any(not isinstance(state.get(k), str) or not state[k].strip()
+                   for k in ("task", "audit_root", "compiled_id", "raw", "raw_id", "question", "local_area"))
+            or not isinstance(state.get("evidence"), list) or not state["evidence"]):
+        raise ValueError("checkpoint refused: malformed prestart recovery record")
+    project = identity(repo)
+    area = str(local_area(repo, state_root))
+    if (state["task"] != task or state.get("identity") != project or state["local_area"] != area
+            or state.get("recovery") != {"task": task, "repo": project["root"],
+                                         "state_root": area if state_root is not None else None,
+                                         "checkpoint": str(state_path(repo, task, state_root))}):
+        raise ValueError("identity drift: prestart belongs to a different task or project/local area")
+    draft = compilation(state["audit_root"], state["compiled_id"])
+    if (draft != state.get("draft") or state["raw_id"] != draft["entry"]["compiled"]["raw_id"]
+            or state["raw"] != draft["raw_entry"]["prompt"]):
+        raise ValueError("contract drift: prestart draft or original request changed")
+    check_records(state["evidence"], "evidence")
+
+
+def check_scope_change(previous, accepted, receipt):
+    """Validate an agent-recorded explicit change, not authenticate human consent.
+
+    The agent must check the original answer's meaning and authority before
+    authoring this record; arbitrary nonempty evidence is not reconciliation.
+    """
+    required = {"task", "raw_id", "draft_id", "question", "before", "after",
+                "source", "actor", "evidence", "decision"}
+    before = {k: previous["draft"]["entry"]["compiled"]["goal_state"][k]
+              for k in ("done_when", "not_in_scope")}
+    after = {k: accepted["entry"]["compiled"]["goal_state"][k] for k in before}
+    if (not isinstance(receipt, dict) or set(receipt) != required
+            or any(receipt.get(k) != v for k, v in (("task", previous["task"]),
+                ("raw_id", previous["raw_id"]), ("draft_id", previous["compiled_id"]),
+                ("question", previous["question"]), ("before", before), ("after", after)))
+            or receipt.get("source") != "human-message" or receipt.get("decision") != "approved"
+            or any(not isinstance(receipt.get(k), str) or not receipt[k].strip() for k in ("actor", "evidence"))
+            or not after["done_when"]
+            or any(not isinstance(values, list) or any(not isinstance(v, str) or not v.strip() for v in values)
+                   for values in after.values())):
+        raise ValueError("prestart refused: scope change needs explicit approved original-to-settled criteria, bound to this task/raw/draft/question and original human answer")
+
+
+def check_prestart_conversion(state):
+    previous = state["prestart"]
+    if (not state["decisions"] or state["decisions"][0].get("phase") != "prestart"
+            or state["decisions"][0].get("question") != previous["question"]
+            or state["decisions"][0].get("draft_id") != previous["compiled_id"]
+            or state["decisions"][0].get("compiled_id") != state["compiled_id"]):
+        raise ValueError("prestart refused: missing or unrelated conversion history")
+    row = state["decisions"][0]
+    if (any(record not in row["evidence"] for record in previous["evidence"])
+            or not any(record not in previous["evidence"] for record in row["evidence"])):
+        raise ValueError("prestart refused: retain original question and answer evidence")
+    if "decision_evidence" in row:
+        answers = row["decision_evidence"]
+        if (not isinstance(answers, list) or not answers
+                or any(record not in row["evidence"] for record in answers)):
+            raise ValueError("prestart refused: missing original answer evidence")
+        check_records(answers, "evidence")
+    original = previous["draft"]["entry"]["compiled"]["goal_state"]
+    settled = state["contract"]["entry"]["compiled"]["goal_state"]
+    if "scope_change" not in row and "scope_change_record" not in row:
+        if any(original[k] != settled[k] for k in ("done_when", "not_in_scope")):
+            raise ValueError("prestart refused: preserve original completion conditions and exclusions; changed scope requires --scope-change")
+        return
+    record = row.get("scope_change_record")
+    check_records([record], "evidence")
+    receipt, captured = read_json_record(record["path"])
+    if (captured != record or receipt != row.get("scope_change") or record not in row["evidence"]):
+        raise ValueError("evidence drift: scope change receipt changed")
+    check_scope_change(previous, state["contract"], receipt)
+    if not any(r["path"] == str(Path(receipt["evidence"]).absolute()) for r in row["evidence"]):
+        raise ValueError("prestart refused: missing original scope-change answer evidence")
 
 
 def new_gate(state, kind, authority, question):
@@ -379,7 +571,7 @@ def resume(state, receipt_path):
     gate = state["gate"]
     if state.get("repairs") and state["repairs"][-1]["status"] == "active":
         raise ValueError("decision refused: checkpoint the scoped repair and request re-review first")
-    receipt = read_json(receipt_path)
+    receipt, receipt_record = read_json_record(receipt_path)
     if (not gate or not isinstance(receipt, dict)
             or receipt.get("task") != state["task"] or receipt.get("gate") != gate["id"]
             or receipt.get("binding") != gate["binding"] or receipt.get("authority") != gate["authority"]
@@ -390,7 +582,7 @@ def resume(state, receipt_path):
         raise ValueError("decision refused: need explicit approval from the gate's authority, bound to this checkpoint")
     if gate["authority"] == "reviewer" and receipt["actor"] in {r["actor"] for r in state["completed"] + state["partial"]}:
         raise ValueError("decision refused: author cannot clear their own hard veto")
-    records = [file_record(receipt_path), file_record(receipt["evidence"])] + gate["evidence"]
+    records = [receipt_record, file_record(receipt["evidence"])] + gate["evidence"]
     state["decisions"].append({"gate": gate, "receipt": receipt, "evidence": records})
     if gate["stage"] == "repair-review":
         state["completed"].append({"stage": "repair-review", "actor": receipt["actor"], "evidence": records})
@@ -401,8 +593,8 @@ def resume(state, receipt_path):
 
 def begin_repair(state, args):
     gate = state["gate"]
-    review = read_json(args.review)
-    authorization = read_json(args.authorization)
+    review, review_record = read_json_record(args.review)
+    authorization, authorization_record = read_json_record(args.authorization)
     if (not gate or gate["kind"] != "hard-veto" or gate["authority"] != "reviewer"
             or state.get("repairs") and state["repairs"][-1]["status"] == "active"
             or not isinstance(review, dict) or not isinstance(authorization, dict)):
@@ -447,7 +639,7 @@ def begin_repair(state, args):
         reopened = [state["completed"][-1]]
     if args.stage in ("verify", "repair-review"):
         raise ValueError("repair refused: select the affected authored stage, not closure or human review")
-    evidence = [file_record(p) for p in (args.review, review["evidence"], args.authorization, authorization["evidence"])]
+    evidence = [review_record, file_record(review["evidence"]), authorization_record, file_record(authorization["evidence"])]
     evidence += gate["evidence"] + [r for row in reopened for r in row["evidence"]]
     if {k: v for k, v in before.items() if k not in ("entries", "index_entries")} != state["snapshot"]:
         raise ValueError("input drift: authorize scoped remediation before editing the workspace")
@@ -491,7 +683,7 @@ def recheck_repair(state, args):
 def close_outcome(state, path):
     if path is None:
         raise ValueError("closure refused: map every original criterion to real-path evidence")
-    report = read_json(path)
+    report, report_record = read_json_record(path)
     required = {"criteria", "changes", "tests", "skips", "limits", "remaining_gates"}
     original = state["contract"]["entry"]["compiled"]["goal_state"]["done_when"]
     if (not isinstance(report, dict) or set(report) != required
@@ -500,7 +692,7 @@ def close_outcome(state, path):
             or any(not isinstance(row, dict) for row in report["criteria"])
             or [row.get("criterion") for row in report["criteria"]] != original):
         raise ValueError("closure refused: original criteria must match exactly; remaining gates cannot be closed")
-    records = [file_record(path)]
+    records = [report_record]
     for row in report["criteria"]:
         if (not isinstance(row.get("observed"), str) or not row["observed"].strip()
                 or not isinstance(row.get("evidence"), list) or not row["evidence"]
@@ -513,12 +705,53 @@ def close_outcome(state, path):
 def execute(args):
     if args.verb == "route":
         return route(read_json(args.facts))
-    if args.verb == "start":
+    if args.verb == "prestart":
         path = state_path(args.repo, args.task, args.state_root)
         if path.exists():
-            raise ValueError("task exists: resume it instead of overwriting completed work")
-        facts = read_json(args.facts)
+            raise ValueError("task exists: recover it with status instead of overwriting prior work")
+        draft = compilation(args.audit_root, args.compiled_id)
+        if not args.question.strip():
+            raise ValueError("prestart refused: preserve the exact material question before asking")
+        project = identity(args.repo)
+        area = str(local_area(args.repo, args.state_root))
+        state = {"version": 2, "phase": "prestart", "task": args.task, "identity": project, "local_area": area,
+                 "audit_root": str(args.audit_root.resolve()), "compiled_id": args.compiled_id, "draft": draft,
+                 "raw_id": draft["entry"]["compiled"]["raw_id"], "raw": draft["raw_entry"]["prompt"],
+                 "question": args.question, "evidence": [file_record(p) for p in args.evidence],
+                 "recovery": {"task": args.task, "repo": project["root"],
+                              "state_root": area if args.state_root is not None else None, "checkpoint": str(path)}}
+        save(path, state)
+        return view(state)
+    if args.verb == "start":
+        path = state_path(args.repo, args.task, args.state_root)
+        previous = None
+        if path.exists():
+            _, previous = load(args.repo, args.task, state_root=args.state_root)
+            if previous.get("phase") != "prestart":
+                raise ValueError("task exists: resume it instead of overwriting completed work")
+        facts, facts_record = read_json_record(args.facts)
         accepted = contract(args.audit_root, args.compiled_id)
+        scope_change = None
+        scope_records = []
+        if previous and (str(args.audit_root.resolve()) != previous["audit_root"]
+                or args.compiled_id == previous["compiled_id"]
+                or accepted["entry"]["compiled"]["raw_id"] != previous["raw_id"]
+                or accepted["raw_entry"] != previous["draft"]["raw_entry"]
+                or not args.decision_evidence):
+            raise ValueError("prestart refused: need a new settled compilation from the same original raw id and actual decision source evidence")
+        if previous:
+            original_goal = previous["draft"]["entry"]["compiled"]["goal_state"]
+            settled_goal = accepted["entry"]["compiled"]["goal_state"]
+            if args.scope_change:
+                scope_change, scope_record = read_json_record(args.scope_change)
+                check_scope_change(previous, accepted, scope_change)
+                if Path(scope_change["evidence"]).absolute() not in {p.absolute() for p in args.decision_evidence}:
+                    raise ValueError("prestart refused: --decision-evidence must include the original scope-change answer")
+                scope_records = [scope_record, file_record(scope_change["evidence"])]
+            elif any(settled_goal[k] != original_goal[k] for k in ("done_when", "not_in_scope")):
+                raise ValueError("prestart refused: preserve original completion conditions and exclusions; changed scope requires --scope-change")
+        elif args.scope_change:
+            raise ValueError("prestart refused: scope reconciliation requires an existing prestart task")
         compiled_tier = accepted["entry"]["compiled"]["goal_state"]["tier"]
         if compiled_tier not in ("T0", "T1", "T2"):
             raise ValueError("contract refused: unknown cost-of-error tier")
@@ -530,11 +763,26 @@ def execute(args):
                  "audit_root": str(args.audit_root.resolve()), "compiled_id": args.compiled_id,
                  "contract": accepted, "raw": accepted["raw_entry"]["prompt"], "facts": facts,
                  **selected, "completed": [], "partial": [], "gate": None, "decisions": [],
-                 "inputs": [file_record(p) for p in [args.facts, *args.input]],
+                 "inputs": [facts_record, *[file_record(p) for p in args.input]],
                  "snapshot": snapshot(args.repo, area)}
+        if previous:
+            state["prestart"] = previous
+            answer_records = [file_record(p) for p in args.decision_evidence]
+            state["decisions"].append({"phase": "prestart", "question": previous["question"],
+                                       "draft_id": previous["compiled_id"], "compiled_id": args.compiled_id,
+                                       "decision_evidence": answer_records,
+                                       "evidence": previous["evidence"] + scope_records + answer_records})
+            if scope_change is not None:
+                state["decisions"][0].update(scope_change=scope_change, scope_change_record=scope_records[0])
+        elif args.decision_evidence:
+            raise ValueError("prestart refused: decision evidence conversion requires an existing prestart task")
         save(path, state)
         return view(state)
     path, state = load(args.repo, args.task, check_tree=args.verb not in ("complete", "pause", "recheck"), state_root=args.state_root)
+    if state.get("phase") == "prestart":
+        if args.verb != "status":
+            raise ValueError("prestart paused: preserve the human answer, compile a new settled contract from this raw id, then start the same task with --decision-evidence")
+        return view(state)
     # Verification observes the reviewed artifact; neither closure nor a human
     # pause may silently turn it into another authoring stage. Fresh proof lives
     # in the excluded local/external evidence area, not among product files.
@@ -549,20 +797,28 @@ def execute(args):
             state["closure"], closure_records = close_outcome(state, args.closure)
             records.extend(closure_records)
         state["completed"].append({"stage": args.stage, "actor": args.actor, "evidence": records})
-        state["snapshot"] = snapshot(args.repo, state.get("local_area"))
+        current = snapshot(args.repo, state.get("local_area"))
+        if args.stage == "verify":
+            if current != state["snapshot"]:
+                raise ValueError("input drift: verification cannot adopt changed workspace; reconcile and repair the authored stage before independent re-review")
+        else:
+            state["snapshot"] = current
         trivial = (state["tier"] == "T0" and not state["facts"]["ui"]
                    and not state["facts"]["coordination"])
         if args.stage in ("implement", "migrate", "document", "execute-with-coordination") and not trivial:
             state["gate"] = new_gate(state, "hard-veto", "reviewer", "Independent applicable reviewer: clear the exit checklist with evidence, or BLOCK")
         if view(state)["next"] == "repair-review":
             state["gate"] = new_gate(state, "decision", "human", "Approve the diagnosed repair phases (or provide explicit prior human authorization)?")
-        save(path, state)
+        save(path, state, reviewed_snapshot=state["snapshot"] if args.stage == "verify" else None)
     elif args.verb == "pause":
         expected = "reviewer" if args.kind == "hard-veto" else "human"
         if state["gate"] or view(state)["next"] is None or not args.question.strip() or args.authority != expected:
             raise ValueError("gate refused: need an active ungated task and a specific question")
-        current = snapshot(args.repo, state.get("local_area"))
         records = [file_record(p) for p in args.evidence]
+        current = snapshot(args.repo, state.get("local_area"))
+        verifying = view(state)["next"] == "verify"
+        if verifying and current != state["snapshot"]:
+            raise ValueError("input drift: verification cannot adopt changed workspace; reconcile and repair the authored stage before independent re-review")
         if current != state["snapshot"] and not records:
             raise ValueError("gate refused: changed in-progress work requires partial-work evidence")
         if ((records or args.kind == "hard-veto") and not args.actor
@@ -570,10 +826,11 @@ def execute(args):
             raise ValueError("gate refused: record actual stage authors with --actor for partial work or a hard veto")
         state["partial"].extend({"stage": view(state)["next"], "actor": actor, "evidence": records}
                                 for actor in dict.fromkeys(args.actor))
-        state["snapshot"] = current
+        if not verifying:
+            state["snapshot"] = current
         state["gate"] = new_gate(state, args.kind, args.authority, args.question)
         state["gate"]["evidence"] = records
-        save(path, state)
+        save(path, state, reviewed_snapshot=state["snapshot"] if verifying else None)
     elif args.verb == "resume":
         resume(state, args.receipt)
         save(path, state)
@@ -605,7 +862,7 @@ def locked_execute(args):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="verb", required=True)
-    for verb in ("route", "start", "status", "complete", "pause", "resume", "repair", "recheck"):
+    for verb in ("route", "prestart", "start", "status", "complete", "pause", "resume", "repair", "recheck"):
         command = commands.add_parser(verb)
         if verb in ("route", "start"):
             command.add_argument("--facts", type=Path, required=True)
@@ -613,10 +870,17 @@ def main(argv=None):
             command.add_argument("--repo", type=Path, default=Path.cwd())
             command.add_argument("--state-root", type=Path)
             command.add_argument("--task", required=True)
-        if verb == "start":
+        if verb in ("start", "prestart"):
             command.add_argument("--audit-root", type=Path, required=True)
             command.add_argument("--compiled-id", required=True)
+        if verb == "prestart":
+            command.add_argument("--question", required=True)
+            command.add_argument("--evidence", type=Path, action="append", required=True)
+        if verb == "start":
             command.add_argument("--input", type=Path, action="append", default=[])
+            command.add_argument("--decision-evidence", type=Path, action="append", default=[])
+            command.add_argument("--scope-change", type=Path,
+                                 help="Explicit agent-recorded human scope reconciliation for this prestart task; not consent authentication")
         if verb == "complete":
             command.add_argument("--stage", required=True)
             command.add_argument("--closure", type=Path)

@@ -4,9 +4,14 @@
 
 AI-Forward and consuming repositories support **Copilot CLI, Claude Code, Codex CLI,
 Grok Build and Antigravity (`agy`) on Windows and macOS**. Hook prerequisites are
-**Git and Python 3**; no Node dependency is introduced. Every default hook and native
-ownership emitter uses the existing quote-free Git launcher, which invokes Git's own
-shell on Windows. Codex ownership keeps the caller directory through `--caller-cwd`.
+**Git and compatible Python (3.10+) or uv**; no Node dependency is introduced.
+Startup entries for Claude, Grok and Copilot first locate the installed launcher from
+a plain child directory, then run it through Git's shell. Their fixed, single-quoted
+resolver is read by sh or PowerShell; Copilot retains separate platform fields.
+Other default events and native ownership retain the existing quote-free launcher.
+Antigravity retains its measured Git root/`.agents` command contract, including its
+Windows cmd.exe quote restriction; arbitrary plain child cwd is not qualified there.
+Codex ownership keeps the caller directory through `--caller-cwd`.
 Skill discovery and each host's native trust/approval requirements are unchanged.
 Codex lifecycle hooks remain opt-in; support does not imply identical native events.
 
@@ -20,10 +25,15 @@ Existing Codex hook files, Grok ownership files and Agy ownership bundles receiv
 same exact-command migration; absent opt-ins stay absent. Re-review changed native
 hook definitions in the harness when it requests approval.
 
-Run `pack-doctor.py` after updating: it rejects old Bash-only commands and invalid
-configuration encoding, then executes a fixed benign hook-help probe through the
-launcher. A successful probe verifies execution on this machine, not native event or
-authorization enforcement. Update the JSON and scripts together; a JSON-only copy
+The optional `pack-doctor.py` diagnoses invalid configuration encoding and old
+unsupported commands, then executes a fixed benign hook-help probe through the
+launcher. In serial use, absent optional coordination is not an installation failure;
+explicitly activated but missing or invalid coordination is still diagnosed. On a
+uv-only setup, use `uv run --no-config --no-project --python ">=3.10"` to invoke it.
+When native Python is unavailable, uv must be on the hook process's PATH. A caller
+may explicitly invoke a uv executable by path for diagnostics; setting `UV_PATH`
+does not make this persisted launcher discover it. A successful probe verifies
+execution on this machine, not native event or authorization enforcement. Update the JSON and scripts together; a JSON-only copy
 can point at a launcher that is not installed.
 
 Native ownership is an explicit project opt-in. `coord hook --config --host
@@ -98,18 +108,28 @@ would block). Copilot CLI hooks receive `{"sessionId","toolName","toolArgs"}` an
 `{"additionalContext": …}`; on `preToolUse` any non-zero exit other than 2 **denies** the call, so the
 guard exits 0 on every path including its own failures.
 
-**Interpreter (Windows and macOS).** Every hook command resolves the interpreter **at run time**:
-`py=$(python3 -c 'import sys;print(sys.executable)' 2>/dev/null); [ -x "$py" ] || py=$(python -c …); "$py" <script>`.
-`python3` wins where it is real Python (Linux, macOS); on python.org Windows `python3` is a Store alias
-that exits 9009 without printing a path, so the fallback `python` is taken. Nothing machine-specific is
-written into the tracked config (class PLAT-B), and no one edits the command per machine (class
-PLAT-A). Cost: one extra interpreter start (~25 ms) per hook. That form needs a POSIX `sh`, so only the
-Grok Build commands carry it inline. The Claude Code, Copilot CLI (both arms) and Antigravity commands,
-and the ownership entries `coord-core.py hook --config` emits for Claude, Codex, Copilot and Antigravity,
-are one quote-free launcher invocation, `git -c alias.aif-hook=!sh aif-hook docs/ai-forward-pack/hooks/run-hook.sh <hook>.py ...`,
-which `run-hook.sh` resolves as above. The reason is that Antigravity runs hooks through cmd.exe and
-Copilot through PowerShell on Windows, and Copilot also reads `.claude/settings.json` (PLAT-A, revision 95).
-Git runs the alias through its own `sh` from the top of the tree.
+**Interpreter (Windows and macOS).** `run-hook.sh` resolves the interpreter **at run time**,
+preferring compatible `python3`, then `python`, then an isolated uv-managed runtime.
+The bootstrap does not add Python to PATH or grant host permissions. A file-level
+setup pass therefore does not prove native event execution; verify each host's trust
+and command approval separately.
+
+**Plain-project startup.** Claude, Grok and Copilot startup entries contain one fixed
+upward search for `docs/ai-forward-pack/hooks/run-hook.sh`, bounded to 64 ancestors and
+stopping at a Git boundary. The resolver operates on relative paths, passes the JSON
+payload untouched on stdin and delegates interpreter selection to the installed
+launcher. It is not a payload-controlled `eval`, a copied child-directory shim or a
+new global dependency. A direct `session-start.py` subprocess and a configured hook
+command are different tests; qualify the exact persisted command under its native
+shell. Existing Antigravity cmd.exe and Codex caller-cwd commands are unchanged.
+
+Duration markers remain keyed to the payload directory. Only regular known
+`.run-starts.json` and `.run-starts.json.tmp` files under `docs/audit/` or
+`.agents/log/audit/` inside the project are ephemeral checkpoint bookkeeping, including
+child directories. Durable records, marker-shaped symlinks, explicit registered inputs
+and product edits are not exempted. Startup-check messages are advisory: the agent
+must assess whether a reported failure prevents this outcome rather than converting
+all warnings into a new customer gate.
 
 Measured origin: the profiled TheTerrace session viewed `public.html` four times in three minutes,
 a 43 KB paged output whole twice, and one sub-agent read the same mockup six times — none of it errored.

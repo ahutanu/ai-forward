@@ -111,8 +111,14 @@ repository or start a swarm by default.
 
 A pause is not abandonment. The agent should tell you what is blocked, show the
 relevant evidence, ask a specific question and give you a task id. Reply in the
-same chat. Your answer applies only to that decision; it does not approve unrelated
-work, grant the app tool permission or authorize deployment.
+same chat. Even the first question gets a recovery pointer: the agent links the task id
+to the original request and draft in the existing audit records before asking. It can
+recover that question in a fresh chat without asking you to choose or run another skill.
+Once a settled contract exists, the same task uses its normal checkpoint. Your answer
+applies only to that decision; it does not approve unrelated
+work, grant the app tool permission or authorize deployment. If you explicitly revise
+a completion condition or exclusion, the agent records both versions and your original
+answer before continuing the same task; silence is never a scope change.
 
 Different pauses need different responses:
 
@@ -152,7 +158,15 @@ Keep the task id. In a fresh chat **in the same project**, use:
 
 Use `$deliver resume <task-id>` in Codex. In Copilot CLI, ask it to use the `/deliver`
 skill to resume that id. Replace `<task-id>` with the id you received. The agent
-checks the saved request, project and evidence before reusing valid completed work.
+checks the recovery phase, saved request, project and evidence before reusing valid completed work.
+For an initial question, it recovers the existing audit pointer and original answer
+source, then continues the same task through a new settled compilation. It does not
+rewrite the original request or assume the answer grants tool permission.
+
+Startup checks can report a relevant failure even while a saved checkpoint is intact.
+The agent should explain which prerequisite affects your requested result, revalidate
+only affected evidence, and retain valid completed work—not restart every stage or
+treat a zero hook exit as clearance.
 If files or requirements changed, it explains what must be checked again rather
 than inventing consent or silently resetting progress. Checkpoints are local;
 a different clone or computer does not automatically have them.
@@ -249,9 +263,21 @@ On macOS/Linux, use:
 python3 docs/ai-forward-pack/scripts/pack-doctor.py
 ```
 
-Read the findings. A file-level readiness check is not a live permission or
-enforcement test. Do not respond to a warning by enabling broad permissions.
-Use the specific setup guidance for the affected harness.
+Read the findings. This optional doctor is not a setup requirement for serial work:
+inactive coordination is reported as not applicable, rather than a failed install.
+An explicitly enabled coordination layer still needs valid contracts and configuration.
+With Git and uv but no native Python command, use this isolated invocation:
+
+```text
+uv run --no-config --no-project --python ">=3.10" docs/ai-forward-pack/scripts/pack-doctor.py
+```
+
+uv must be able to discover or obtain the requested interpreter. A successful uv
+invocation does not prove `python` or `python3` is available on your outer shell PATH.
+Read the specific finding rather than installing another global runtime just to
+make every example look identical. A file-level readiness check is not a live
+permission or enforcement test. Do not respond to a warning by enabling broad
+permissions. Use the specific setup guidance for the affected harness.
 
 ## If the repository already has a history
 

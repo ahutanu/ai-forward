@@ -84,9 +84,34 @@ def merge_named_hook_bundles(source_text, current_text=None):
     for value in (source, current):
         if not isinstance(value, dict) or any(not isinstance(section, dict) for section in value.values()):
             raise ValueError("Named hook bundles must be objects of objects")
+    _refresh_legacy_startup(current)
     _refresh_legacy_ownership(current)
     current.update(source)
     return json.dumps(current, indent=2) + "\n"
+
+
+STARTUP_LAUNCHER = ("git -c alias.aif-hook=!sh aif-hook -c '"
+    'r=.;n=0;while [ ! -f "$r/docs/ai-forward-pack/hooks/run-hook.sh" ];do '
+    '[ -e "$r/.git" ] && exit 2;n=$((n+1));[ "$n" -le 64 ] || exit 2;r=$r/..;done;'
+    'cd "$r" || exit 2;exec sh docs/ai-forward-pack/hooks/run-hook.sh "$@"'
+    "' aif-hook ")
+
+
+def _refresh_legacy_startup(value):
+    """Only exact shipped startup commands; wrappers and argv extensions are local."""
+    if isinstance(value, dict):
+        if not value.get("args"):
+            old = "git -c alias.aif-hook=!sh aif-hook docs/ai-forward-pack/hooks/run-hook.sh "
+            for field in ("command", "bash", "powershell"):
+                for host in ("claude", "grok", "copilot"):
+                    suffix = "session-start.py --host " + host
+                    if value.get(field) == old + suffix:
+                        value[field] = STARTUP_LAUNCHER + suffix
+        for item in value.values():
+            _refresh_legacy_startup(item)
+    elif isinstance(value, list):
+        for item in value:
+            _refresh_legacy_startup(item)
 
 
 def _refresh_legacy_ownership(value):
@@ -143,6 +168,7 @@ def merge_claude_settings(source_text, current_text=None):
                         raise ValueError("Command handlers require a command string")
                     if "command" in handler and not isinstance(handler["command"], str):
                         raise ValueError("Hook commands must be strings")
+    _refresh_legacy_startup(current)
     prefix = ("py=$(python3 -c 'import sys;print(sys.executable)' 2>/dev/null); "
               "[ -x \"$py\" ] || py=$(python -c 'import sys;print(sys.executable)'); ")
     launcher = "git -c alias.aif-hook=!sh aif-hook docs/ai-forward-pack/hooks/run-hook.sh "
@@ -160,6 +186,8 @@ def merge_claude_settings(source_text, current_text=None):
             for handler in entry["hooks"]:
                 command = handler.get("command", "")
                 match = re.fullmatch(re.escape(launcher) + r"([a-z-]+\.py) (--host claude(?: --event \w+)?)", command)
+                if not match:
+                    match = re.fullmatch(re.escape(STARTUP_LAUNCHER) + r"(session-start\.py) (--host claude)", command)
                 if match:
                     script, args = match.groups()
                     target = "docs/ai-forward-pack/hooks/" + script
@@ -204,7 +232,9 @@ GITIGNORE_LINES = ["*.jsonl.lock", "spikes/", "docs/audit/.run-starts.json",
                    "!.agents/skills*", "!.agents/hooks.json", "!.agents/rules*",
                    "!.agents/session-checks.json",
                    ".agents/mail/", ".agents/log/audit/.run-starts.json",
-                   ".agents/log/audit/.run-starts.json.tmp"]
+                   ".agents/log/audit/.run-starts.json.tmp",
+                   "**/docs/audit/.run-starts.json", "**/docs/audit/.run-starts.json.tmp",
+                   "**/.agents/log/audit/.run-starts.json", "**/.agents/log/audit/.run-starts.json.tmp"]
 # D10 (ratified 2026-09-19): the coord ledgers `.agents/log/` are TRACKED by default - git is the
 # durable and cross-machine path for state-changing mail (their body-less twins). The mail
 # inboxes `.agents/mail/` are machine-local and carry bodies, so they are ignored by an EXPLICIT
@@ -678,6 +708,25 @@ class Applier(object):
         self.place("hooks", "adapters/hooks/grok.ai-forward-hooks.json",
                    os.path.join(self.target, ".grok", "hooks", "ai-forward.json"),
                    read(os.path.join(hooks, "grok.ai-forward-hooks.json")))
+        # A customized whole native bundle is normally kept as a local deviation.
+        # Startup migration is narrower: change only exact formerly shipped commands
+        # inside it, preserving extra handlers, native metadata and all settings.
+        for relative in (".github/hooks/ai-forward.json", ".grok/hooks/ai-forward.json"):
+            target = os.path.join(self.target, *relative.split("/"))
+            try:
+                current = read_hook_settings(target)
+                if current is None:
+                    continue
+                config = json.loads(current)
+                if not isinstance(config, dict) or not isinstance(config.get("hooks"), dict):
+                    raise ValueError("native hooks must be an object")
+                before = json.dumps(config, sort_keys=True)
+                _refresh_legacy_startup(config)
+                if json.dumps(config, sort_keys=True) != before:
+                    self._write(target, json.dumps(config, indent=2) + "\n")
+                    self.row("hooks", relative, "MERGE", "ok", "exact startup commands refreshed; custom policy retained")
+            except (OSError, ValueError, TypeError):
+                self.row("hooks", relative, "CONFLICT", "fail", "invalid native hooks; existing file retained")
         agy_target = os.path.join(self.target, ".agents", "hooks.json")
         try:
             current_hooks = read_hook_settings(agy_target)
@@ -784,6 +833,16 @@ class Applier(object):
                     declined.add(rest[0])
         if line in declined:
             return "the repo records `{0}{1}`".format(DECLINE_MARKER, line)
+        if line.startswith("**/"):
+            # These suffix patterns include the root as well as descendants.
+            # Do not reintroduce a root default explicitly withheld above.
+            root_pattern = line[3:]
+            root_reason = self._gitignore_withhold(root_pattern, have)
+            if root_reason:
+                return "its root pattern was withheld: " + root_reason
+            suffix = "/" + root_pattern
+            if any(entry.startswith("!") and entry[1:].endswith(suffix) for entry in have):
+                return "the repo already re-includes a descendant duration marker"
         clash = sorted(gitignore_negations(line) & have)
         if clash:
             return ("the repo already re-includes it with {0} - .gitignore is"

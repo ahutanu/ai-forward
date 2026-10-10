@@ -2,6 +2,62 @@
 
 Owner: @ahutanu. Use a **verified Python ≥3.10** interpreter, or `uv run --no-config --no-project --python ">=3.10" docs/ai-forward-pack/scripts/delivery.py --help`; source contributors use `pack/scripts/delivery.py`. Verify a native interpreter's `--version` before use; do not assume `python3` exists or is new enough. The uv form isolates invocation from the target project's dependencies/environment. This stdlib helper only selects stages and checks routing/checkpoint integrity. It never runs skills, arbitrary shell, models, releases or host permissions, and never certifies semantic correctness or authenticates a human.
 
+## Recover the first question before work starts
+
+If grounding discovers a consequential decision before a dispatchable contract exists,
+create the recovery pointer **before asking**. Reuse the original raw audit entry and
+its nondispatchable draft compilation; do not manufacture an accepted contract:
+
+```text
+delivery.py prestart --task <id> --audit-root <audit-parent> --compiled-id <draft-al-id> --question <exact-question> --evidence <question-source>
+delivery.py status --task <id>
+```
+
+Carry the original `--repo` and `--state-root` choices exactly as for ordinary
+checkpoints. Status reports `phase: prestart`, the original raw request, draft,
+question and evidence; no stage is completed and no approval is assumed. Give that
+same task id in the stop message. The agent owns these existing audit pointers and
+local paths, not the customer.
+
+A fresh `/deliver resume <id>` reads status and the original raw/draft records first.
+Inspect the actual scoped human answer and preserve its original evidence. Use the
+existing compiler to finish a **new** settled compilation linked to the same raw id,
+keeping earlier audit entries unchanged. A human may explicitly revise criteria at that
+question; retain both versions and the bound original answer rather than silently
+weakening the contract. Then convert this same task:
+
+```text
+delivery.py start --task <id> --facts <facts.json> --audit-root <audit-parent> --compiled-id <settled-al-id> --decision-evidence <original-answer-source>
+```
+
+The recovery record remains attached to the accepted task. If the actual human answer
+**explicitly** changes completion conditions or exclusions, preserve that original answer
+and author a `--scope-change <change.json>` receipt. Bind it to the same task, raw id,
+draft compilation and exact question, with `before` and `after` criteria and the original
+answer evidence; pass it with `start --decision-evidence`. Record `source: human-message`,
+`decision: approved` and the actual actor only after checking the original source's meaning
+and authority. The receipt contains these exact fields:
+
+```json
+{"task":"<same-task>","raw_id":"<original-raw-id>","draft_id":"<draft-compilation-id>","question":"<exact-question>","before":{"done_when":["<original-criterion>"],"not_in_scope":["<original-exclusion>"]},"after":{"done_when":["<settled-criterion>"],"not_in_scope":["<settled-exclusion>"]},"source":"human-message","actor":"<actual-human>","evidence":"<original-answer-source>","decision":"approved"}
+```
+
+Pass this file with `start --scope-change <change.json>` and include its original
+answer in `--decision-evidence`. The helper checks the exact before/after binding
+and rechecks the captured receipt/answer evidence on reuse, not human authenticity.
+This is an explicit same-task reconciliation, not a blanket permission to
+replace criteria merely because an evidence file is nonempty. Keep the original raw/draft
+history alongside the accepted settled contract. Missing, denied, mismatched or changed
+receipts refuse. An unchanged-scope answer needs no scope-change receipt.
+
+A different raw request,
+missing/changed evidence or drift does not become permission to reset the pointer or
+reuse old approvals. An answer source is not authenticated by this helper: compare
+its meaning and authority against the original question before conversion. Do not
+flip `dispatchable`, rerun valid completed work, or send the customer to `/compile`.
+Ordinary `start` still accepts an already settled contract directly; only a pending
+pre-start pointer needs decision evidence. Accepted tasks cannot be overwritten.
+
 ## Start and continue
 
 Use a lowercase task slug. Preserve raw and compiled prompts through the existing compiler/audit scripts. `start` takes a **finished dispatchable compilation audit id**, reuses the compiler's schema/provenance gate, and stores both records. An in-hand accepted compilation is adopted, not compiled again.
@@ -18,13 +74,36 @@ Git checkpoints remain private to this worktree's Git directory at `ai-forward/d
 
 Keep facts, compiler audit, receipts and proof in `local_area` or an explicitly chosen external evidence area. That narrow area is excluded from workspace hashing so creating a human-reply receipt does not invalidate the pause; registered inputs/evidence remain separately hash-checked even there. Git tracked/nonignored files, HEAD and branch are fingerprinted automatically from the root, including when invoked in a subdirectory. Plain projects fingerprint files without following directory links, excluding only local state, common runtime directories (`.git`, `node_modules`, `__pycache__`, `.venv`, `venv`) and the exact regular duration markers described below; `.gitignore` is not interpreted for plain projects. Register ignored/runtime/external load-bearing files with `--input`. Unrelated nonignored product edits conservatively block reuse; there is no broad ignore switch or semantic drift waiver. Regular workspace files include their content hash and POSIX user/group/other executable bits; Windows uses a neutral executable field because it has no equivalent POSIX execute permission. This same boundary is used by resume, recursive submodules and out-of-scope repair comparisons; timestamps and unrelated permission metadata are not fingerprinted. Git discovery and queries discard inherited repository-local redirection variables so `--repo` selects the intended project, while credentials and global configuration remain available. Earlier helpers' content-only workspace fingerprints do not establish this stronger boundary: preserve refused checkpoints and revalidate their original contract/evidence rather than editing the integrity hash.
 
-Session-start duration markers are ephemeral bookkeeping, not product edits. The installer ignores only `.agents/log/audit/.run-starts.json` and its `.tmp` companion alongside the existing `docs/audit/` marker rules; it keeps durable `.agents/log/` records visible. Plain projects exclude only those same four exact marker paths when they are regular files, not symlinks or entire log directories. If a task needs marker bytes as an input, register them with `--input`; that separate input check still rejects changes. Git projects retain their own ignore and explicit tracking decisions.
+Session-start duration markers are ephemeral bookkeeping, not product edits. The installer and checkpoint boundary recognize only regular duration stores whose exact root or descendant suffix is `docs/audit/.run-starts.json`, `.agents/log/audit/.run-starts.json` or their `.tmp` companions. This covers a real session payload rooted in a project subdirectory without moving the audit opt-in root. Symlink components, lookalike names and entire log directories are not exempt; durable child audit and coordination records remain visible. If a task needs marker bytes as an input, register them with `--input`; that separate input check still rejects changes. Git projects retain their own ignore and explicit tracking decisions.
 
-Own authoring-stage edits, including any authorized audit writes, are captured at `complete`; finish those writes before checkpointing. **Verification is non-authoring:** both `complete --stage verify` and any pause while verification is current require the unchanged workspace fingerprint. Keep fresh verification proof, closure reports and receipts in the excluded local area or an external evidence area. A new nonignored in-project proof file also changes that fingerprint; naming it as evidence is not a drift waiver. If a correction is needed, preserve the reviewed version and use the affected authored stage with scoped repair and fresh independent review. If edits already occurred, preserve them and reconcile the drift explicitly before proceeding; do not reset the record or adopt them through a permission pause. Read/validate status **before** resuming work. New sessions must not use `complete` as a way to adopt unexplained drift. Nonempty regular evidence files are hashed, not semantically judged; inspect the actual observations/results against the stage's exit checklist before recording them.
+Own authoring-stage edits, including any authorized audit writes, are captured at `complete`; finish those writes before checkpointing. **Verification is non-authoring:** both `complete --stage verify` and every pause while verification is current compare the final observation with, and retain, the unchanged independently reviewed workspace fingerprint. A permission pause cannot rebind a changed product, and a completion-only guard is insufficient. Keep fresh verification proof, closure reports and receipts in the excluded local area or an external evidence area. A new nonignored in-project proof file also changes that fingerprint; naming it as evidence is not a drift waiver. If a correction is needed, preserve the reviewed version and use the affected authored stage with scoped repair and fresh independent review. If edits already occurred, preserve them and reconcile the drift explicitly before proceeding; do not reset the record or adopt them through a permission pause. Read/validate status **before** resuming work. New sessions must not use `complete` as a way to adopt unexplained drift. Registered JSON is parsed and hashed from the same captured regular-file bytes. Routing facts may then receive the compiled-tier safety floor, but their registered source version is preserved. Changed facts, receipts, repair authorization or closure files cannot acquire a digest that blesses another interpretation. Nonempty evidence files are hashed, not semantically judged; inspect the actual observations/results against the stage's exit checklist before recording them.
 
 Atomic replace plus an exclusive task writer lock protects cooperative concurrent updates. A crash may leave `<id>.lock`; do not infer completion or automatically break it. Verify no writer remains, inspect last durable checkpoint/evidence, and have the operator remove only that stale local lock. Checkpoints are local and are not transported to a different checkout/session store automatically.
 
+## Startup observations before resume
+
+Read the startup report as well as checkpoint status. `FAILED` or `NOT CHECKED` is an
+advisory observation, not an approval or automatic all-task veto. Decide whether the
+check is relevant to the original outcome and whether its failure invalidates earlier
+evidence. Explain the affected prerequisite, repair or obtain it within authorized
+scope, and revalidate only affected work. Preserve valid completed work and the
+original decision history; do not silently ignore a relevant failure, invent a new
+human gate for every notice, or rerun the full lifecycle to regain context. A zero
+hook exit and a valid fingerprint do not establish present environment readiness.
+
 ## Gates and decision receipts
+
+Before executing a selected skill's independently reviewed plan or design, use the
+existing `pause --kind hard-veto --authority reviewer` against that current stage,
+with its original plan evidence and actual author. Continue only after an actual
+independent ruling and bound `resume`. This is agent-owned sequencing, not another
+skill command the customer must type. Reuse valid existing clearance; do not invent
+an optimization stage simply to repeat `/implement` planning. If selected, its own
+pre-execution veto remains applicable even when the helper has no automatic gate.
+A late approval does not prove a pre-execution gate occurred. If execution already
+missed it, retain the missed-gate evidence and obtain explicit scoped reconciliation;
+never backdate a ruling, relabel the author or declare historical compliance.
+
 
 Completing `investigate` always records a human repair-review gate. Completing implementation/documentation at T1/T2, or UI/migration/coordination work, records an independent review gate before outcome closure. Genuinely T0 code/docs without UI/coordination may self-check; a routine feature/fix is T1+, not trivial just because its diff is small. This exemption does not clear any actual veto recorded via `pause --kind hard-veto`, or waive a selected skill's applicable preimplementation review. Explicit preauthorization can clear repair-review without a new question **only** after reading the original human instruction and verifying the diagnosed phases remain within it. The helper never mines raw prose for consent.
 
@@ -94,8 +173,8 @@ List original criteria in their original order, each with nonempty observation a
 
 ## Host reachability
 
-The pack installer copies complete skill directories to `.claude/skills`, `.agents/skills` and `.grok/skills`, and Copilot wrappers to `.github/prompts`. These resources therefore travel with the skill. Claude Code and VS Code support `/deliver`; Copilot CLI supports requesting a named skill as `Use the /deliver skill ...` (not a custom shell command). `resume <id>` is interpreted by this skill, not a new host-native command. No `allowed-tools` preapproval is added.
+The pack installer copies complete skill directories to `.claude/skills`, `.agents/skills` and `.grok/skills`, and Copilot wrappers to `.github/prompts`. These resources therefore travel with the skill. Claude Code and VS Code support `/deliver`; Copilot CLI supports `/skills` discovery followed by `/deliver`, or requesting a named skill as `Use the /deliver skill ...` (not a custom shell command). `resume <id>` is interpreted by this skill, not a new host-native command. No `allowed-tools` preapproval is added.
 
 Official invocation references: [Claude Code skills](https://code.claude.com/docs/en/skills), [Copilot CLI skills](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills), [VS Code skills](https://code.visualstudio.com/docs/agent-customization/agent-skills). Documentation compatibility is not live host qualification; deterministic helper tests do not measure model compliance.
 
-The maintenance case `pack/evals/cases/deliver-feature-01.json` uses only implemented `cmd-exit` and `file-absent` assertions. A reviewer-controlled isolated Python command checks the verifier's SHA-256 over LF-normalized UTF-8 text (portable across seed newline conventions) before the unchanged boundary oracle's actual `app` import is exercised. The command and expected digest live in the case outside the worker workspace; disabling the workspace verifier cannot approve an unchanged stub. This is a finite deterministic oracle, not a sandbox or protection against editing the reviewer-owned case/interpreter itself.
+The maintenance case `pack/evals/cases/deliver-feature-01.json` is a T1 feature artifact test, not a live workflow qualification. Supported `cmd-exit` assertions check the reviewer's LF-normalized verifier digest before and after exercising the actual application import. The boundary command must also emit its exact positive completion line after every check; an exit zero before that line is refused. Supported `files-absent` assertions check the declared product-document exclusions while allowing ordinary test caches and proof in the existing dedicated `.git/ai-forward/delivery/` local area. This narrow pathname allowance is not permission to put product code or product documentation there, and does not semantically validate proof. Case/verifier ownership remains outside the worker workspace. A correct deterministic file writer can still pass: this is finite artifact conformance, not evidence of red-to-green stage execution, authentic independent review, permission handling or native host compliance. Those claims require a separately observed bounded customer trajectory. Unknown assertion types fail closed; a new label is not an implemented check. The oracle is not a malicious-code sandbox or protection against modifying the reviewer-owned interpreter/case.

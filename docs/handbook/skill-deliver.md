@@ -73,7 +73,9 @@ skill, adopt the whole repository, generate domain experts or launch agents by d
 ## What you get
 
 A changed result or an explicit pause, with the same task and completion conditions
-preserved. The handback identifies changed artifacts, observed acceptance evidence,
+preserved. Even the first question receives a task id: the agent keeps a recoverable
+pointer to the original request and draft in the existing audit records before asking.
+You supply the specific decision, not the next skill command. The handback identifies changed artifacts, observed acceptance evidence,
 checks and skips, residual limits, and any decision still needed.
 
 Checkpoint integrity protects continuity, not semantic truth. A hash, a passing unit
@@ -90,8 +92,15 @@ look uninterrupted. A natural reply continues the task; it does not start a new 
 
 - Keep your desired outcome and exclusions concrete; implementation choices may change.
 - After a fresh session, ask `deliver` to resume the recorded task. The agent validates
-  the checkpoint, contract, project and evidence before reusing completed work.
+  the recovery phase, checkpoint or existing audit pointer, contract, project and evidence
+  before reusing valid completed work. An initial question resumes through a new settled
+  compilation linked to the original request. If you explicitly revise what counts as
+  done, it keeps both versions and your original answer before continuing that same task.
+  An answer never grants tool permission.
 - Changed/missing evidence or context triggers re-grounding, not a fabricated success.
+- Read startup observations as well as saved-task status. Relevant unavailable or failed
+  prerequisites may need repair or revalidation of affected proof; they do not justify
+  silently ignoring failure or repeating every valid completed stage.
 - Say stop to end the current track. A passing aside is not a new requirement.
 - If the skill is absent, refresh discovery using [harness setup](#harnesses).
 
