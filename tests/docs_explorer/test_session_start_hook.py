@@ -250,10 +250,22 @@ class SessionStartHookTests(unittest.TestCase):
         cwd.mkdir(parents=True, exist_ok=True)
         r = self._run_hook({"hook_event_name": "SessionStart", "session_id": "plain-own", "cwd": str(cwd)}, cwd=cwd)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(str(self.repo), (self.repo / "project-ran").read_text())
+        self.assertTrue(self.repo.samefile(pathlib.Path((self.repo / "project-ran").read_text())),
+                        'The check must execute in this project, not an unrelated directory')
         self.assertIn("__harness__:plain-own", self._starts(cwd))
         self.assertEqual("", r.stdout)
         self.assertEqual("", r.stderr)
+
+    def test_own_check_directory_assertion_accepts_a_physical_project_alias(self):
+        alias = self.repo.parent / 'own-alias'
+        try:
+            alias.symlink_to(self.repo, target_is_directory=True)
+        except OSError:
+            if os.name == 'nt':
+                self.skipTest('Directory symlinks require host privileges')
+            raise
+        self.repo = alias
+        self._assert_own_check_runs_from_subdirectory()
 
     def test_installed_plain_project_runs_its_own_check_from_a_subdirectory(self):
         self._assert_own_check_runs_from_subdirectory()
@@ -279,7 +291,8 @@ class SessionStartHookTests(unittest.TestCase):
         cwd.mkdir()
         r = self._run_hook({"hook_event_name": "SessionStart", "session_id": "nearest", "cwd": str(cwd)}, cwd=cwd)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(str(project / "src"), (project / "src" / "nearest-ran").read_text())
+        self.assertTrue((project / "src").samefile(pathlib.Path((project / "src" / "nearest-ran").read_text())),
+                        'The nearest declared check must execute in its own directory')
         self.assertFalse((project / "root-ran").exists())
         self.assertIn("__harness__:nearest", self._starts(cwd))
 
