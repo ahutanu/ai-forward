@@ -812,6 +812,9 @@ class RevisionCollisionSourceHistoryTests(unittest.TestCase):
                     _w(target, 'docs/ai-forward-pack/INSTALL.md', installed)
                     dest = _w(target, 'docs/ai-forward-pack/README.md', original + local_note)
                     os.chmod(dest, 0o755)
+                    installed_mode = os.stat(dest).st_mode
+                    if os.name != 'nt':
+                        self.assertEqual(0o111, installed_mode & 0o111)
                     app = pa.Applier(str(source), str(target), dry=True)
                     app.place('bundle', 'README.md', dest, latest_readme)
                     self.assertIn(('docs/ai-forward-pack/README.md', 'MERGE'), _rows(app.rows))
@@ -819,7 +822,7 @@ class RevisionCollisionSourceHistoryTests(unittest.TestCase):
                     app = pa.Applier(str(source), str(target), dry=False)
                     app.place('bundle', 'README.md', dest, latest_readme)
                     self.assertEqual(latest_readme + local_note, pathlib.Path(dest).read_text())
-                    self.assertEqual(0o111, os.stat(dest).st_mode & 0o111)
+                    self.assertEqual(installed_mode, os.stat(dest).st_mode)
                     _w(target, 'docs/ai-forward-pack/INSTALL.md', latest_install)
                     repeat = pa.Applier(str(source), str(target), dry=False)
                     repeat.place('bundle', 'README.md', dest, latest_readme)
