@@ -727,7 +727,8 @@ class DeliveryOutcomeRepairsTests(unittest.TestCase):
                 (external_folder / marker.name).write_text("{}", encoding="utf-8")
                 marker.parent.symlink_to(external_folder, target_is_directory=True)
                 self.assertFalse(helper.runtime_start_marker(marker, self.repo.resolve()))
-                self.assertIn("src/docs/audit", helper.snapshot(self.repo, started["local_area"], details=True)["entries"])
+                audit_key = str(Path("src/docs/audit")) if plain else "src/docs/audit"
+                self.assertIn(audit_key, helper.snapshot(self.repo, started["local_area"], details=True)["entries"])
 
     def test_verify_serial_drift_and_unchanged_transition_controls(self):
         for plain in (False, True):
