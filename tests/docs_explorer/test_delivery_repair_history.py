@@ -158,7 +158,12 @@ class RepairHistoryTests(unittest.TestCase):
                     captured = active["repairs"][-1]["evidence"]
                     for index, receipt in ((1, receipts[0]), (3, receipts[1])):
                         raw = json.loads(receipt.read_bytes())["evidence"]
-                        self.assertEqual(captured[index], self.delivery.file_record(origin / raw))
+                        expected = self.delivery.file_record(origin / raw)
+                        self.assertEqual(captured[index]["sha256"], expected["sha256"])
+                        self.assertTrue(Path(captured[index]["path"]).is_absolute())
+                        # macOS /var and /private/var can name the same cwd;
+                        # bind the actual captured file, not a spelling alias.
+                        self.assertTrue(Path(captured[index]["path"]).samefile(expected["path"]))
                         # Deliberately plausible, unrelated current-cwd proof must not win.
                         if not Path(raw).is_absolute():
                             decoy = fresh / raw
