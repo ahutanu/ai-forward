@@ -9,7 +9,8 @@ class DeliveryRepairCICoverageTests(unittest.TestCase):
                      'test_delivery_recovery_guidance.py', 'test_pack_doctor.py', 'test_run_evals.py',
                      'test_cross_platform_controls.py', 'test_coord_enforcement.py',
                      'test_coord_install_path.py', 'test_copilot_runner.py',
-                     'test_prestart_scope_guidance.py', 'test_delivery_preexecution_gates.py'):
+                     'test_prestart_scope_guidance.py', 'test_delivery_preexecution_gates.py',
+                     'test_delivery_repair_history.py'):
             with self.subTest(test=name): self.assertIn('tests/docs_explorer/'+name, text)
         self.assertIn('os: [ubuntu-latest, macos-latest, windows-latest]', text)
         self.assertIn('shell: cmd', text)

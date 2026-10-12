@@ -129,6 +129,22 @@ Refuse aliases and special files; a missing leaf remains a valid create/delete s
 
 **Coverage gap** — no docstring in the source.
 
+### `check_displaced_partials(state)`
+
+Prove a legacy reopen from its exact append suffix and prior gate binding.
+
+Only the latest active repair can displace the immediate successor. After
+recheck restores the completed row, ordinary prefix validation applies.
+This interpretation neither rewrites history nor authenticates consent.
+
+### `valid_snapshot(value, depth=…)`
+
+Validate existing recursive Gitlink records without changing snapshot policy.
+
+### `validate_progress(state)`
+
+Shared schema-2 routing/history guard, before persistence or recovery.
+
 ### `load(repo, task, check_tree=…, state_root=…)`
 
 **Coverage gap** — no docstring in the source.
@@ -145,6 +161,14 @@ The agent must check the original answer's meaning and authority before
 authoring this record; arbitrary nonempty evidence is not reconciliation.
 
 ### `check_prestart_conversion(state)`
+
+**Coverage gap** — no docstring in the source.
+
+### `gate_binding(state)`
+
+**Coverage gap** — no docstring in the source.
+
+### `check_gate_binding(state)`
 
 **Coverage gap** — no docstring in the source.
 
@@ -178,5 +202,5 @@ authoring this record; arbitrary nonempty evidence is not reconciliation.
 
 ## Coverage
 
-- Public functions: **31** · documented: **6** (**19%**)
-- Undocumented (recorded, not invented): `route`, `read_json`, `digest`, `git`, `identity`, `snapshot`, `file_record`, `read_json_record`, `check_records`, `compiler`, `compilation`, `contract`, `local_area`, `state_path`, `save`, `view`, `load`, `check_prestart_conversion`, `new_gate`, `resume`, `begin_repair`, `recheck_repair`, `close_outcome`, `execute`, `locked_execute`
+- Public functions: **36** · documented: **9** (**25%**)
+- Undocumented (recorded, not invented): `route`, `read_json`, `digest`, `git`, `identity`, `snapshot`, `file_record`, `read_json_record`, `check_records`, `compiler`, `compilation`, `contract`, `local_area`, `state_path`, `save`, `view`, `load`, `check_prestart_conversion`, `gate_binding`, `check_gate_binding`, `new_gate`, `resume`, `begin_repair`, `recheck_repair`, `close_outcome`, `execute`, `locked_execute`

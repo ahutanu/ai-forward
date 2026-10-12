@@ -362,6 +362,14 @@ def state_path(repo, task, state_root=None):
 
 
 def save(path, state, reviewed_snapshot=None):
+    if not isinstance(state, dict) or state.get("version") != 2:
+        raise ValueError("checkpoint refused: corrupt or unsupported checkpoint; do not infer progress")
+    if state.get("phase") == "prestart":
+        candidate = {**state, "integrity": digest({k: v for k, v in state.items() if k != "integrity"})}
+        check_prestart(candidate, state["identity"]["root"], state["task"], candidate["recovery"]["state_root"])
+    else:
+        validate_progress(state)
+        check_gate_binding(state)
     # Recheck captured inputs immediately before persistence. Refusal leaves the
     # prior checkpoint intact; this is observation, not filesystem isolation.
     check_records(state.get("inputs", []), "input")
@@ -393,24 +401,148 @@ def view(state):
     return {**state, "next": state["stages"][done] if done < len(state["stages"]) else None}
 
 
-def load(repo, task, check_tree=True, state_root=None):
-    path = state_path(repo, task, state_root)
-    state = read_json(path)
-    if (not isinstance(state, dict) or state.get("version") != 2
-            or state.get("integrity") != digest({k: v for k, v in state.items() if k != "integrity"})):
-        raise ValueError("checkpoint refused: corrupt or unsupported checkpoint; do not infer progress")
-    if state.get("phase") == "prestart":
-        check_prestart(state, repo, task, state_root)
-        return path, state
+def check_displaced_partials(state):
+    """Prove a legacy reopen from its exact append suffix and prior gate binding.
+
+    Only the latest active repair can displace the immediate successor. After
+    recheck restores the completed row, ordinary prefix validation applies.
+    This interpretation neither rewrites history nor authenticates consent.
+    """
+    repair = state["repairs"][-1]
+    done = len(state["completed"])
+    prior_gate = repair["prior_gate"]
+    if (repair["status"] != "active" or repair["stage"] != state["stages"][done]
+            or len(repair["reopened"]) != 1
+            or repair["reopened"][0]["stage"] != repair["stage"]
+            or prior_gate.get("stage") != state["stages"][done + 1]
+            or prior_gate.get("kind") != "hard-veto" or prior_gate.get("authority") != "reviewer"
+            or not state["gate"] or state["gate"]["kind"] != "hard-veto"
+            or state["gate"]["authority"] != "reviewer" or state["gate"]["stage"] != repair["stage"]):
+        raise ValueError("displaced partial relationship")
+    suffix = [{k: repair["reopened"][0][k] for k in ("stage", "actor", "evidence")}]
+    suffix.extend({"stage": repair["stage"], "actor": actor, "evidence": repair["evidence"]}
+                  for actor in repair["actors"])
+    if state["partial"][-len(suffix):] != suffix:
+        raise ValueError("displaced partial suffix")
+    previous_repairs = [dict(row) for row in state["repairs"][:-1]]
+    if previous_repairs and previous_repairs[-1]["status"] == "superseded":
+        previous_repairs[-1]["status"] = "review"
+    bound = {"identity": state["identity"], "task": state["task"], "contract": state["contract"],
+             "snapshot": {k: v for k, v in repair["before"].items() if k not in ("entries", "index_entries")},
+             "completed": state["completed"] + repair["reopened"],
+             "partial": state["partial"][:-len(suffix)]}
+    if previous_repairs:
+        bound["repairs"] = previous_repairs
+    if digest(bound) != prior_gate.get("binding"):
+        raise ValueError("displaced partial prior binding")
+    if repair["before"]["files"] != digest(repair["before"]["entries"]):
+        raise ValueError("displaced partial before manifest")
+    check_records(repair["evidence"], "evidence")
+    review, review_record = read_json_record(repair["evidence"][0]["path"])
+    authorization, authorization_record = read_json_record(repair["evidence"][2]["path"])
+    if review_record != repair["evidence"][0] or authorization_record != repair["evidence"][2]:
+        raise ValueError("evidence drift: recorded repair receipt changed")
+    authors = {row["actor"] for row in bound["completed"] + bound["partial"]} | set(repair["actors"])
+    if (not isinstance(review, dict) or not isinstance(authorization, dict)
+            or any(record.get(k) != v for record in (review, authorization)
+                   for k, v in (("task", state["task"]), ("gate", prior_gate["id"]), ("binding", prior_gate["binding"])))
+            or review.get("authority") != "reviewer" or review.get("source") != "reviewer-report"
+            or review.get("decision") != "blocked" or not isinstance(review.get("actor"), str)
+            or not review["actor"].strip() or review["actor"] in authors
+            or authorization.get("source") != "human-message" or authorization.get("decision") != "approved"
+            or not isinstance(authorization.get("actor"), str) or not authorization["actor"].strip()
+            or authorization.get("stage") != repair["stage"] or authorization.get("paths") != repair["paths"]
+            or any(not isinstance(record.get("evidence"), str) or not record["evidence"].strip()
+                   for record in (review, authorization))):
+        raise ValueError("displaced partial repair receipts")
+    # Slots 1/3 are the absolute byte captures made by begin_repair, not paths
+    # to reinterpret against this process's cwd. Trust them only within this
+    # exact active history binding; the checksum is not source authentication.
+    if gate_binding(state) != state["gate"]["binding"]:
+        raise ValueError("displaced partial active binding")
+    captured = [repair["evidence"][1], repair["evidence"][3]]
+    check_records(captured, "evidence")
+    bases = set()
+    for receipt, record in zip((review, authorization), captured):
+        raw = Path(receipt["evidence"])
+        absolute = Path(record["path"])
+        if raw.is_absolute():
+            if absolute != raw:
+                raise ValueError("displaced partial absolute evidence path")
+        else:
+            # Path.absolute() preserves '..' and ancestor aliases at capture.
+            # Match that lexical boundary, never resolve() to another spelling.
+            if (not raw.parts or len(absolute.parts) <= len(raw.parts)
+                    or absolute.parts[-len(raw.parts):] != raw.parts):
+                raise ValueError("displaced partial relative evidence path")
+            bases.add(Path(*absolute.parts[:-len(raw.parts)]))
+    if len(bases) > 1:
+        raise ValueError("displaced partial evidence capture cwd")
+    expected = [review_record, captured[0], authorization_record, captured[1]]
+    expected += prior_gate["evidence"] + repair["reopened"][0]["evidence"]
+    if repair["evidence"] != expected:
+        raise ValueError("displaced partial repair evidence")
+    if any(row["stage"] != prior_gate["stage"] for row in state["partial"]
+           if row["stage"] not in state["stages"][:done + 1]):
+        raise ValueError("unrelated future partial")
+
+
+def valid_snapshot(value, depth=0):
+    """Validate existing recursive Gitlink records without changing snapshot policy."""
+    if (depth > 16 or not isinstance(value, dict)
+            or any(not isinstance(value.get(k), str) for k in ("head", "branch", "files"))
+            or not re.fullmatch(r"[a-f0-9]{64}", value["files"])
+            or "index" in value and (not isinstance(value["index"], str)
+                                     or not re.fullmatch(r"[a-f0-9]{64}", value["index"]))):
+        return False
+    children = value.get("submodules", {})
+    if not isinstance(children, dict):
+        return False
+    for name, row in children.items():
+        if not isinstance(name, str) or not name or not isinstance(row, dict):
+            return False
+        # An indexed Gitlink may have a symlink worktree leaf. The producer
+        # records that leaf without traversing it, even inside a checkout.
+        if set(row) == {"link"}:
+            if not isinstance(row["link"], str) or not row["link"]:
+                return False
+            continue
+        if set(row) in ({"directory"}, {"special"}):
+            marker = Path(name)
+            if (marker.is_absolute() or ".." in marker.parts
+                    or not runtime_start_marker_name(marker, Path("."))):
+                return False
+        if set(row) == {"directory"}:
+            if row["directory"] is not True:
+                return False
+            continue
+        if set(row) == {"special"}:
+            if type(row["special"]) is not int or row["special"] not in (
+                    stat.S_IFIFO, stat.S_IFSOCK, stat.S_IFCHR, stat.S_IFBLK):
+                return False
+            continue
+        if (set(row) != {"gitlink", "checkout"}
+                or not isinstance(row.get("gitlink"), list) or not row["gitlink"]
+                or any(not isinstance(entry, str) or not entry for entry in row["gitlink"])):
+            return False
+        checkout = row.get("checkout")
+        if checkout != "unavailable" and not valid_snapshot(checkout, depth + 1):
+            return False
+    return True
+
+
+def validate_progress(state):
+    """Shared schema-2 routing/history guard, before persistence or recovery."""
     try:
         selected = route(state["facts"])
-        valid = (all(isinstance(state[k], str) and state[k].strip() for k in ("task", "audit_root", "compiled_id", "raw"))
+        valid = (state.get("version") == 2
+                 and all(isinstance(state[k], str) and state[k].strip() for k in ("task", "audit_root", "compiled_id", "raw"))
                  and isinstance(state["identity"], dict) and isinstance(state["contract"], dict)
-                 and isinstance(state["snapshot"], dict)
+                 and valid_snapshot(state["snapshot"])
                  and all(isinstance(state[k], list) for k in ("stages", "inputs", "completed", "partial", "decisions"))
                  and state["stages"] == selected["stages"] and state["tier"] == selected["tier"])
-        if not valid:
-            raise ValueError("shape")
+        if not valid or state["raw"] != state["contract"]["raw_entry"]["prompt"]:
+            raise ValueError("shape or original raw")
         for record in state["inputs"]:
             if (not isinstance(record, dict) or not isinstance(record.get("path"), str)
                     or not record["path"] or not isinstance(record.get("sha256"), str)):
@@ -424,7 +556,7 @@ def load(repo, task, check_tree=True, state_root=None):
             raise ValueError("stage order")
         for partial in state["partial"]:
             if (not isinstance(partial, dict) or set(partial) != {"stage", "actor", "evidence"}
-                    or partial["stage"] not in state["stages"][:len(state["completed"]) + 1]
+                    or partial["stage"] not in state["stages"]
                     or not isinstance(partial["actor"], str) or not partial["actor"].strip()
                     or not isinstance(partial["evidence"], list)):
                 raise ValueError("partial author record")
@@ -453,11 +585,31 @@ def load(repo, task, check_tree=True, state_root=None):
                 or any(not isinstance(gate.get(k), str) or not gate[k].strip() for k in ("id", "binding", "question", "stage"))
                 or not isinstance(gate.get("evidence"), list)):
             raise ValueError("gate record")
-    except (ValueError, TypeError, KeyError):
+        active_reopen = (state.get("repairs") and state["repairs"][-1]["status"] == "active"
+                         and state["repairs"][-1]["reopened"])
+        if (active_reopen
+                or any(row["stage"] not in state["stages"][:len(state["completed"]) + 1] for row in state["partial"])):
+            check_displaced_partials(state)
+    except (ValueError, TypeError, KeyError, IndexError) as exc:
+        if isinstance(exc, ValueError) and str(exc).startswith(("evidence drift:", "input drift:")):
+            raise
         raise ValueError("checkpoint refused: malformed routing or progress records; do not infer progress") from None
+
+
+def load(repo, task, check_tree=True, state_root=None):
+    path = state_path(repo, task, state_root)
+    state = read_json(path)
+    if (not isinstance(state, dict) or state.get("version") != 2
+            or state.get("integrity") != digest({k: v for k, v in state.items() if k != "integrity"})):
+        raise ValueError("checkpoint refused: corrupt or unsupported checkpoint; do not infer progress")
+    if state.get("phase") == "prestart":
+        check_prestart(state, repo, task, state_root)
+        return path, state
+    validate_progress(state)
     if (state["task"] != task or state["identity"] != identity(repo)
             or state.get("local_area", str(local_area(repo, state_root))) != str(local_area(repo, state_root))):
         raise ValueError("identity drift: checkpoint belongs to a different task or worktree")
+    check_gate_binding(state)
     if contract(state["audit_root"], state["compiled_id"]) != state["contract"]:
         raise ValueError("contract drift: re-ground and request a new accepted contract")
     if "prestart" in state:
@@ -556,13 +708,22 @@ def check_prestart_conversion(state):
         raise ValueError("prestart refused: missing original scope-change answer evidence")
 
 
-def new_gate(state, kind, authority, question):
+def gate_binding(state):
     bound = {"identity": state["identity"], "task": state["task"],
-                      "contract": state["contract"], "snapshot": state["snapshot"],
-                      "completed": state["completed"], "partial": state["partial"]}
+             "contract": state["contract"], "snapshot": state["snapshot"],
+             "completed": state["completed"], "partial": state["partial"]}
     if state.get("repairs"):
         bound["repairs"] = state["repairs"]
-    binding = digest(bound)
+    return digest(bound)
+
+
+def check_gate_binding(state):
+    if state["gate"] is not None and gate_binding(state) != state["gate"]["binding"]:
+        raise ValueError("checkpoint refused: malformed current gate binding; do not infer progress")
+
+
+def new_gate(state, kind, authority, question):
+    binding = gate_binding(state)
     return {"id": secrets.token_hex(16), "kind": kind, "authority": authority,
             "question": question, "binding": binding, "stage": view(state)["next"], "evidence": []}
 

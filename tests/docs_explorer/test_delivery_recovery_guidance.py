@@ -3,6 +3,11 @@ from pathlib import Path
 import unittest
 ROOT=Path(__file__).resolve().parents[2]
 class DeliveryRecoveryGuidanceTests(unittest.TestCase):
+ def test_reopened_stage_preserves_verification_authors_without_progress_credit(self):
+  body=(ROOT/'pack/commands/deliver/reference/checkpoints.md').read_text(encoding='utf-8')
+  for phrase in ('displaced verification authors', 'not completed verification',
+                 'same structural guard', 'preserves checkpoint bytes'):
+   with self.subTest(phrase=phrase):self.assertIn(phrase,body)
  def test_first_question_recovery_is_owned_by_deliver(self):
   skill=(ROOT/'pack/commands/deliver/SKILL.md').read_text(encoding='utf-8')
   reference=(ROOT/'pack/commands/deliver/reference/checkpoints.md').read_text(encoding='utf-8')

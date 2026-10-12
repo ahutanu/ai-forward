@@ -17,13 +17,43 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def recovered_revision_106_install(raw=None):
+    """Reverse only the revision107 metadata/archive, with immutable byte oracles."""
+    if raw is None:
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+    prefix, frontmatter, body = raw.split(b'---\n', 2)
+    blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', body, re.S)
+    if not blocks or 'Revision 106 — 10 October 2026'.encode('utf-8') not in blocks[0]:
+        raise AssertionError('The complete revision106 archive must precede all older history')
+    archive = blocks[0]
+    rows = archive.split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+    if (len(rows), hashlib.sha256(rows).hexdigest()) != (
+            4818, '01abdd303b93cab30f5c19fceef37c9686d0bbff3d45c7d9f01cbcadde5abf05'):
+        raise AssertionError('The recovered revision106 delta is not byte-exact')
+    if body.count(archive + b'\n\n') != 1:
+        raise AssertionError('The revision106 archive must occur exactly once')
+    body = body.replace(archive + b'\n\n', b'', 1)
+    if (len(body), hashlib.sha256(body).hexdigest()) != (
+            268288, '0065c234b9baa4edf0ee02efa641c61712274af997edebf4e66105f46f8e402f'):
+        raise AssertionError('Reversal must recover every revision106 body/history byte')
+    prior_frontmatter = frontmatter.split(b'changes:\n', 1)[0] + b'changes:\n' + rows + b'\n'
+    prior_frontmatter = prior_frontmatter.replace(b'revision: 107\n', b'revision: 106\n', 1)
+    prior_frontmatter = prior_frontmatter.replace(b"bundle_version: '2026.10.12.1'",
+                                                b"bundle_version: '2026.10.10.2'", 1)
+    recovered = b'---\n'.join((prefix, prior_frontmatter, body))
+    if (len(recovered), hashlib.sha256(recovered).hexdigest()) != (
+            273983, '8876c227d5c7081156a19417570cbc0bbda35f7ba12208b5a0ffcbdc166b2834'):
+        raise AssertionError('Reversal must recover the complete revision106 source, not a projection')
+    return recovered
+
+
 def recovered_revision_105_install():
     """Recover the exact previous source from its raw archive, without Git/cache.
 
     Older 104/103 oracles deliberately receive this recovered source, so their
     published expected hashes remain unchanged when a new delta is archived.
     """
-    raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+    raw = recovered_revision_106_install()
     prefix, frontmatter, body = raw.split(b'---\n', 2)
     blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', body, re.S)
     if not blocks or 'Revision 105 — 10 October 2026'.encode('utf-8') not in blocks[0]:
@@ -66,9 +96,126 @@ class UpstreamAdoptionDocsTests(unittest.TestCase):
                 self.assertIn('not copied by install', paragraph)
 
 
+class DeliveryRepairHistoryRefreshMetadataTests(unittest.TestCase):
+    def test_revision_106_archive_and_entire_body_reversal_preserve_source_bytes(self):
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
+        self.assertEqual(9, len(blocks), 'Add one archive without deleting any existing history')
+        self.assertIn('Revision 106 — 10 October 2026'.encode('utf-8'), blocks[0])
+        rows = blocks[0].split(b'```yaml\nchanges:\n', 1)[1].split(b'\n```', 1)[0]
+        self.assertEqual((4818, '01abdd303b93cab30f5c19fceef37c9686d0bbff3d45c7d9f01cbcadde5abf05'),
+                         (len(rows), hashlib.sha256(rows).hexdigest()),
+                         'Archive the COMPLETE revision106 changes, including its long summary')
+        self.assertEqual(1, raw.count(rows), 'The prior active delta must occur once, in history')
+        expected_old_blocks = (
+            (4681, 'e2239d7afd51f8a0efec1d9d8b61b882ca175a830ad95f6267a5a3199fbcd1ba'),
+            (1229, '1eb78ac90646167b59ad0685b7d9443d4d56054e677ce9f49f94c44631e14728'),
+            (5454, '28bd8bc19a95ac4ddf298cb5280b155127043f8535353bbc024b37ef788c5832'),
+            (3397, '17d9f0ddea6826eb6961ac843b054a5e1e2779b1650a5f504f08d424875999fa'),
+            (1028, 'b084ebe3a79e98734dcfbf5df1b757990f8f5c3f869e2d20687d075d9149dad3'),
+            (1038, '9a56bc7f409c6c5e5f01cbe0917840cac3d3722a95ecc34465d6d3194443334f'),
+            (753, 'c6b40766a5fc4f6ea47f001ed4e292dddce725204c5b00962f0910a0ff9eb674'),
+            (187189, '1dc4d0d7b3cc4df881a208f02c8ce3ac02a907488f1a1b5c3df390eee4c462f7'),
+        )
+        self.assertEqual(expected_old_blocks,
+                         tuple((len(block), hashlib.sha256(block).hexdigest()) for block in blocks[1:]),
+                         'Every older complete history block and its order remain unchanged')
+        body = raw.split(b'---\n', 2)[2]
+        self.assertIn(b'### Prior revisions\n\n' + blocks[0] + b'\n\n' + blocks[1], body)
+        recovered = recovered_revision_106_install(raw)
+        self.assertEqual((273983, '8876c227d5c7081156a19417570cbc0bbda35f7ba12208b5a0ffcbdc166b2834'),
+                         (len(recovered), hashlib.sha256(recovered).hexdigest()))
+
+    def test_revision_107_is_narrow_preservation_first_normal_source_refresh(self):
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        frontmatter = raw.split(b'---\n', 2)[1].decode('utf-8')
+        self.assertRegex(frontmatter, r"(?m)^revision: 107$")
+        self.assertIn("bundle_version: '2026.10.12.1'", frontmatter)
+        self.assertIn('counts: { lenses: 23, skills: 30, knowledge_docs: 40, templates: 29, scripts: 47 }',
+                      frontmatter)
+        self.assertEqual(1, frontmatter.count('  - { type: changed,'))
+        self.assertIn('area: delivery-repair-history', frontmatter)
+        paths = re.search(r"paths: \[(.*?)\], deploy:", frontmatter)
+        self.assertIsNotNone(paths)
+        assert paths is not None
+        self.assertEqual([
+            'scripts/delivery.py', 'commands/deliver/reference/checkpoints.md',
+            'adapters/INSTALL.md',
+        ], re.findall(r"'([^']+)'", paths.group(1)),
+                         'List only the actual narrow repair delta; unchanged context-budget stays out')
+        for path in re.findall(r"'([^']+)'", paths.group(1)):
+            with self.subTest(source_path=path):
+                self.assertTrue((ROOT / 'pack' / path).is_file(), path)
+        deploy = frontmatter.split("deploy: '", 1)[1].split("', summary:", 1)[0]
+        for instruction in ('SOURCE clone, not an installed applier', 'plan --target',
+                            'apply --target', 'full deployment map', 'revision 106 to 107',
+                            'not --force', 'equal-revision', 'local deviations',
+                            'project-owned settings', 'custom hook entries and wrappers',
+                            'existing ownership opt-ins', 'product bytes and modes',
+                            'unresolved checkpoints', 'original raw task',
+                            'accepted completion criteria and exclusions', 'all authors',
+                            'prior review gates and evidence', 'same task',
+                            'independent re-review', 'reset a task', 'edit integrity hashes',
+                            'every installed skill surface',
+                            'regenerate installed and reader surfaces', 'source Git history',
+                            'original INSTALL guidance', 'conflicts',
+                            'grant trust or permissions', 'select models',
+                            'enable ownership guards', 'session checks remain repo-declared and opt-in'):
+            with self.subTest(instruction=instruction):
+                self.assertIn(instruction, deploy)
+        summary = frontmatter.split("summary: '", 1)[1]
+        for behavior in ('verification author history', 'reopened implementation',
+                         'narrow repair relation', 'pre-save validation',
+                         'unrelated malformed routing or progress',
+                         'stale, denied and self-review', 'original human objective',
+                         'accepted criteria', 'original presentation',
+                         'no live orchestration qualification'):
+            with self.subTest(behavior=behavior):
+                self.assertIn(behavior, summary)
+        self.assertNotIn('area: delivery-outcome-repairs', frontmatter)
+        self.assertNotRegex(raw, rb'(?m)^(?:<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)(?: |$)')
+
+    def test_recovered_revision_106_rejects_complete_archive_body_and_header_corruption(self):
+        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        prefix, frontmatter, body = raw.split(b'---\n', 2)
+        blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', body, re.S)
+        self.assertEqual(9, len(blocks))
+        archive = blocks[0]
+        self.assertIn(b'Counts remain unchanged.', archive)
+        self.assertIn(b'Source repositories refresh the source-only eval runner and case', archive)
+        changed_tail = archive.replace(b'Counts remain unchanged.', b'Counts remain unchangeD.', 1)
+        mutations = {
+            'long-summary-tail-same-length': (frontmatter, body.replace(archive, changed_tail, 1)),
+            'complete-deploy-row': (frontmatter, body.replace(
+                archive, archive.replace(b'source-only eval runner and case', b'source-only eval runner and casE', 1), 1)),
+            'older-history-long-row': (frontmatter, body.replace(
+                blocks[-1], blocks[-1].replace(b'adoption-quality', b'adoption-qualitY', 1), 1)),
+            'original-body-guidance': (frontmatter, body.replace(
+                b'you do **not** need to diff the whole tree',
+                b'you do **NOT** need to diff the whole tree', 1)),
+            'older-history-order': (frontmatter, body.replace(
+                blocks[1] + b'\n\n' + blocks[2], blocks[2] + b'\n\n' + blocks[1], 1)),
+            'duplicate-archive': (frontmatter, body.replace(archive, archive + b'\n\n' + archive, 1)),
+            'truncate-archive-summary': (frontmatter, body.replace(
+                archive, archive[:archive.index(b"summary: '")] + b"summary: 'abbreviated' }\n```\n</details>", 1)),
+            'header-counts': (frontmatter.replace(b'skills: 30', b'skills: 29', 1), body),
+            'header-purpose': (frontmatter.replace(b'portable bootstrap', b'portable bootstraP', 1), body),
+        }
+        for name, (mutated_frontmatter, mutated_body) in mutations.items():
+            corrupted = b'---\n'.join((prefix, mutated_frontmatter, mutated_body))
+            with self.subTest(corruption=name):
+                self.assertNotEqual(raw, corrupted, 'Every negative control must actually mutate bytes')
+                with self.assertRaises(AssertionError):
+                    recovered_revision_106_install(corrupted)
+        self.assertEqual((273983, '8876c227d5c7081156a19417570cbc0bbda35f7ba12208b5a0ffcbdc166b2834'),
+                         (len(recovered_revision_106_install(raw)),
+                          hashlib.sha256(recovered_revision_106_install(raw)).hexdigest()),
+                         'Unmodified bytes remain accepted alongside the hard negative controls')
+
+
 class DeliveryOutcomeRefreshMetadataTests(unittest.TestCase):
     def test_revision_105_archive_and_entire_body_reversal_preserve_source_bytes(self):
-        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        raw = recovered_revision_106_install()
         blocks = re.findall(rb'<details>\n<summary>.*?\n</details>', raw, re.S)
         self.assertEqual(8, len(blocks), 'Add one archive without deleting any existing history')
         self.assertIn('Revision 105 — 10 October 2026'.encode('utf-8'), blocks[0])
@@ -106,7 +253,7 @@ class DeliveryOutcomeRefreshMetadataTests(unittest.TestCase):
                          'Only revision, bundle version, current delta and one archive may change')
 
     def test_revision_106_names_seven_repairs_and_preservation_first_refresh(self):
-        raw = (ROOT / 'pack/adapters/INSTALL.md').read_bytes()
+        raw = recovered_revision_106_install()
         frontmatter = raw.split(b'---\n', 2)[1].decode('utf-8')
         self.assertRegex(frontmatter, r"(?m)^revision: 106$")
         self.assertIn("bundle_version: '2026.10.10.2'", frontmatter)
@@ -595,6 +742,12 @@ class UpstreamWorkflowPolicyTests(unittest.TestCase):
         # body, not just headings. Permissions, every OS and native cmd remain.
         jobs = raw[raw.index(b'permissions:\n'):]
         self.assertEqual(1, jobs.count(added_tests))
+        # Revision107 adds the retained-history regression to the same job.
+        # Reverse only that named insertion; keep every older numeric/hash gate.
+        repair_history_test = b' tests/docs_explorer/test_delivery_repair_history.py'
+        self.assertEqual(1, jobs.count(repair_history_test))
+        self.assertIn(repair_history_test, routing)
+        jobs = jobs.replace(repair_history_test, b'', 1)
         # Revision106 adds only the maintained repair/native parser checks to the
         # same read-only job. Reverse that exact addition before applying the
         # retained complete original-job oracle below.
